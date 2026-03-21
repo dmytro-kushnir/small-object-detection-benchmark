@@ -1,0 +1,44 @@
+# Dataset preparation: set input.* to your data (no secrets; paths are yours).
+defaults:
+  - _self_
+
+hydra:
+  job:
+    chdir: false
+
+# Paths are relative to the process working directory (run from repo root), or absolute.
+# coco | yolo
+input:
+  mode: coco
+  coco_json: datasets/raw/annotations.json
+  images_dir: datasets/raw/images
+  # YOLO mode: root with images/, labels/, and optional data.yaml for class names
+  yolo_root: datasets/raw/yolo
+  yolo_data_yaml: null  # if null, uses yolo_root/data.yaml when present
+
+output_dir: datasets/processed/example
+
+seed: 42
+split:
+  train: 0.8
+  val: 0.1
+  test: 0.1
+
+# After filtering: drop images with zero annotations
+drop_empty_images: true
+
+# Small-object filter: instance kept only if ALL enabled thresholds pass (if threshold is null, that check is skipped)
+filter:
+  min_side_px: null      # sqrt(w*h) >= this
+  min_area_px: null      # w*h >= this
+  min_area_frac: null    # (w*h)/(img_w*img_h) >= this
+
+# Resize: if both null, images are copied (or symlink if copy_images false)
+resize:
+  target_short_edge: null  # e.g. 640; maintains aspect ratio
+  fixed_width: null
+  fixed_height: null
+
+copy_images: true
+# If false and no resize, try symlink; falls back to copy if symlink fails
+use_symlink: false

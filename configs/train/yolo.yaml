@@ -1,0 +1,31 @@
+defaults:
+  - _self_
+
+hydra:
+  job:
+    chdir: false
+
+# Ultralytics YOLO26 weights identifier (e.g. yolo26n.pt)
+model: yolo26n.pt
+
+# Path to dataset.yaml produced by prepare_dataset.py
+data: datasets/processed/example/dataset.yaml
+
+epochs: 10
+imgsz: 640
+batch: 16
+workers: 8
+device: null  # null = auto; or "cpu", "0", "0,1"
+
+project: experiments/yolo
+# run name: if null, generated at runtime
+name: null
+
+seed: 42
+patience: 50
+save: true
+plots: true
+verbose: true
+
+optimizer:
+  lr0: null  # null = Ultralytics default

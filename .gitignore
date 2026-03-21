@@ -1,0 +1,13 @@
+# Hydra default multirun/sweep output (ephemeral; do not commit)
+outputs/
+
+# Bulk dataset tree: usually a machine-local symlink (e.g. to another mount).
+# Canonical prep script lives in scripts/datasets/ (version-controlled).
+/datasets
+
+# Python bytecode and caches (local / version-specific; do not commit)
+__pycache__/
+*.py[cod]
+*.pyc
+*.pyo
+.Python
