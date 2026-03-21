@@ -5,6 +5,13 @@ outputs/
 # Canonical prep script lives in scripts/datasets/ (version-controlled).
 /datasets
 
+# Training runs (Ultralytics); only .gitkeep dirs are tracked
+experiments/yolo/
+
+# Local weights / exports under models/ (keep models/.gitkeep only)
+models/*
+!models/.gitkeep
+
 # Python bytecode and caches (local / version-specific; do not commit)
 __pycache__/
 *.py[cod]
