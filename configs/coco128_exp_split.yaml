@@ -1,0 +1,10 @@
+# @package _global_
+#
+# Single source of truth for train/val/test ratios on the COCO128 smoke pipeline.
+# Included by exp000_prepare and exp001_prepare so both runs assign the same image IDs
+# to each split (required for fair EXP-001 vs EXP-000 val evaluation).
+
+split:
+  train: 0.85
+  val: 0.15
+  test: 0.0

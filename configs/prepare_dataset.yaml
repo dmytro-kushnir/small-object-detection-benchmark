@@ -25,12 +25,15 @@ split:
   train: 0.8
   val: 0.1
   test: 0.1
+# EXP-000 / EXP-001 (COCO128 smoke) override via defaults: coco128_exp_split.yaml (0.85/0.15/0.0).
 
 # After filtering: drop images with zero annotations
 drop_empty_images: true
 
 # Small-object filter: instance kept only if ALL enabled thresholds pass (if threshold is null, that check is skipped)
+# apply_to: all = filter before split (train/val/test). train = filter only train labels/GT; val/test identical to unfiltered.
 filter:
+  apply_to: all
   min_side_px: null      # sqrt(w*h) >= this
   min_area_px: null      # w*h >= this
   min_area_frac: null    # (w*h)/(img_w*img_h) >= this

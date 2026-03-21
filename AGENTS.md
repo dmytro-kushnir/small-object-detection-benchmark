@@ -163,6 +163,8 @@ Each run must include:
 * metrics.json
 * system info (GPU, device)
 
+**After a user (or automated pipeline) finishes an experiment run**, update the living research narrative in **`docs/research_analysis.md`**: add or refresh quantitative tables from `experiments/results/*.json` and `exp*_vs_baseline.json` (if applicable), adjust interpretation and caveats, and append a row to the **Changelog** table. Raw numbers stay in JSON; the analysis doc is for paper-ready synthesis.
+
 ---
 
 ## 🔁 Reproducibility Rules
@@ -199,6 +201,10 @@ When adding new feature:
 3. Ensure evaluation compatibility
 4. Document in `/docs`
 
+When an **experiment produces new metrics** (e.g. after `./scripts/run_smoke_test.sh`, `./scripts/run_exp001.sh`, or custom train/eval):
+
+5. Update **`docs/research_analysis.md`** (tables, conclusions, changelog) so the repo stays aligned with stored results.
+
 ---
 
 ## 📚 Documentation
@@ -208,6 +214,7 @@ Maintain:
 * `/docs/methodology.md`
 * `/docs/datasets.md`
 * `/docs/results.md`
+* `/docs/research_analysis.md` — **update after each experiment** with comparisons and draft conclusions for publications (see Experiment Tracking).
 
 ---
 
@@ -250,6 +257,8 @@ When generating code:
 * Add docstrings
 * Keep scripts runnable independently
 * Avoid overengineering
+
+When the user reports **completed experiment runs** or asks to record outcomes, **`docs/research_analysis.md` must be updated** in the same session unless they explicitly defer documentation.
 
 ---
 

@@ -1,6 +1,6 @@
 # @package _global_
 
-# EXP-000 baseline: COCO128 YOLO → datasets/processed/test_run (no filter, no resize).
+# EXP-001: filter small train GT only; val/test match EXP-000 (fair eval on same instances_val.json content).
 defaults:
   - prepare_dataset
   - coco128_exp_split
@@ -15,13 +15,15 @@ input:
   yolo_root: datasets/raw/test/coco128
   yolo_data_yaml: null
 
-output_dir: datasets/processed/test_run
+output_dir: datasets/processed/test_run_exp001
 
 drop_empty_images: false
 
 filter:
+  apply_to: train
   min_side_px: null
-  min_area_px: null
+  # Remove train objects smaller than COCO "small" (area < 32*32). Val/test unfiltered.
+  min_area_px: 1024
   min_area_frac: null
 
 resize:

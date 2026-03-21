@@ -36,7 +36,7 @@ chmod +x scripts/run_visualization.sh   # once
 ./scripts/run_visualization.sh
 ```
 
-Writes under `experiments/visualizations/test_run/`: `predictions/` (GT green, preds red), `comparisons/` (FN / FP emphasis), `dataset/` (random GT samples; train split if prepared, else val). Override paths with `PRED`, `GT`, `IMAGES_DIR`, `VIZ_OUT`, `DATASET_GT`, `DATASET_IMAGES`.
+Writes under `experiments/visualizations/test_run/`: `predictions/` (GT green, preds red), `comparisons/` (FN / FP emphasis), `dataset/` (random GT samples; train split if prepared, else val). Default preset is EXP-000 (`test_run`). For EXP-001 figures use `VIZ_PRESET=exp001` or `./scripts/run_visualization.sh exp001`. Override paths with `PRED`, `GT`, `IMAGES_DIR`, `VIZ_OUT`, `DATASET_GT`, `DATASET_IMAGES`.
 
 ---
 
@@ -44,9 +44,38 @@ Writes under `experiments/visualizations/test_run/`: `predictions/` (GT green, p
 
 ### EXP-001: Small object filtering
 
-* Remove objects below threshold
-* Goal: reduce noise
-* Expected: higher precision
+* During preparation, remove **train**-split GT instances below a configurable area (or side) threshold; **val and test COCO JSON match EXP-000** (same seed/split/raw data), so val mAP compares fairly.
+* Config: [`configs/exp001_prepare.yaml`](../configs/exp001_prepare.yaml) sets `filter.apply_to: train` and `filter.min_area_px: 1024` (COCO “small” is &lt; 32²). Override with Hydra, e.g. `filter.min_area_px=2048`.
+* Outputs: `datasets/processed/test_run_exp001/`, `experiments/yolo/test_run_exp001/`, `experiments/results/test_run_exp001_metrics.json`.
+
+**Prerequisite:** run EXP-000 first so `experiments/results/test_run_metrics.json` exists (for automatic comparison at the end of the EXP-001 script).
+
+```bash
+chmod +x scripts/run_exp001.sh   # once
+./scripts/run_exp001.sh
+```
+
+This prepares the filtered dataset, trains 1 epoch (`yolo26n.pt`, same hyperparameters as smoke test), runs val inference to `experiments/yolo/test_run_exp001/predictions_val.json`, evaluates to `experiments/results/test_run_exp001_metrics.json`, and if the baseline file exists writes **`experiments/results/exp001_vs_baseline.json`** and prints a short delta summary. Device: `EXP001_DEVICE` or `SMOKE_DEVICE` (same semantics as EXP-000).
+
+**Compare only** (if metrics files already exist):
+
+```bash
+python scripts/evaluation/compare_metrics.py \
+  --baseline experiments/results/test_run_metrics.json \
+  --compare experiments/results/test_run_exp001_metrics.json \
+  --out experiments/results/exp001_vs_baseline.json
+```
+
+**Visualizations** (predictions + comparisons; no retrain):
+
+```bash
+VIZ_PRESET=exp001 ./scripts/run_visualization.sh
+# or: ./scripts/run_visualization.sh exp001
+```
+
+Writes under `experiments/visualizations/test_run_exp001/`.
+
+**Note:** Global filtering (`filter.apply_to: all` in [`prepare_dataset.yaml`](../configs/prepare_dataset.yaml)) still filters every split; EXP-001 uses `apply_to: train` only.
 
 ---
 

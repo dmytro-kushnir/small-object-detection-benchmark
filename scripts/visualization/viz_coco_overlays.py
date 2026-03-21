@@ -1,5 +1,5 @@
 #!/usr/bin/env python3
-"""EXP-000 visualizations from existing predictions + COCO GT (no train/eval)."""
+"""COCO prediction/GT overlays from existing predictions JSON (no train/eval)."""
 
 from __future__ import annotations
 
@@ -265,7 +265,7 @@ def run_dataset_samples(
 
 
 def main() -> None:
-    p = argparse.ArgumentParser(description="EXP-000 visualizations (existing preds + GT).")
+    p = argparse.ArgumentParser(description="COCO overlays from existing preds + GT.")
     p.add_argument("--pred", type=str, required=True, help="Predictions JSON (list)")
     p.add_argument("--gt", type=str, required=True, help="COCO GT JSON (e.g. instances_val.json)")
     p.add_argument(

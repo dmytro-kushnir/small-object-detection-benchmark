@@ -31,4 +31,4 @@ Under `output_dir`:
 - `dataset.yaml` — Ultralytics data config
 - `prepare_manifest.json` — counts, filter params, seed
 
-See `configs/prepare_dataset.yaml` for all options.
+See `configs/prepare_dataset.yaml` for all options. Bbox filters use `filter.apply_to`: `all` (every split) or `train` (val/test GT unchanged—used for EXP-001 vs baseline).

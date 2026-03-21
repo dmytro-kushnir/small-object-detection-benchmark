@@ -342,8 +342,14 @@ def run_prepare(cfg: DictConfig) -> None:
     else:
         raise ValueError(f"Unknown input.mode: {mode}")
 
-    coco = filter_annotations(coco, cfg.filter)
-    coco = normalize_categories(coco)
+    apply_to = str(getattr(cfg.filter, "apply_to", "all")).lower()
+    train_only_bbox_filter = apply_to in ("train", "train_only")
+
+    if train_only_bbox_filter:
+        coco = normalize_categories(coco)
+    else:
+        coco = filter_annotations(coco, cfg.filter)
+        coco = normalize_categories(coco)
 
     img_to_anns: dict[int, list[dict[str, Any]]] = {}
     for a in coco["annotations"]:
@@ -414,6 +420,9 @@ def run_prepare(cfg: DictConfig) -> None:
                     continue
                 im_out_h, im_out_w = arr.shape[:2]
 
+            if train_only_bbox_filter and split_name == "train":
+                anns = [a for a in anns if passes_filter(a, im_out_w, im_out_h, cfg.filter)]
+
             fname = src.name
             lbl_path = lbl_dir / f"{Path(fname).stem}.txt"
             with open(lbl_path, "w", encoding="utf-8") as lf:
@@ -476,6 +485,8 @@ def run_prepare(cfg: DictConfig) -> None:
         "seed": int(cfg.seed),
         "input_mode": mode,
         "filter": OmegaConf.to_container(cfg.filter, resolve=True),
+        "filter_apply_to": apply_to,
+        "train_only_bbox_filter": train_only_bbox_filter,
         "split": OmegaConf.to_container(cfg.split, resolve=True),
         "resize": OmegaConf.to_container(cfg.resize, resolve=True),
         "counts": {s: len(split_rows[s]) for s in split_rows},

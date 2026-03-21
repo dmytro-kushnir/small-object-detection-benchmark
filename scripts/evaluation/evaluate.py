@@ -213,6 +213,12 @@ def main() -> None:
         default=None,
         help="Optional path to prepare_manifest.json (metadata only)",
     )
+    p.add_argument(
+        "--experiment-id",
+        type=str,
+        default="EXP-000",
+        help="Label stored in output JSON (e.g. EXP-001)",
+    )
     args = p.parse_args()
 
     try:
@@ -310,7 +316,7 @@ def main() -> None:
 
     repo_root = Path(__file__).resolve().parents[2]
     payload: dict[str, Any] = {
-        "experiment_id": "EXP-000",
+        "experiment_id": args.experiment_id,
         "coco_eval": coco_metrics,
         "coco_eval_stats_raw": [float(x) for x in stats],
         "matched_pr": matched,

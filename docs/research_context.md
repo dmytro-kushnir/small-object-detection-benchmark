@@ -63,7 +63,7 @@ All experiments must follow:
 
 Dataset preparation is handled by:
 
-datasets/scripts/prepare_dataset.py
+`scripts/datasets/prepare_dataset.py`
 
 This ensures:
 

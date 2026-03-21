@@ -1,0 +1,38 @@
+%YAML 1.1
+---
+# CODECHECK community workflow: https://codecheck.org.uk/guide/community-workflow-author.html
+# Config spec: https://codecheck.org.uk/spec/config/1.0/
+# Validate YAML after edits (e.g. https://codebeautify.org/yaml-validator).
+#
+# Primary workflow (recreated by a checker from a clean clone):
+#   ./scripts/run_smoke_test.sh
+# Optional extended workflow (after baseline metrics exist):
+#   ./scripts/run_exp001.sh
+# See docs/reproduction.md for environment, CPU/GPU, and what to log.
+
+version: https://codecheck.org.uk/spec/config/1.0/
+
+manifest:
+  - file: experiments/results/test_run_metrics.json
+    comment: EXP-000 COCOeval mAP/AR, FPS, system_info, git_rev (evaluate.py output)
+  - file: experiments/yolo/test_run/predictions_val.json
+    comment: Validation predictions (COCO list JSON) used for evaluation
+  - file: experiments/yolo/test_run/config.yaml
+    comment: Frozen training config from Ultralytics run
+  - file: experiments/yolo/test_run/weights/last.pt
+    comment: Checkpoint after training (best.pt may also exist; smoke test accepts either for inference)
+  - file: datasets/processed/test_run/prepare_manifest.json
+    comment: Dataset prep metadata (seed, filter, split counts)
+
+paper:
+  title: "Small object detection benchmark — baseline smoke-test workflow"
+  authors:
+    - name: Dmytro Kushnir
+  reference: "Repository workflow; add DOI or arXiv ID when tied to a publication."
+
+sod_bench:
+  workflow_baseline: "./scripts/run_smoke_test.sh"
+  workflow_extended: "./scripts/run_exp001.sh"
+  extended_outputs_note: >
+    After run_exp001.sh, also expect experiments/results/test_run_exp001_metrics.json
+    and experiments/results/exp001_vs_baseline.json (if baseline metrics were present).

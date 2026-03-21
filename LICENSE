@@ -19,3 +19,12 @@ AUTHORS OR COPYRIGHT HOLDERS BE LIABLE FOR ANY CLAIM, DAMAGES OR OTHER
 LIABILITY, WHETHER IN AN ACTION OF CONTRACT, TORT OR OTHERWISE, ARISING FROM,
 OUT OF OR IN CONNECTION WITH THE SOFTWARE OR THE USE OR OTHER DEALINGS IN THE
 SOFTWARE.
+
+---
+
+Data and third-party assets (not covered by the MIT license above)
+
+- Images and labels fetched by `scripts/datasets/download_coco128.py` (e.g. COCO128)
+  remain under their upstream dataset terms; see that script and the source site.
+- User-supplied data under `datasets/raw/` or `datasets/processed/` is not
+  distributed with this repository; users are responsible for their own licenses.
