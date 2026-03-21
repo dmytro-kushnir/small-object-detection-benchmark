@@ -70,7 +70,7 @@ Implement:
 /scripts/datasets/prepare_dataset.py
 ```
 
-The `datasets/` directory in the repo is often a **symlink** to a larger disk (raw/processed data live there). The preparation script stays under `scripts/datasets/` so it remains version-controlled.
+The `datasets/` directory lives in the repository; `datasets/raw/` and `datasets/processed/` are **gitignored** (downloads and prepared data stay local). Preparation logic stays under `scripts/datasets/` and is version-controlled.
 
 Responsibilities:
 

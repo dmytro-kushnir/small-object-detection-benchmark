@@ -37,8 +37,12 @@ Artifacts go under `experiments/yolo/<run_id>/` (weights, Ultralytics logs, plus
 
 ## Other scripts
 
-- `python scripts/inference/infer_yolo.py --weights … --source … --out predictions.json`
-- `python scripts/evaluation/evaluate.py` — mock metrics placeholder until COCO eval is wired
+- `python scripts/inference/infer_yolo.py --weights … --source … --coco-gt …/instances_val.json --out preds.json` — COCO **list** JSON for `pycocotools` (`image_id` aligned to GT)
+- `python scripts/evaluation/evaluate.py --gt … --pred … --weights … --images-dir …/val --out experiments/results/test_run_metrics.json` — COCOeval mAP / AR + P/R + FPS
+
+**EXP-000 baseline:** `./scripts/run_smoke_test.sh` (see [`docs/experiments.md`](docs/experiments.md)).
+
+**EXP-000 figures:** `./scripts/run_visualization.sh` (GT/pred overlays from existing `predictions_val.json`; no retrain).
 
 ## Docker
 

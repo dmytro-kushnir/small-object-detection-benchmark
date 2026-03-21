@@ -1,14 +1,22 @@
 # Hydra default multirun/sweep output (ephemeral; do not commit)
 outputs/
 
-# Bulk dataset tree: usually a machine-local symlink (e.g. to another mount).
-# Canonical prep script lives in scripts/datasets/ (version-controlled).
-/datasets
+# Dataset tree lives in-repo; ignore bulk (downloads + processed outputs)
+datasets/raw/*
+!datasets/raw/.gitkeep
+datasets/processed/*
+!datasets/processed/.gitkeep
 
-# Training runs (Ultralytics); only .gitkeep dirs are tracked
+# Training runs (Ultralytics)
 experiments/yolo/
 
-# Local weights / exports under models/ (keep models/.gitkeep only)
+# EXP-000 / smoke metrics (regenerate via scripts/run_smoke_test.sh)
+experiments/results/*.json
+
+# EXP-000 figures (regenerate via scripts/run_visualization.sh)
+experiments/visualizations/
+
+# Local weights / exports (keep models/.gitkeep only)
 models/*
 !models/.gitkeep
 

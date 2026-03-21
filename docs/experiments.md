@@ -14,6 +14,30 @@ Evaluate different techniques to improve small object detection.
 * Default resize
 * 1 epoch (smoke test)
 
+### Run EXP-000 (one command)
+
+From the repo root:
+
+```bash
+chmod +x scripts/run_smoke_test.sh   # once
+./scripts/run_smoke_test.sh
+```
+
+This downloads COCO128 to `datasets/raw/test/coco128`, prepares with [`configs/exp000_prepare.yaml`](../configs/exp000_prepare.yaml) into `datasets/processed/test_run`, trains `yolo26n` for one epoch to `experiments/yolo/test_run`, runs val inference, and writes **pycocotools** metrics (plus FPS/latency) to **`experiments/results/test_run_metrics.json`**.
+
+Override device: `SMOKE_DEVICE=cpu` or `SMOKE_DEVICE=0`.
+
+### Visualizations (after EXP-000)
+
+From existing `predictions_val.json`, val GT, and images (no retrain):
+
+```bash
+chmod +x scripts/run_visualization.sh   # once
+./scripts/run_visualization.sh
+```
+
+Writes under `experiments/visualizations/test_run/`: `predictions/` (GT green, preds red), `comparisons/` (FN / FP emphasis), `dataset/` (random GT samples; train split if prepared, else val). Override paths with `PRED`, `GT`, `IMAGES_DIR`, `VIZ_OUT`, `DATASET_GT`, `DATASET_IMAGES`.
+
 ---
 
 ## 🧠 Experiments

@@ -1,0 +1,34 @@
+# @package _global_
+
+# EXP-000 baseline: COCO128 YOLO → datasets/processed/test_run (no filter, no resize).
+defaults:
+  - prepare_dataset
+  - _self_
+
+hydra:
+  job:
+    chdir: false
+
+input:
+  mode: yolo
+  yolo_root: datasets/raw/test/coco128
+  yolo_data_yaml: null
+
+output_dir: datasets/processed/test_run
+
+drop_empty_images: false
+
+filter:
+  min_side_px: null
+  min_area_px: null
+  min_area_frac: null
+
+resize:
+  target_short_edge: null
+  fixed_width: null
+  fixed_height: null
+
+split:
+  train: 0.85
+  val: 0.15
+  test: 0.0

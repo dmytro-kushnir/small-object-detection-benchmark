@@ -1,3 +1,5 @@
+# @package _global_
+
 # Dataset preparation: set input.* to your data (no secrets; paths are yours).
 defaults:
   - _self_

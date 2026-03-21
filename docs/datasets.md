@@ -1,6 +1,8 @@
 # Datasets
 
-If `datasets/` is not present, create it as a directory or **symlink** it to your large-data mount (see `AGENTS.md`).
+The repo includes `datasets/raw/` and `datasets/processed/` (placeholders tracked; actual data is gitignored). Downloads and prepared runs are written there from the repository root.
+
+Use **normal directories** inside the clone for `datasets/`, `experiments/`, and `models/` (not symlinks to other mounts), so Git can track `.gitkeep` files and paths match the scripts.
 
 ## Preparation
 
