@@ -110,6 +110,7 @@ def run_train(cfg: DictConfig) -> None:
         "plots": bool(cfg.plots),
         "verbose": bool(cfg.verbose),
         "seed": int(cfg.seed),
+        "exist_ok": bool(cfg.exist_ok),
     }
     if cfg.device is not None:
         train_kw["device"] = cfg.device

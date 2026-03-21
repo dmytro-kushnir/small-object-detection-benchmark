@@ -28,6 +28,8 @@ patience: 50
 save: true
 plots: true
 verbose: true
+# Ultralytics: if false, reusing project/name creates test_run2, test_run3, …
+exist_ok: false
 
 optimizer:
   lr0: null  # null = Ultralytics default

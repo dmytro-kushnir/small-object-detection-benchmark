@@ -6,8 +6,9 @@
 #
 # Primary workflow (recreated by a checker from a clean clone):
 #   ./scripts/run_smoke_test.sh
-# Optional extended workflow (after baseline metrics exist):
+# Optional extended workflows (after baseline metrics exist):
 #   ./scripts/run_exp001.sh
+#   ./scripts/run_exp002.sh
 # See docs/reproduction.md for environment, CPU/GPU, and what to log.
 
 version: https://codecheck.org.uk/spec/config/1.0/
@@ -33,6 +34,9 @@ paper:
 sod_bench:
   workflow_baseline: "./scripts/run_smoke_test.sh"
   workflow_extended: "./scripts/run_exp001.sh"
+  workflow_exp002: "./scripts/run_exp002.sh"
   extended_outputs_note: >
     After run_exp001.sh, also expect experiments/results/test_run_exp001_metrics.json
     and experiments/results/exp001_vs_baseline.json (if baseline metrics were present).
+    After run_exp002.sh, expect experiments/results/test_run_exp002_metrics.json and
+    experiments/results/exp002_vs_baseline.json (same test_run data as baseline).

@@ -12,7 +12,7 @@ pip install -r requirements.txt
 
 Run commands from the **repository root** so relative paths in `configs/` resolve correctly (or pass absolute paths via Hydra overrides).
 
-For an independent verifier-oriented workflow (environment, smoke test, EXP-001, what to log), see [`docs/reproduction.md`](docs/reproduction.md).
+For an independent verifier-oriented workflow (environment, smoke test, EXP-001 / EXP-002, what to log), see [`docs/reproduction.md`](docs/reproduction.md).
 
 **CODECHECK:** This repo includes a root [`codecheck.yml`](codecheck.yml) manifest aligned with the [CODECHECK community workflow](https://codecheck.org.uk/guide/community-workflow-author.html) (see also [project principles](https://codecheck.org.uk/project/)). Submit via the [CODECHECK register](https://github.com/codecheckers/register/issues/new/choose) when ready.
 
@@ -49,6 +49,8 @@ Artifacts go under `experiments/yolo/<run_id>/` (weights, Ultralytics logs, plus
 **EXP-000 figures:** `./scripts/run_visualization.sh` (GT/pred overlays from existing `predictions_val.json`; no retrain).
 
 **EXP-001 (filtered GT):** `./scripts/run_exp001.sh` after EXP-000; see [`docs/experiments.md`](docs/experiments.md).
+
+**EXP-002 (higher `imgsz`):** `./scripts/run_exp002.sh` after EXP-000 (same `test_run` data, `imgsz=1280`); see [`docs/experiments.md`](docs/experiments.md).
 
 ## Docker
 

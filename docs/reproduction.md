@@ -41,6 +41,20 @@ After the baseline exists (`experiments/results/test_run_metrics.json`):
 - `experiments/results/exp001_vs_baseline.json` if the baseline metrics file was present
 - Corresponding paths under `datasets/processed/test_run_exp001/` and `experiments/yolo/test_run_exp001/`
 
+## Extended check (EXP-002)
+
+After the baseline exists (`experiments/results/test_run_metrics.json`):
+
+```bash
+./scripts/run_exp002.sh
+```
+
+**Expect:**
+
+- `experiments/results/test_run_exp002_metrics.json`
+- `experiments/results/exp002_vs_baseline.json` if the baseline metrics file was present
+- Artifacts under `experiments/yolo/test_run_exp002/` (same `datasets/processed/test_run` as EXP-000)
+
 ## What to record for a report
 
 - `git rev-parse HEAD` (also embedded as `git_rev` in metrics JSON where applicable).
@@ -53,4 +67,5 @@ Unified evaluation is implemented in `scripts/evaluation/evaluate.py`; dataset p
 ```bash
 make reproduce-baseline   # ./scripts/run_smoke_test.sh
 make reproduce-exp001     # ./scripts/run_exp001.sh
+make reproduce-exp002     # ./scripts/run_exp002.sh
 ```

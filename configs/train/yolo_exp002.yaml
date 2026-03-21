@@ -1,0 +1,17 @@
+# @package _global_
+# EXP-002: higher training/inference resolution; same prepared data as EXP-000 (test_run).
+# Default batch=4 matches smoke baseline; if 1280 OOMs, override e.g. batch=2 (breaks strict hyperparam identity).
+
+defaults:
+  - yolo
+  - _self_
+
+model: yolo26n.pt
+data: datasets/processed/test_run/dataset.yaml
+epochs: 1
+imgsz: 1280
+batch: 4
+workers: 0
+project: experiments/yolo
+name: test_run_exp002
+exist_ok: true

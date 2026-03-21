@@ -9,15 +9,38 @@ import sys
 from pathlib import Path
 from typing import Any
 
-EVAL_NOTE = (
-    "EXP-001 applies bbox filtering on the train split only (filter.apply_to: train); "
-    "val/test GT match EXP-000 when using the same raw data, seed, and split. "
-    "Deltas on val mAP compare the same evaluation labels."
+DEFAULT_EVAL_NOTE = (
+    "Ensure both runs use the same validation GT and comparable training setup when interpreting deltas."
 )
 
 
 def _load(path: Path) -> dict[str, Any]:
     return json.loads(path.read_text(encoding="utf-8"))
+
+
+def _pull_inference(m: dict[str, Any]) -> dict[str, float | None]:
+    ib = m.get("inference_benchmark") or {}
+    fps = ib.get("fps")
+    lat = ib.get("latency_ms_mean")
+    return {
+        "fps": float(fps) if fps is not None else None,
+        "latency_ms_mean": float(lat) if lat is not None else None,
+    }
+
+
+def _infer_deltas(
+    vb: dict[str, float | None], vc: dict[str, float | None]
+) -> dict[str, float | None]:
+    out: dict[str, float | None] = {}
+    if vb["fps"] is not None and vc["fps"] is not None:
+        out["fps_diff"] = vc["fps"] - vb["fps"]
+    else:
+        out["fps_diff"] = None
+    if vb["latency_ms_mean"] is not None and vc["latency_ms_mean"] is not None:
+        out["latency_ms_mean_diff"] = vc["latency_ms_mean"] - vb["latency_ms_mean"]
+    else:
+        out["latency_ms_mean_diff"] = None
+    return out
 
 
 def main() -> None:
@@ -39,6 +62,18 @@ def main() -> None:
         type=str,
         default="experiments/results/exp001_vs_baseline.json",
         help="Output JSON path",
+    )
+    p.add_argument(
+        "--evaluation-note",
+        type=str,
+        default=DEFAULT_EVAL_NOTE,
+        help="Stored in output JSON and printed (experiment-specific fair-comparison reminder).",
+    )
+    p.add_argument(
+        "--summary-label",
+        type=str,
+        default="Compare vs baseline",
+        help="Printed section title (e.g. EXP-001 vs baseline).",
     )
     args = p.parse_args()
 
@@ -82,13 +117,20 @@ def main() -> None:
         "recall_diff": vc["recall"] - vb["recall"],
     }
 
-    payload = {
+    ib_b = _pull_inference(b)
+    ib_c = _pull_inference(c)
+    infer_deltas = _infer_deltas(ib_b, ib_c)
+
+    payload: dict[str, Any] = {
         "baseline_experiment_id": b.get("experiment_id"),
         "compare_experiment_id": c.get("experiment_id"),
         "deltas": deltas,
         "baseline_metrics": vb,
         "compare_metrics": vc,
-        "evaluation_note": EVAL_NOTE,
+        "baseline_inference": ib_b,
+        "compare_inference": ib_c,
+        "inference_deltas": infer_deltas,
+        "evaluation_note": args.evaluation_note,
         "paths": {"baseline": str(base_path), "compare": str(cmp_path)},
     }
 
@@ -96,8 +138,9 @@ def main() -> None:
     out_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")
     print(f"Wrote {out_path}")
 
+    label = args.summary_label
     print()
-    print("=== EXP-001 vs baseline (compare − baseline) ===")
+    print(f"=== {label} (compare − baseline) ===")
     print(f"  mAP@[.5:.95]: {deltas['mAP_diff']:+.6f}")
     print(f"  mAP@0.5:      {deltas['mAP50_diff']:+.6f}")
     print(f"  mAP_small:    {deltas['small_diff']:+.6f}  <-- small-object bucket (see note below)")
@@ -105,8 +148,18 @@ def main() -> None:
     print(f"  mAP_large:    {deltas['large_diff']:+.6f}")
     print(f"  P (IoU50):    {deltas['precision_diff']:+.6f}")
     print(f"  R (IoU50):    {deltas['recall_diff']:+.6f}")
+    if infer_deltas["fps_diff"] is not None:
+        print(f"  FPS:          {infer_deltas['fps_diff']:+.6f}  (higher = faster)")
+    else:
+        print("  FPS:          (n/a — missing benchmark in one or both JSONs)")
+    if infer_deltas["latency_ms_mean_diff"] is not None:
+        print(
+            f"  Latency mean: {infer_deltas['latency_ms_mean_diff']:+.3f} ms  (compare − baseline)"
+        )
+    else:
+        print("  Latency mean: (n/a — missing benchmark in one or both JSONs)")
     print()
-    print("Note:", EVAL_NOTE)
+    print("Note:", args.evaluation_note)
     print()
 
 

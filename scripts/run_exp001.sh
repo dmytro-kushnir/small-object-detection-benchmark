@@ -61,12 +61,16 @@ python3 scripts/evaluation/evaluate.py \
   --prepare-manifest "$ROOT/datasets/processed/test_run_exp001/prepare_manifest.json" \
   --train-config "$ROOT/experiments/yolo/test_run_exp001/config.yaml"
 
+EXP001_NOTE="EXP-001 applies bbox filtering on the train split only (filter.apply_to: train); val/test GT match EXP-000 when using the same raw data, seed, and split. Deltas on val mAP compare the same evaluation labels."
+
 echo "== 6/6 Compare vs baseline =="
 if [[ -f "$BASELINE_METRICS" ]]; then
   python3 scripts/evaluation/compare_metrics.py \
     --baseline "$BASELINE_METRICS" \
     --compare "$METRICS" \
-    --out "$ROOT/experiments/results/exp001_vs_baseline.json"
+    --out "$ROOT/experiments/results/exp001_vs_baseline.json" \
+    --summary-label "EXP-001 vs baseline" \
+    --evaluation-note "$EXP001_NOTE"
 else
   echo "Skip compare: baseline not found at $BASELINE_METRICS (run ./scripts/run_smoke_test.sh first)." >&2
 fi
