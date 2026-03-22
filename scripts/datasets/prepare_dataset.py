@@ -46,6 +46,93 @@ def _gather_images_yolo(yolo_root: Path) -> list[tuple[Path, Path]]:
     return pairs
 
 
+def gather_images_yolo_split(yolo_root: Path, split: str) -> list[tuple[Path, Path]]:
+    """YOLO pairs under images/{split}/ and labels/{split}/ only (for COCO export per split)."""
+    if split not in ("train", "val", "test"):
+        raise ValueError(f"split must be train|val|test, got {split!r}")
+    images_sub = yolo_root / "images" / split
+    labels_root = yolo_root / "labels" / split
+    if not images_sub.is_dir():
+        raise FileNotFoundError(f"YOLO images dir not found: {images_sub}")
+    exts = {".jpg", ".jpeg", ".png", ".bmp", ".webp", ".tif", ".tiff"}
+    pairs: list[tuple[Path, Path]] = []
+    for img_path in sorted(images_sub.rglob("*")):
+        if img_path.suffix.lower() not in exts:
+            continue
+        rel = img_path.relative_to(images_sub)
+        label_path = labels_root / rel.with_suffix(".txt")
+        pairs.append((img_path, label_path))
+    return pairs
+
+
+def yolo_to_coco_in_memory_for_split(
+    yolo_root: Path,
+    data_yaml: Path | None,
+    split: str,
+) -> dict[str, Any]:
+    """Build COCO dict for one split (train / val / test) without mixing image_ids across splits."""
+    pairs = gather_images_yolo_split(yolo_root, split)
+    names = _load_yolo_names(yolo_root, data_yaml)
+    images_out: list[dict[str, Any]] = []
+    annotations_out: list[dict[str, Any]] = []
+    max_cat = -1
+    ann_id = 1
+    for img_id, (img_path, label_path) in enumerate(
+        tqdm(pairs, desc=f"yolo_to_coco_{split}"), start=1
+    ):
+        im = cv2.imread(str(img_path))
+        if im is None:
+            continue
+        h, w = im.shape[:2]
+        images_out.append(
+            {
+                "id": img_id,
+                "file_name": str(img_path.name),
+                "width": int(w),
+                "height": int(h),
+            }
+        )
+        if not label_path.is_file():
+            continue
+        with open(label_path, encoding="utf-8") as f:
+            for line in f:
+                parts = line.strip().split()
+                if len(parts) < 5:
+                    continue
+                cls = int(float(parts[0]))
+                xc, yc, bw, bh = map(float, parts[1:5])
+                max_cat = max(max_cat, cls)
+                box_w = bw * w
+                box_h = bh * h
+                x = xc * w - box_w / 2.0
+                y = yc * h - box_h / 2.0
+                annotations_out.append(
+                    {
+                        "id": ann_id,
+                        "image_id": img_id,
+                        "category_id": cls,
+                        "bbox": [float(x), float(y), float(box_w), float(box_h)],
+                        "area": float(box_w * box_h),
+                        "iscrowd": 0,
+                    }
+                )
+                ann_id += 1
+
+    if names:
+        categories = [{"id": i, "name": str(names[i])} for i in range(len(names))]
+    else:
+        categories = [
+            {"id": i, "name": f"class_{i}"}
+            for i in range(max_cat + 1 if max_cat >= 0 else 1)
+        ]
+
+    return {
+        "images": images_out,
+        "annotations": annotations_out,
+        "categories": categories,
+    }
+
+
 def _load_yolo_names(yolo_root: Path, data_yaml: Path | None) -> list[str]:
     candidates = []
     if data_yaml and data_yaml.is_file():

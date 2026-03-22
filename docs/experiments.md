@@ -153,7 +153,63 @@ python scripts/evaluation/summarize_resolution_sweep.py --cwd . \
 
 ---
 
-### EXP-003: Dataset balancing
+### EXP-003: SAHI sliced inference (no retraining)
+
+* **Same val COCO GT and images as EXP-000** (`datasets/processed/test_run`): no dataset changes.
+* **Variable:** [SAHI](https://obss.github.io/sahi/) tiled inference only — compare against **vanilla** `infer_yolo.py` metrics for the same weights.
+* **Weights:** `experiments/yolo/test_run/weights/best.pt` (320-train smoke baseline; confirm actual `imgsz` in `experiments/yolo/test_run/config.yaml`) and `experiments/yolo/exp002b_imgsz896/weights/best.pt` (requires a completed EXP-002b run).
+* **SAHI parameters:** [`configs/exp003_sahi.yaml`](../configs/exp003_sahi.yaml) (slice size, overlap, confidence; CLI overrides in [`scripts/inference/infer_sahi_yolo.py`](../scripts/inference/infer_sahi_yolo.py)). Each run folder stores a resolved `sahi_config.json` next to `predictions_val.json`.
+
+**Prerequisites:** `pip install -r requirements.txt` (includes `sahi`), EXP-000 artifacts, **`experiments/results/test_run_metrics.json`**, and **`experiments/results/exp002b_imgsz896_metrics.json`** plus 896 weights (run `./scripts/run_exp002b.sh` first if missing).
+
+```bash
+chmod +x scripts/run_exp003.sh   # once
+./scripts/run_exp003.sh
+```
+
+**Env:** `EXP003_DEVICE` or `SMOKE_DEVICE`; optional `EXP003_SAHI_CONFIG` to point at a different YAML.
+
+**Outputs:**
+
+* Predictions + logged SAHI config: `experiments/yolo/test_run_exp003_sahi_base/`, `experiments/yolo/test_run_exp003_sahi_896/`
+* Metrics: `experiments/results/test_run_exp003_sahi_base_metrics.json`, `test_run_exp003_sahi_896_metrics.json` (FPS/latency use SAHI when `--sahi-config` is passed to `evaluate.py`)
+* Comparisons: `experiments/results/exp003_sahi_vs_baseline.json`, `exp003_sahi_vs_exp002b_896.json`
+* Overlays: `experiments/visualizations/test_run_exp003_sahi_base/`, `…/test_run_exp003_sahi_896/`
+* Narrative: `experiments/results/exp003_sahi_summary.md` (fill numbers after the script run)
+
+**Make:** `make reproduce-exp003` runs the same shell script.
+
+---
+
+### EXP-A000: Ant MOT → YOLO baseline (domain dataset)
+
+* **Separate from COCO128:** indoor/outdoor **ant** tracking frames (e.g. 1920×1080) with **MOT** `gt/gt.txt` (`frame, id, x, y, w, h, …`) and frames under `img1/` (or `img/`) per sequence.
+* **Preparation:** [`scripts/datasets/prepare_ants_mot.py`](../scripts/datasets/prepare_ants_mot.py) + [`configs/datasets/ants_mot_prepare.yaml`](../configs/datasets/ants_mot_prepare.yaml) — **temporal split** (`per_sequence` default: first ~80% of frames per sequence → train, last ~20% → val; no random split).
+* **Outputs:** `datasets/ants_yolo/` (YOLO layout, `dataset.yaml`, `annotations/instances_{train,val}.json`, `analysis.json`, `prepare_manifest.json`). Directory is **gitignored**; regenerate locally.
+* **Canonical full baseline (20 epochs):** [`configs/train/yolo_ants_expA000_full.yaml`](../configs/train/yolo_ants_expA000_full.yaml) → `experiments/yolo/ants_expA000_full/`, metrics `experiments/results/ants_expA000_full_metrics.json`, relative-area stats `experiments/results/ants_expA000_relative_metrics.json`, overlays `experiments/visualizations/ants_expA000_full/`, report `experiments/results/ants_expA000_full_summary.md` (includes smoke vs full table when smoke metrics exist). Orchestrator: [`scripts/run_ants_expA000_full.sh`](../scripts/run_ants_expA000_full.sh) (`make reproduce-ants-full`).
+* **Smoke (1 epoch, pipeline check):** [`configs/train/yolo_ants_expA000_smoke.yaml`](../configs/train/yolo_ants_expA000_smoke.yaml) → `experiments/yolo/ants_expA000_smoke/`, metrics `experiments/results/ants_expA000_smoke_metrics.json`.
+* **Legacy baseline (20 epochs, different artifact names — deprecated for new work):** [`configs/train/yolo_ants_expA000.yaml`](../configs/train/yolo_ants_expA000.yaml) → `experiments/yolo/ants_expA000/`, metrics `experiments/results/ants_expA000_metrics.json`, summary `experiments/results/ants_expA000_summary.md`. Prefer **`run_ants_expA000_full.sh`** so results align with docs and `research_analysis.md`.
+
+**Prerequisite:** set **`ANTS_DATASET_ROOT`** to your `Ant_dataset` root (path with MOT sequences).
+
+```bash
+chmod +x scripts/run_ants_prepare.sh scripts/run_ants_expA000_smoke.sh scripts/run_ants_expA000.sh scripts/run_ants_expA000_full.sh   # once
+export ANTS_DATASET_ROOT="/path/to/Ant_dataset"
+./scripts/run_ants_prepare.sh
+./scripts/run_ants_expA000_smoke.sh    # optional 1-epoch pipeline check
+./scripts/run_ants_expA000_full.sh     # canonical 20-epoch baseline (relative metrics, viz cap, summary)
+# legacy only: ./scripts/run_ants_expA000.sh
+```
+
+**Env:** `ANTS_DEVICE` or `SMOKE_DEVICE` for CUDA/CPU. For viz, default overlay cap is **250** val images; set `ANTS_VIZ_MAX_IMAGES=all` to render all, or e.g. `ANTS_VIZ_MAX_IMAGES=1073` for the full val set. Optional Hydra overrides on prepare: `./scripts/run_ants_prepare.sh split_strategy=global_sorted link_mode=copy`.
+
+**GT samples:** `experiments/visualizations/ants_dataset/` (from `viz_ant_gt_samples.py` inside prepare script).
+
+**Next (not automated here):** EXP-A002b resolution sweep, EXP-A003 SAHI, EXP-A004 ANTS — see summary template.
+
+---
+
+### EXP-004: Dataset balancing (future)
 
 * Oversample images with small objects
 * Goal: improve recall
@@ -161,7 +217,7 @@ python scripts/evaluation/summarize_resolution_sweep.py --cwd . \
 
 ---
 
-### EXP-004: Bounding box scaling
+### EXP-005: Bounding box scaling (future)
 
 * Slightly enlarge small bounding boxes
 * Goal: improve learnability
@@ -180,6 +236,7 @@ Each experiment must report:
 * Recall
 * FPS
 * Latency (mean ms per image in `evaluate.py` benchmark; compare via `compare_metrics.py` for A/B)
+* For **EXP-003**, FPS/latency are measured over **SAHI sliced** inference per full image when evaluation is run with `--sahi-config` (see [`scripts/evaluation/sahi_bench.py`](../scripts/evaluation/sahi_bench.py))
 
 ---
 

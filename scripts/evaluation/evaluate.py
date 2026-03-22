@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import importlib.util
 import json
 import math
 import subprocess
@@ -175,6 +176,26 @@ def _bench_fps(
     }
 
 
+def _load_sahi_bench_module() -> Any:
+    p = Path(__file__).resolve().parent / "sahi_bench.py"
+    spec = importlib.util.spec_from_file_location("sahi_bench", p)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Cannot load {p}")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _sahi_params_from_yaml(path: Path, imgsz_override: int | None) -> dict[str, Any]:
+    import yaml
+
+    raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+    params = dict(raw) if isinstance(raw, dict) else {}
+    if imgsz_override is not None:
+        params["yolo_imgsz"] = int(imgsz_override)
+    return params
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description="COCO bbox eval + FPS (EXP-000).")
     p.add_argument("--gt", type=str, required=True, help="COCO GT JSON (e.g. instances_val.json)")
@@ -228,6 +249,12 @@ def main() -> None:
         default=None,
         help="Ultralytics predict imgsz for FPS/latency benchmark (default: model default).",
     )
+    p.add_argument(
+        "--sahi-config",
+        type=str,
+        default=None,
+        help="If set, FPS/latency uses SAHI sliced inference (YAML; see configs/exp003_sahi.yaml).",
+    )
     args = p.parse_args()
 
     try:
@@ -255,6 +282,13 @@ def main() -> None:
     if not images_dir.is_dir():
         print(f"Images dir not found: {images_dir}", file=sys.stderr)
         sys.exit(1)
+
+    sahi_cfg_path: Path | None = None
+    if args.sahi_config:
+        sahi_cfg_path = Path(args.sahi_config).expanduser().resolve()
+        if not sahi_cfg_path.is_file():
+            print(f"SAHI config not found: {sahi_cfg_path}", file=sys.stderr)
+            sys.exit(1)
 
     coco_gt = COCO(str(gt_path))
     dets = _load_predictions(pred_path)
@@ -347,6 +381,8 @@ def main() -> None:
         payload["paths"]["train_config"] = str(Path(args.train_config).resolve())
     if args.prepare_manifest:
         payload["paths"]["prepare_manifest"] = str(Path(args.prepare_manifest).resolve())
+    if sahi_cfg_path is not None:
+        payload["paths"]["sahi_config"] = str(sahi_cfg_path)
     if not dets:
         payload["coco_eval_note"] = "Skipped COCOeval (empty predictions); metrics zeroed."
 

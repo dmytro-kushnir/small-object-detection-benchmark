@@ -63,7 +63,8 @@ All experiments must follow:
 
 Dataset preparation is handled by:
 
-`scripts/datasets/prepare_dataset.py`
+* `scripts/datasets/prepare_dataset.py` (COCO → YOLO / processed splits)
+* `scripts/datasets/prepare_ants_mot.py` (optional MOT ant sequences → `datasets/ants_yolo/`)
 
 This ensures:
 

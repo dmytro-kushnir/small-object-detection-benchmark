@@ -1,0 +1,16 @@
+# @package _global_
+# EXP-A000 smoke: ant YOLO dataset, 1 epoch, verify pipeline.
+
+defaults:
+  - yolo
+  - _self_
+
+model: yolo26n.pt
+data: datasets/ants_yolo/dataset.yaml
+epochs: 1
+imgsz: 640
+batch: 4
+workers: 0
+project: experiments/yolo
+name: ants_expA000_smoke
+exist_ok: true

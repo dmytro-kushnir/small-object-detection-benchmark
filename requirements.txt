@@ -21,3 +21,6 @@ PyYAML>=6.0
 
 # 🤖 YOLO (newer needed for CUDA 13 compatibility)
 ultralytics>=8.4.0
+
+# Sliced inference (EXP-003 SAHI + Ultralytics)
+sahi>=0.11.14

@@ -1,0 +1,16 @@
+# @package _global_
+# EXP-A000 full baseline: same recipe as yolo_ants_expA000, run name ants_expA000_full.
+
+defaults:
+  - yolo
+  - _self_
+
+model: yolo26n.pt
+data: datasets/ants_yolo/dataset.yaml
+epochs: 20
+imgsz: 640
+batch: 4
+workers: 0
+project: experiments/yolo
+name: ants_expA000_full
+exist_ok: true

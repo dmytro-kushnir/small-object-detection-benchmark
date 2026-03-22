@@ -69,12 +69,39 @@ Resolution sweep on the same prepared data as EXP-000 (optional; longer than EXP
 - `experiments/results/exp002b_resolution_sweep.json`, `experiments/results/exp002b_recommendation.md`, plots under `experiments/results/plots/`
 - YOLO dirs `experiments/yolo/exp002b_imgsz640/` … `exp002b_imgsz1024/` (640 may be copied from baseline metrics only if baseline `test_run` was trained at `imgsz=640`)
 
+## Extended check (EXP-003)
+
+SAHI tiled inference on the **same** val split as EXP-000, compared to vanilla metrics for `test_run` and `exp002b_imgsz896` weights (requires EXP-002b metrics and 896 checkpoint):
+
+```bash
+./scripts/run_exp003.sh
+```
+
+**Expect:**
+
+- `experiments/yolo/test_run_exp003_sahi_{base,896}/predictions_val.json` and `sahi_config.json`
+- `experiments/results/test_run_exp003_sahi_{base,896}_metrics.json`
+- `experiments/results/exp003_sahi_vs_baseline.json`, `exp003_sahi_vs_exp002b_896.json`, `exp003_sahi_summary.md`
+- Overlays under `experiments/visualizations/test_run_exp003_sahi_{base,896}/`
+
 ## What to record for a report
 
 - `git rev-parse HEAD` (also embedded as `git_rev` in metrics JSON where applicable).
 - From each metrics JSON, at least: `experiment_id`, `coco_eval`, `system_info`, `git_rev`.
 
-Unified evaluation is implemented in `scripts/evaluation/evaluate.py`; dataset preparation lives in `scripts/datasets/prepare_dataset.py`. See [`docs/experiments.md`](experiments.md) for experiment-specific scripts and [`README.md`](../README.md) for day-to-day commands.
+Unified evaluation is implemented in `scripts/evaluation/evaluate.py`; dataset preparation lives in `scripts/datasets/prepare_dataset.py` (COCO workflow) and `scripts/datasets/prepare_ants_mot.py` (MOT → YOLO ants). See [`docs/experiments.md`](experiments.md) for experiment-specific scripts and [`README.md`](../README.md) for day-to-day commands.
+
+## Ant dataset (EXP-A000, optional)
+
+Requires a local **MOT-format** ant dataset; set `ANTS_DATASET_ROOT` to its root, then prepare (**writes gitignored `datasets/ants_yolo/`** — not in the repo; regenerate after clone):
+
+```bash
+export ANTS_DATASET_ROOT="/path/to/Ant_dataset"
+./scripts/run_ants_prepare.sh
+./scripts/run_ants_expA000_smoke.sh   # optional 1-epoch check
+./scripts/run_ants_expA000_full.sh    # canonical 20-epoch baseline (or make reproduce-ants-full)
+# legacy artifact names only (deprecated): ./scripts/run_ants_expA000.sh
+```
 
 ## Make wrappers (optional)
 
@@ -83,4 +110,8 @@ make reproduce-baseline   # ./scripts/run_smoke_test.sh
 make reproduce-exp001     # ./scripts/run_exp001.sh
 make reproduce-exp002     # ./scripts/run_exp002.sh
 make reproduce-exp002b    # ./scripts/run_exp002b.sh
+make reproduce-exp003     # ./scripts/run_exp003.sh
+make reproduce-ants-smoke # ./scripts/run_ants_expA000_smoke.sh (after prepare + ANTS_DATASET_ROOT)
+make reproduce-ants-baseline  # legacy: ./scripts/run_ants_expA000.sh (prefer reproduce-ants-full)
+make reproduce-ants-full      # ./scripts/run_ants_expA000_full.sh (after prepare)
 ```

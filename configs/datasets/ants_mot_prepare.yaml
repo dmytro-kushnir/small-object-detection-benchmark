@@ -1,0 +1,38 @@
+# @package _global_
+# MOTChallenge-style ant tracking → YOLO layout under output_root.
+# Override dataset_root (path to Ant_dataset on your machine).
+
+defaults:
+  - _self_
+
+hydra:
+  job:
+    chdir: false
+
+# Required: absolute or repo-relative path to raw Ant_dataset
+dataset_root: ???
+
+output_root: datasets/ants_yolo
+train_ratio: 0.8
+val_ratio: 0.2
+
+# per_sequence: 80/20 temporal within each sequence (no random split)
+# global_sorted: sort all (sequence_key, frame_id), then first 80% train
+split_strategy: per_sequence
+
+seed: 42
+link_mode: symlink
+layout: mot_sequence
+
+img_subdir: img1
+gt_subdir: gt
+gt_filename: gt.txt
+image_ext: .jpg
+frame_digits: 6
+delimiter: auto
+
+# If true, skip MOT lines with confidence column == -1 (when >=8 columns)
+skip_mot_confidence_neg_one: true
+
+# YOLO single class
+class_id_yolo: 0

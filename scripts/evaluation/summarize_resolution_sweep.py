@@ -71,23 +71,47 @@ def _collect_inputs(globs: list[str], cwd: Path) -> list[Path]:
 
 def _recommendation_rule(summary: list[dict[str, Any]]) -> tuple[int, str]:
     """Pick imgsz: among rows with fps >= median(fps), highest mAP_small; tie-break lower imgsz."""
-    with_fps = [r for r in summary if r.get("fps") is not None]
+    with_fps: list[dict[str, Any]] = []
+    for r in summary:
+        fps = r.get("fps")
+        if fps is None:
+            continue
+        try:
+            fv = float(fps)
+        except (TypeError, ValueError):
+            continue
+        if math.isfinite(fv):
+            with_fps.append(r)
     if not with_fps:
         best = max(summary, key=lambda r: (r.get("mAP_small") or 0.0, -(r["imgsz"])))
         return best["imgsz"], (
-            "No FPS values; fallback: highest mAP_small, then lower imgsz."
+            "No finite FPS values; fallback: highest mAP_small, then lower imgsz."
         )
     fps_vals = [float(r["fps"]) for r in with_fps]
     med = statistics.median(fps_vals)
-    candidates = [r for r in with_fps if float(r["fps"]) >= med]
+    if not math.isfinite(med):
+        candidates = list(with_fps)
+        rule = (
+            "Non-finite median FPS; fallback: among runs with finite FPS, highest mAP_small; "
+            "tie-break lower imgsz."
+        )
+    else:
+        candidates = [r for r in with_fps if float(r["fps"]) >= med]
+        if not candidates:
+            candidates = list(with_fps)
+            rule = (
+                "Median-FPS filter yielded no candidates; fallback: among runs with finite FPS, "
+                "highest mAP_small; tie-break lower imgsz."
+            )
+        else:
+            rule = (
+                f"Among resolutions with FPS ≥ median FPS ({med:.4f}), pick highest mAP_small; "
+                "tie-break lower imgsz."
+            )
     candidates.sort(
         key=lambda r: (-(r.get("mAP_small") or 0.0), r["imgsz"]),
     )
-    best = candidates[0]
-    return best["imgsz"], (
-        f"Among resolutions with FPS ≥ median FPS ({med:.4f}), pick highest mAP_small; "
-        "tie-break lower imgsz."
-    )
+    return candidates[0]["imgsz"], rule
 
 
 def _write_recommendation_md(

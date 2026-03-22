@@ -6,6 +6,7 @@ datasets/raw/*
 !datasets/raw/.gitkeep
 datasets/processed/*
 !datasets/processed/.gitkeep
+datasets/ants_yolo/
 
 # Training runs (Ultralytics)
 experiments/yolo/

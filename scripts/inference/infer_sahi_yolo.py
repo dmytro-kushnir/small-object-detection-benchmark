@@ -1,0 +1,174 @@
+#!/usr/bin/env python3
+"""SAHI sliced inference with Ultralytics YOLO weights → COCO list JSON (evaluate.py compatible)."""
+
+from __future__ import annotations
+
+import argparse
+import importlib.util
+import json
+import sys
+from pathlib import Path
+from typing import Any
+
+
+def _load_gt_name_to_id(coco_gt_path: Path) -> dict[str, int]:
+    data = json.loads(coco_gt_path.read_text(encoding="utf-8"))
+    out: dict[str, int] = {}
+    for im in data.get("images", []):
+        fn = im.get("file_name")
+        iid = im.get("id")
+        if fn is not None and iid is not None:
+            out[Path(str(fn)).name] = int(iid)
+    return out
+
+
+def _load_sahi_bench_module() -> Any:
+    p = Path(__file__).resolve().parent.parent / "evaluation" / "sahi_bench.py"
+    spec = importlib.util.spec_from_file_location("sahi_bench", p)
+    if spec is None or spec.loader is None:
+        raise RuntimeError(f"Cannot load {p}")
+    mod = importlib.util.module_from_spec(spec)
+    spec.loader.exec_module(mod)
+    return mod
+
+
+def _load_yaml(path: Path) -> dict[str, Any]:
+    import yaml
+
+    raw = yaml.safe_load(path.read_text(encoding="utf-8"))
+    return dict(raw) if isinstance(raw, dict) else {}
+
+
+def _merge_sahi_config(
+    yaml_path: Path,
+    overrides: dict[str, Any | None],
+) -> dict[str, Any]:
+    cfg = _load_yaml(yaml_path)
+    for k, v in overrides.items():
+        if v is not None:
+            cfg[k] = v
+    return cfg
+
+
+def main() -> None:
+    p = argparse.ArgumentParser(
+        description="SAHI sliced YOLO inference → COCO results JSON for pycocotools."
+    )
+    p.add_argument("--weights", type=str, required=True, help="Path to .pt weights")
+    p.add_argument("--source", type=str, required=True, help="Directory of val images")
+    p.add_argument(
+        "--coco-gt",
+        type=str,
+        required=True,
+        help="COCO GT JSON to map file_name → image_id",
+    )
+    p.add_argument("--out", type=str, required=True, help="Output predictions JSON path")
+    p.add_argument(
+        "--sahi-config",
+        type=str,
+        default="configs/exp003_sahi.yaml",
+        help="YAML with slice_height, slice_width, overlap_*, confidence_threshold, model_type",
+    )
+    p.add_argument("--device", type=str, default=None, help='e.g. "0", "cpu"')
+    p.add_argument("--slice-height", type=int, default=None)
+    p.add_argument("--slice-width", type=int, default=None)
+    p.add_argument("--overlap-height-ratio", type=float, default=None)
+    p.add_argument("--overlap-width-ratio", type=float, default=None)
+    p.add_argument("--confidence-threshold", type=float, default=None)
+    p.add_argument("--yolo-imgsz", type=int, default=None)
+    args = p.parse_args()
+
+    weights = Path(args.weights).expanduser().resolve()
+    source_path = Path(args.source).expanduser().resolve()
+    gt_path = Path(args.coco_gt).expanduser().resolve()
+    out_path = Path(args.out).expanduser().resolve()
+    cfg_path = Path(args.sahi_config).expanduser().resolve()
+
+    if not weights.is_file():
+        print(f"Weights not found: {weights}", file=sys.stderr)
+        sys.exit(1)
+    if not source_path.is_dir():
+        print(f"Source dir not found: {source_path}", file=sys.stderr)
+        sys.exit(1)
+    if not gt_path.is_file():
+        print(f"COCO GT not found: {gt_path}", file=sys.stderr)
+        sys.exit(1)
+    if not cfg_path.is_file():
+        print(f"SAHI config not found: {cfg_path}", file=sys.stderr)
+        sys.exit(1)
+
+    sahi_params = _merge_sahi_config(
+        cfg_path,
+        {
+            "slice_height": args.slice_height,
+            "slice_width": args.slice_width,
+            "overlap_height_ratio": args.overlap_height_ratio,
+            "overlap_width_ratio": args.overlap_width_ratio,
+            "confidence_threshold": args.confidence_threshold,
+            "yolo_imgsz": args.yolo_imgsz,
+        },
+    )
+
+    try:
+        sb = _load_sahi_bench_module()
+    except Exception as e:
+        print(f"Failed to load sahi_bench: {e}", file=sys.stderr)
+        sys.exit(1)
+
+    try:
+        model = sb.build_sahi_detection_model(weights, args.device, sahi_params)
+    except ImportError:
+        print("Install sahi (pip install -r requirements.txt).", file=sys.stderr)
+        sys.exit(1)
+
+    name_to_id = _load_gt_name_to_id(gt_path)
+    coco = json.loads(gt_path.read_text(encoding="utf-8"))
+    images = coco.get("images", [])
+
+    detections: list[dict[str, Any]] = []
+    missing: set[str] = set()
+
+    for im in images:
+        fn = im.get("file_name")
+        iid = im.get("id")
+        if fn is None or iid is None:
+            continue
+        base = Path(str(fn)).name
+        if base not in name_to_id:
+            missing.add(base)
+            continue
+        img_path = source_path / base
+        if not img_path.is_file():
+            missing.add(base)
+            continue
+        im_id = int(name_to_id[base])
+        result = sb.run_sahi_sliced_on_path(img_path, model, sahi_params)
+        detections.extend(sb.predictions_to_coco_dets(result, im_id))
+
+    if missing:
+        print(
+            f"Warning: skipped {len(missing)} missing/unknown files "
+            f"(showing up to 5): {sorted(missing)[:5]}",
+            file=sys.stderr,
+        )
+
+    out_path.parent.mkdir(parents=True, exist_ok=True)
+    out_path.write_text(json.dumps(detections, indent=2), encoding="utf-8")
+
+    meta = {
+        "sahi_params": sahi_params,
+        "sahi_config_path": str(cfg_path),
+        "weights": str(weights),
+        "coco_gt": str(gt_path),
+        "source": str(source_path),
+        "predictions_out": str(out_path),
+    }
+    (out_path.parent / "sahi_config.json").write_text(
+        json.dumps(meta, indent=2), encoding="utf-8"
+    )
+    print(f"Wrote {out_path} ({len(detections)} detections)")
+    print(f"Wrote {out_path.parent / 'sahi_config.json'}")
+
+
+if __name__ == "__main__":
+    main()
