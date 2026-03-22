@@ -7,14 +7,14 @@ Narrative synthesis for a future paper. **Update this file after each experiment
 
 ---
 
-## Shared setup (EXP-000 / EXP-001 / EXP-002 as currently scripted)
+## Shared setup (EXP-000 / EXP-001 / EXP-002 / EXP-002b as currently scripted)
 
 | Item | Value |
 |------|--------|
 | Model | YOLO26n (`yolo26n.pt`) |
-| Training | 1 epoch, batch 4, workers 0 for smoke-style runs; **`imgsz=320`** for EXP-000 / EXP-001 ([`scripts/run_smoke_test.sh`](../scripts/run_smoke_test.sh), [`scripts/run_exp001.sh`](../scripts/run_exp001.sh)); **`imgsz=1280`** for EXP-002 ([`configs/train/yolo_exp002.yaml`](../configs/train/yolo_exp002.yaml)) |
+| Training | 1 epoch, batch 4, workers 0 for smoke-style runs; **`imgsz=320`** for EXP-000 / EXP-001; **`imgsz=1280`** for EXP-002; **EXP-002b** sweeps 640–1024 on `test_run` ([`scripts/run_exp002b.sh`](../scripts/run_exp002b.sh), [`configs/train/yolo_exp002b.yaml`](../configs/train/yolo_exp002b.yaml)) |
 | Data | COCO128 via `scripts/datasets/download_coco128.py`; **same seed and split** where applicable (`seed` from `prepare_dataset.yaml`; split from [`configs/coco128_exp_split.yaml`](../configs/coco128_exp_split.yaml)). **EXP-002 reuses `datasets/processed/test_run`** (no separate processed dir). |
-| Evaluation | EXP-000 vs EXP-001: same val GT when using train-only filter. **EXP-002:** identical val COCO JSON and val images to EXP-000; only training/inference resolution changes. |
+| Evaluation | EXP-000 vs EXP-001: same val GT when using train-only filter. **EXP-002 / EXP-002b:** identical val COCO JSON and val images to EXP-000; only training/inference resolution changes. |
 | Primary metrics | COCO mAP / AR (including **mAP_small**) and **inference FPS/latency** from `scripts/evaluation/evaluate.py`; deltas (including FPS/latency) from `scripts/evaluation/compare_metrics.py` |
 
 ---
@@ -93,6 +93,41 @@ On this **1-epoch COCO128** setup, **raising train/infer `imgsz` from 320 to 128
 
 ---
 
+## EXP-002b — Resolution sweep (640–1024)
+
+**Goal:** Find a better **mAP_small vs speed** trade-off than a single extreme resolution (cf. EXP-002 at 1280 vs smoke at 320).
+
+**Procedure:** [`scripts/run_exp002b.sh`](../scripts/run_exp002b.sh) trains YOLO26n for one epoch at each `imgsz` in {640, 768, 896, 1024} on `datasets/processed/test_run`, runs val inference and `evaluate.py` with matching `--imgsz`. Aggregated metrics: [`experiments/results/exp002b_resolution_sweep.json`](../experiments/results/exp002b_resolution_sweep.json); auto-generated narrative: [`experiments/results/exp002b_recommendation.md`](../experiments/results/exp002b_recommendation.md); plots: [`experiments/results/plots/`](../experiments/results/plots/) (`exp002b_mapsmall_vs_imgsz.png`, `exp002b_map_vs_imgsz.png`, `exp002b_fps_vs_imgsz.png`).
+
+### Quantitative summary (recorded run)
+
+Values from **`experiments/results/exp002b_resolution_sweep.json`** (`summary` array; `git_rev` in file). **Re-record when you re-run.**
+
+| imgsz | mAP@[.50:.95] | mAP@.50 | mAP_small | mAP_medium | mAP_large | P (matched) | R (matched) | FPS | Latency mean (ms) |
+|------:|---------------:|--------:|----------:|-----------:|----------:|--------------:|------------:|----:|------------------:|
+| 640 | 0.487 | 0.599 | 0.147 | 0.350 | 0.772 | 0.826 | 0.559 | 27.5 | 36.4 |
+| 768 | 0.485 | 0.591 | 0.171 | 0.378 | 0.726 | 0.797 | 0.578 | 23.2 | 43.1 |
+| 896 | **0.497** | **0.640** | **0.210** | **0.423** | 0.692 | 0.747 | **0.608** | 21.3 | 46.9 |
+| 1024 | 0.450 | 0.617 | 0.191 | 0.432 | 0.584 | 0.670 | 0.578 | 21.5 | 46.4 |
+
+**Context vs EXP-000 (320, same val):** The sweep does not retrain at 320; for orientation, the recorded EXP-000 row in this doc has mAP@[.50:.95] ≈ 0.415 and mAP_small ≈ 0.028. Even **640** in EXP-002b already shows much higher **mAP_small** (0.147) and overall mAP (0.487)—expected when comparing a **320** train/infer setup to **640+** on the same tiny 1-epoch schedule (different effective resolution, not a controlled single-variable delta from 320).
+
+### Interpretation (draft for paper / discussion)
+
+On this **1-epoch COCO128** sweep, **896 achieves the best mAP@[.50:.95], mAP@.50, mAP_small, mAP_medium, and matched recall**; **640 retains the strongest mAP_large, matched precision, FPS, and lowest latency**. **1024 underperforms 896** on overall mAP and mAP_small despite similar throughput to 896—consistent with **instability or poor calibration after minimal training** at the largest size, not a monotonic “bigger is better” story.
+
+The bundled rule in **`exp002b_recommendation.md`** picks **768** as the scripted trade-off: among runs with **FPS ≥ median** (~22.4), only **640** and **768** qualify (896 and 1024 sit slightly below median FPS here); between those two, **768 wins on mAP_small** (0.171 vs 0.147). That is a **transparent speed floor**, not a claim that 768 is globally optimal: if **raw small-object AP** matters more than the median-FPS constraint, **896** is the empirical peak in this run; if **large-object AP or latency** dominate, **640** is preferable.
+
+**Working conclusion:** A **mid-high resolution (768–896)** is a reasonable compromise on this setup: large gains in small/medium buckets vs the 320 baseline without jumping all the way to 1280 (EXP-002). **896** looks best for **mAP_small and overall mAP** here; **640** is best for **speed and mAP_large**. Re-run across seeds and epochs before strong publication claims.
+
+### Caveats
+
+- Single epoch, COCO128, one recorded sweep → high variance.
+- Median-FPS recommendation rule excludes the fastest **mAP_small** setting (896) when its FPS falls just below median; treat `exp002b_recommendation.md` as one explicit policy, not ground truth.
+- Compare EXP-002 (1280) separately: it uses a different anchor than the 640–1024 grid and is not directly interpolated from this table.
+
+---
+
 ## Changelog
 
 | Date | Experiment(s) | Summary |
@@ -100,5 +135,7 @@ On this **1-epoch COCO128** setup, **raising train/infer `imgsz` from 320 to 128
 | 2026-03-21 | EXP-000 vs EXP-001 | Initial write-up; train-only small-box filter; no mAP_small gain, overall metrics slightly worse on recorded run. |
 | 2026-03-21 | EXP-002 (documented) | Pipeline: same `test_run` data, `imgsz` 320→1280; compare JSON includes FPS/latency deltas. |
 | 2026-03-21 | EXP-002 (numbers) | Recorded `exp002_vs_baseline.json`: large **mAP_small** / mAP_medium gain; mAP@[.5:.95] and mAP_large down; FPS −5, latency +11 ms. |
+| 2026-03-21 | EXP-002b (documented) | Resolution sweep 640–1024; `exp002b_resolution_sweep.json`, recommendation MD, plots under `experiments/results/plots/`. |
+| 2026-03-22 | EXP-002b (numbers) | Sweep: best overall **mAP / mAP_small** at **896**; best **mAP_large / FPS** at **640**; **1024** below **896** on mAP and mAP_small; scripted trade-off **768** (FPS ≥ median rule). |
 
 *(Append new rows when you re-run and refresh JSONs.)*

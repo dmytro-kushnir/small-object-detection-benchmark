@@ -1,0 +1,16 @@
+# @package _global_
+# EXP-002b: resolution sweep on same data as EXP-000 (test_run). Override imgsz and name per run.
+
+defaults:
+  - yolo
+  - _self_
+
+model: yolo26n.pt
+data: datasets/processed/test_run/dataset.yaml
+epochs: 1
+imgsz: 640
+batch: 4
+workers: 0
+project: experiments/yolo
+name: exp002b_imgsz640
+exist_ok: true

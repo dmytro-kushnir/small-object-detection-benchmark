@@ -119,6 +119,40 @@ Writes under `experiments/visualizations/test_run_exp002/` (val overlays use `da
 
 ---
 
+### EXP-002b: Resolution sweep
+
+* **Same prepared data and val GT as EXP-000** (`datasets/processed/test_run`): no filtering; identical validation COCO JSON and images.
+* **Variable:** Ultralytics `imgsz` only — sweep **640, 768, 896, 1024** (same model `yolo26n.pt`, 1 epoch, batch 4, workers 0 as smoke-style runs unless overridden).
+* **Training config:** [`configs/train/yolo_exp002b.yaml`](../configs/train/yolo_exp002b.yaml); per-size run dirs `experiments/yolo/exp002b_imgsz{640|768|896|1024}/`.
+* **Inference / evaluation:** [`scripts/inference/infer_yolo.py`](../scripts/inference/infer_yolo.py) and [`scripts/evaluation/evaluate.py`](../scripts/evaluation/evaluate.py) take `--imgsz` so predict and FPS benchmark match each trained resolution.
+
+**Reuse 640 from baseline:** If `experiments/yolo/test_run/config.yaml` has `imgsz: 640` and both `experiments/results/test_run_metrics.json` and `experiments/yolo/test_run/predictions_val.json` exist, the sweep **copies** baseline metrics to `experiments/results/exp002b_imgsz640_metrics.json` and skips train/infer/eval for 640. (Current smoke baseline uses `imgsz=320`, so all four sizes are normally trained.)
+
+```bash
+chmod +x scripts/run_exp002b.sh   # once
+./scripts/run_exp002b.sh
+```
+
+**Outputs:**
+
+* Per size: `experiments/results/exp002b_imgsz*_metrics.json`
+* Aggregated: `experiments/results/exp002b_resolution_sweep.json` (compact `summary` table + `runs` metadata)
+* Narrative: `experiments/results/exp002b_recommendation.md`
+* Plots (matplotlib): `experiments/results/plots/exp002b_mapsmall_vs_imgsz.png`, `exp002b_map_vs_imgsz.png`, `exp002b_fps_vs_imgsz.png`
+
+**Env:** `EXP002B_DEVICE` or `SMOKE_DEVICE`; `EXP002B_BATCH` if VRAM is tight at larger `imgsz`.
+
+**Summarize only** (if metrics files already exist):
+
+```bash
+python scripts/evaluation/summarize_resolution_sweep.py --cwd . \
+  --out experiments/results/exp002b_resolution_sweep.json \
+  --recommendation-out experiments/results/exp002b_recommendation.md \
+  --plots-dir experiments/results/plots
+```
+
+---
+
 ### EXP-003: Dataset balancing
 
 * Oversample images with small objects

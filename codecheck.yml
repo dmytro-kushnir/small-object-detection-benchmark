@@ -9,6 +9,7 @@
 # Optional extended workflows (after baseline metrics exist):
 #   ./scripts/run_exp001.sh
 #   ./scripts/run_exp002.sh
+#   ./scripts/run_exp002b.sh
 # See docs/reproduction.md for environment, CPU/GPU, and what to log.
 
 version: https://codecheck.org.uk/spec/config/1.0/
@@ -35,8 +36,11 @@ sod_bench:
   workflow_baseline: "./scripts/run_smoke_test.sh"
   workflow_extended: "./scripts/run_exp001.sh"
   workflow_exp002: "./scripts/run_exp002.sh"
+  workflow_exp002b: "./scripts/run_exp002b.sh"
   extended_outputs_note: >
     After run_exp001.sh, also expect experiments/results/test_run_exp001_metrics.json
     and experiments/results/exp001_vs_baseline.json (if baseline metrics were present).
     After run_exp002.sh, expect experiments/results/test_run_exp002_metrics.json and
     experiments/results/exp002_vs_baseline.json (same test_run data as baseline).
+    After run_exp002b.sh, expect experiments/results/exp002b_resolution_sweep.json,
+    exp002b_recommendation.md, exp002b_imgsz*_metrics.json, and plots under experiments/results/plots/.

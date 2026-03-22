@@ -55,6 +55,20 @@ After the baseline exists (`experiments/results/test_run_metrics.json`):
 - `experiments/results/exp002_vs_baseline.json` if the baseline metrics file was present
 - Artifacts under `experiments/yolo/test_run_exp002/` (same `datasets/processed/test_run` as EXP-000)
 
+## Extended check (EXP-002b)
+
+Resolution sweep on the same prepared data as EXP-000 (optional; longer than EXP-002):
+
+```bash
+./scripts/run_exp002b.sh
+```
+
+**Expect:**
+
+- `experiments/results/exp002b_imgsz*_metrics.json` (one per `imgsz`)
+- `experiments/results/exp002b_resolution_sweep.json`, `experiments/results/exp002b_recommendation.md`, plots under `experiments/results/plots/`
+- YOLO dirs `experiments/yolo/exp002b_imgsz640/` … `exp002b_imgsz1024/` (640 may be copied from baseline metrics only if baseline `test_run` was trained at `imgsz=640`)
+
 ## What to record for a report
 
 - `git rev-parse HEAD` (also embedded as `git_rev` in metrics JSON where applicable).
@@ -68,4 +82,5 @@ Unified evaluation is implemented in `scripts/evaluation/evaluate.py`; dataset p
 make reproduce-baseline   # ./scripts/run_smoke_test.sh
 make reproduce-exp001     # ./scripts/run_exp001.sh
 make reproduce-exp002     # ./scripts/run_exp002.sh
+make reproduce-exp002b    # ./scripts/run_exp002b.sh
 ```

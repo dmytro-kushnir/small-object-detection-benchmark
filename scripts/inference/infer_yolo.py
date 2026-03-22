@@ -50,6 +50,12 @@ def main() -> None:
         default=None,
         help="Visualization folder (parent=project, basename=name for Ultralytics).",
     )
+    p.add_argument(
+        "--imgsz",
+        type=int,
+        default=None,
+        help="Ultralytics predict imgsz (default: model/YOLO default).",
+    )
     args = p.parse_args()
 
     try:
@@ -79,6 +85,8 @@ def main() -> None:
     pred_kw: dict = {"save": False, "verbose": False}
     if args.device is not None:
         pred_kw["device"] = args.device
+    if args.imgsz is not None:
+        pred_kw["imgsz"] = int(args.imgsz)
     if args.save_vis:
         out_parent = Path(args.out).expanduser().resolve().parent
         vis_path = (

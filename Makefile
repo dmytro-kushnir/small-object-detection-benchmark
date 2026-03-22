@@ -1,4 +1,4 @@
-.PHONY: reproduce-baseline reproduce-exp001 reproduce-exp002
+.PHONY: reproduce-baseline reproduce-exp001 reproduce-exp002 reproduce-exp002b
 
 reproduce-baseline:
 	./scripts/run_smoke_test.sh
@@ -8,3 +8,6 @@ reproduce-exp001:
 
 reproduce-exp002:
 	./scripts/run_exp002.sh
+
+reproduce-exp002b:
+	./scripts/run_exp002b.sh

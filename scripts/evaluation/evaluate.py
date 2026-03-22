@@ -122,6 +122,7 @@ def _bench_fps(
     image_paths: list[Path],
     device: str | None,
     warmup: int,
+    imgsz: int | None = None,
 ) -> dict[str, Any]:
     from ultralytics import YOLO
 
@@ -138,6 +139,8 @@ def _bench_fps(
     kw: dict[str, Any] = {"save": False, "verbose": False}
     if device is not None:
         kw["device"] = device
+    if imgsz is not None:
+        kw["imgsz"] = int(imgsz)
 
     n_warm = min(warmup, len(image_paths))
     for p in image_paths[:n_warm]:
@@ -218,6 +221,12 @@ def main() -> None:
         type=str,
         default="EXP-000",
         help="Label stored in output JSON (e.g. EXP-001)",
+    )
+    p.add_argument(
+        "--imgsz",
+        type=int,
+        default=None,
+        help="Ultralytics predict imgsz for FPS/latency benchmark (default: model default).",
     )
     args = p.parse_args()
 
@@ -312,7 +321,11 @@ def main() -> None:
         if cand.is_file():
             paths.append(cand)
 
-    perf = _bench_fps(weights_path, paths, args.device, args.warmup)
+    perf = _bench_fps(
+        weights_path, paths, args.device, args.warmup, imgsz=args.imgsz
+    )
+    if args.imgsz is not None:
+        perf = {**perf, "imgsz": int(args.imgsz)}
 
     repo_root = Path(__file__).resolve().parents[2]
     payload: dict[str, Any] = {
