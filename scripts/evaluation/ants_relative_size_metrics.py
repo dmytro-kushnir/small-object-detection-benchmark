@@ -80,6 +80,58 @@ def _percentiles(sorted_vals: list[float], ps: list[float]) -> dict[str, float]:
     return out
 
 
+def compute_ground_truth_block(coco: dict[str, Any], n_bins: int) -> dict[str, Any]:
+    """Stats block for GT annotations (same shape as payload['ground_truth'])."""
+    id_to_wh = _image_sizes(coco)
+    gt_anns = list(coco.get("annotations", []))
+    gt_rel = _relative_areas_for_anns(gt_anns, id_to_wh)
+    gt_sorted = sorted(gt_rel)
+    return {
+        "n_annotations": len(gt_rel),
+        "mean": sum(gt_rel) / len(gt_rel) if gt_rel else None,
+        "std": _std(gt_rel),
+        "percentiles": _percentiles(gt_sorted, [0.05, 0.5, 0.95]),
+        "histogram": _histogram(gt_rel, int(n_bins)),
+        "bins_policy": _bin_policy_fractions(gt_rel),
+    }
+
+
+def compute_predictions_block(
+    pred_path: Path,
+    id_to_wh: dict[int, tuple[int, int]],
+    n_bins: int,
+    score_thr: float,
+) -> dict[str, Any] | None:
+    """Predictions stats block; None if file missing."""
+    if not pred_path.is_file():
+        return None
+    raw = _load_json(pred_path)
+    preds = raw if isinstance(raw, list) else []
+    thr = float(score_thr)
+    pred_anns: list[dict[str, Any]] = []
+    for pr in preds:
+        if float(pr.get("score", 1.0)) < thr:
+            continue
+        pred_anns.append(
+            {
+                "image_id": int(pr["image_id"]),
+                "bbox": pr["bbox"],
+            }
+        )
+    pr_rel = _relative_areas_for_anns(pred_anns, id_to_wh)
+    pr_sorted = sorted(pr_rel)
+    return {
+        "source": str(pred_path.resolve()),
+        "score_threshold": float(score_thr),
+        "n_boxes": len(pr_rel),
+        "mean": sum(pr_rel) / len(pr_rel) if pr_rel else None,
+        "std": _std(pr_rel),
+        "percentiles": _percentiles(pr_sorted, [0.05, 0.5, 0.95]),
+        "histogram": _histogram(pr_rel, int(n_bins)),
+        "bins_policy": _bin_policy_fractions(pr_rel),
+    }
+
+
 def _bin_policy_fractions(values: list[float]) -> list[dict[str, Any]]:
     n = len(values)
     if n == 0:
@@ -122,9 +174,6 @@ def main() -> None:
 
     coco = _load_json(gt_path)
     id_to_wh = _image_sizes(coco)
-    gt_anns = list(coco.get("annotations", []))
-    gt_rel = _relative_areas_for_anns(gt_anns, id_to_wh)
-    gt_sorted = sorted(gt_rel)
 
     payload: dict[str, Any] = {
         "source_gt": str(gt_path),
@@ -133,44 +182,16 @@ def main() -> None:
             "COCOeval mAP_small/mAP_large use fixed pixel-area thresholds on absolute bbox area in px²; "
             "they can be -1 when no GT falls in those bins. This file measures 'small on frame' independently."
         ),
-        "ground_truth": {
-            "n_annotations": len(gt_rel),
-            "mean": sum(gt_rel) / len(gt_rel) if gt_rel else None,
-            "std": _std(gt_rel),
-            "percentiles": _percentiles(gt_sorted, [0.05, 0.5, 0.95]),
-            "histogram": _histogram(gt_rel, int(args.n_bins)),
-            "bins_policy": _bin_policy_fractions(gt_rel),
-        },
+        "ground_truth": compute_ground_truth_block(coco, int(args.n_bins)),
     }
 
     if args.pred:
         pred_path = Path(args.pred).expanduser().resolve()
         if pred_path.is_file():
-            raw = _load_json(pred_path)
-            preds = raw if isinstance(raw, list) else []
-            thr = float(args.score_thr)
-            pred_anns: list[dict[str, Any]] = []
-            for pr in preds:
-                if float(pr.get("score", 1.0)) < thr:
-                    continue
-                pred_anns.append(
-                    {
-                        "image_id": int(pr["image_id"]),
-                        "bbox": pr["bbox"],
-                    }
-                )
-            pr_rel = _relative_areas_for_anns(pred_anns, id_to_wh)
-            pr_sorted = sorted(pr_rel)
-            payload["predictions"] = {
-                "source": str(pred_path),
-                "score_threshold": float(args.score_thr),
-                "n_boxes": len(pr_rel),
-                "mean": sum(pr_rel) / len(pr_rel) if pr_rel else None,
-                "std": _std(pr_rel),
-                "percentiles": _percentiles(pr_sorted, [0.05, 0.5, 0.95]),
-                "histogram": _histogram(pr_rel, int(args.n_bins)),
-                "bins_policy": _bin_policy_fractions(pr_rel),
-            }
+            block = compute_predictions_block(
+                pred_path, id_to_wh, int(args.n_bins), float(args.score_thr)
+            )
+            payload["predictions"] = block or {"error": f"missing file: {pred_path}"}
         else:
             payload["predictions"] = {"error": f"missing file: {pred_path}"}
 

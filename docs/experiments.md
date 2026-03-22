@@ -205,7 +205,31 @@ export ANTS_DATASET_ROOT="/path/to/Ant_dataset"
 
 **GT samples:** `experiments/visualizations/ants_dataset/` (from `viz_ant_gt_samples.py` inside prepare script).
 
-**Next (not automated here):** EXP-A002b resolution sweep, EXP-A003 SAHI, EXP-A004 ANTS — see summary template.
+---
+
+### EXP-A002b: Ant resolution sweep (640–1024)
+
+* **Same** `datasets/ants_yolo` temporal split and val COCO GT as EXP-A000 full; **only** training/inference `imgsz` changes (20 epochs per size).
+* **Config:** [`configs/train/yolo_ants_expA002b.yaml`](../configs/train/yolo_ants_expA002b.yaml). **Orchestrator:** [`scripts/run_ants_expA002b.sh`](../scripts/run_ants_expA002b.sh) (`make reproduce-ants-expA002b`).
+* **Runs:** `experiments/yolo/ants_expA002b_imgsz{640,768,896,1024}/`. **640 reuse:** if `ants_expA000_full` was trained at `imgsz=640`, metrics are **copied** to `ants_expA002b_imgsz640_metrics.json` (no retrain); preds/viz use `ants_expA000_full/predictions_val.json`.
+* **Per-run metrics:** `experiments/results/ants_expA002b_imgsz*_metrics.json` (same `evaluate.py` fields as EXP-A000).
+* **Aggregate:** `experiments/results/ants_expA002b_resolution_sweep.json` (wrapper with `summary` rows: mAP, mAP50, mAP_medium, P, R, fps, `latency_ms`), `ants_expA002b_recommendation.md` (trade-off uses **mAP_medium** + median FPS rule), plots `experiments/results/plots/ants_expA002b_*.png` via [`summarize_ants_resolution_sweep.py`](../scripts/evaluation/summarize_ants_resolution_sweep.py).
+* **Relative areas (all resolutions):** `experiments/results/ants_expA002b_relative_metrics.json` from [`ants_relative_sweep_aggregate.py`](../scripts/evaluation/ants_relative_sweep_aggregate.py).
+* **Viz:** `experiments/visualizations/ants_expA002b/imgsz*/` — `comparisons/` highlights FN (orange) / FP (thick red); default overlay cap **250** (`ANTS_VIZ_MAX_IMAGES`).
+* **Report:** `experiments/results/ants_expA002b_summary.md` from [`write_ants_expA002b_summary.py`](../scripts/evaluation/write_ants_expA002b_summary.py). Compare to reference [`experiments/results/ants_expA000_full_metrics.json`](../experiments/results/ants_expA000_full_metrics.json).
+
+**Prerequisite:** prepared `datasets/ants_yolo/`; for 640 reuse, completed `ants_expA000_full` at 640.
+
+```bash
+chmod +x scripts/run_ants_expA002b.sh   # once
+export ANTS_DATASET_ROOT="/path/to/Ant_dataset"   # if not already prepared
+./scripts/run_ants_prepare.sh          # if needed
+./scripts/run_ants_expA000_full.sh     # optional but enables 640 reuse
+# OOM: EXP_A002B_BATCH=2 ./scripts/run_ants_expA002b.sh
+./scripts/run_ants_expA002b.sh
+```
+
+**Next (not automated here):** EXP-A003 SAHI, EXP-A004 ANTS.
 
 ---
 
@@ -237,6 +261,7 @@ Each experiment must report:
 * FPS
 * Latency (mean ms per image in `evaluate.py` benchmark; compare via `compare_metrics.py` for A/B)
 * For **EXP-003**, FPS/latency are measured over **SAHI sliced** inference per full image when evaluation is run with `--sahi-config` (see [`scripts/evaluation/sahi_bench.py`](../scripts/evaluation/sahi_bench.py))
+* For **EXP-A002b** (ants), treat **mAP_medium** as the primary COCO bucket when interpreting the sweep (mAP_small is often −1 on this GT); aggregated JSON uses `latency_ms` (= `evaluate.py` mean latency).
 
 ---
 

@@ -101,6 +101,8 @@ export ANTS_DATASET_ROOT="/path/to/Ant_dataset"
 ./scripts/run_ants_expA000_smoke.sh   # optional 1-epoch check
 ./scripts/run_ants_expA000_full.sh    # canonical 20-epoch baseline (or make reproduce-ants-full)
 # legacy artifact names only (deprecated): ./scripts/run_ants_expA000.sh
+# resolution sweep 640–1024 (after prepare; optional ants_expA000_full for 640 reuse):
+# ./scripts/run_ants_expA002b.sh
 ```
 
 ## Make wrappers (optional)
@@ -114,4 +116,5 @@ make reproduce-exp003     # ./scripts/run_exp003.sh
 make reproduce-ants-smoke # ./scripts/run_ants_expA000_smoke.sh (after prepare + ANTS_DATASET_ROOT)
 make reproduce-ants-baseline  # legacy: ./scripts/run_ants_expA000.sh (prefer reproduce-ants-full)
 make reproduce-ants-full      # ./scripts/run_ants_expA000_full.sh (after prepare)
+make reproduce-ants-expA002b  # ./scripts/run_ants_expA002b.sh (after prepare + optional full for 640 reuse)
 ```

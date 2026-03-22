@@ -280,10 +280,56 @@ Ultralytics writes **[`experiments/yolo/ants_expA000_full/results.png`](../exper
 
 ### Recommended next steps
 
-1. **EXP-A002b (ants):** Resolution sweep (`imgsz` grid) on the **same** `datasets/ants_yolo` split; compare each run to **`ants_expA000_full_metrics.json`** (mAP, mAP_medium, matched P/R, FPS).
-2. **EXP-A003 (ants):** SAHI on val only vs vanilla `infer_yolo` at the **same** `imgsz` as the trained full baseline weights.
-3. **EXP-A004:** ANTS method (to be defined) vs same reference metrics.
+1. **EXP-A003 (ants):** SAHI (or similar tiled inference) on val vs vanilla `infer_yolo` at **`imgsz=768`** using weights from **`ants_expA002b_imgsz768`** (or keep comparing to 640 weights if you want a low-res checkpoint). Reference sweep: [`ants_expA002b_resolution_sweep.json`](../experiments/results/ants_expA002b_resolution_sweep.json).
+2. **EXP-A004:** ANTS / domain method (to be defined) vs **`ants_expA002b_imgsz768`** or **`ants_expA000_full`** metrics depending on the hypothesis.
+3. **Optional:** Revisit **1024** with longer training, different aug, or explicit train/infer policy if the sharp mAP drop is a priority to explain.
 4. **Optional:** `stream=True` in [`infer_yolo.py`](../scripts/inference/infer_yolo.py) if val or deployment folders grow very large.
+
+---
+
+## EXP-A002b — Ant resolution sweep (640 / 768 / 896 / 1024)
+
+**Goal:** Quantify how **training + inference resolution** affects **mAP_medium** (primary COCO bucket for this dataset), matched precision/recall, and **FPS/latency** on the fixed ants val split — same pipeline as EXP-A000 full.
+
+**Procedure:** [`scripts/run_ants_expA002b.sh`](../scripts/run_ants_expA002b.sh) — YOLO26n, **20 epochs** per `imgsz` (**640** reused [`ants_expA000_full_metrics.json`](../experiments/results/ants_expA000_full_metrics.json) — identical numbers to EXP-A000 full). Aggregates: [`ants_expA002b_resolution_sweep.json`](../experiments/results/ants_expA002b_resolution_sweep.json), [`ants_expA002b_recommendation.md`](../experiments/results/ants_expA002b_recommendation.md), [`ants_expA002b_relative_metrics.json`](../experiments/results/ants_expA002b_relative_metrics.json), viz `experiments/visualizations/ants_expA002b/`, [`ants_expA002b_summary.md`](../experiments/results/ants_expA002b_summary.md). **Recorded run:** `git_rev` in sweep JSON (e.g. `f0abb00…`); generated UTC in same file.
+
+### Quantitative comparison (recorded run)
+
+| imgsz | mAP@[.50:.95] | mAP@.50 | mAP_medium | P (matched) | R (matched) | FPS | Latency ms |
+|------:|--------------:|--------:|-----------:|------------:|------------:|----:|-----------:|
+| 640 | 0.636 | 0.914 | 0.636 | 0.917 | 0.936 | 58.1 | 17.2 |
+| 768 | **0.645** | **0.922** | **0.645** | 0.914 | **0.946** | **60.6** | **16.5** |
+| 896 | 0.626 | 0.919 | 0.628 | 0.921 | 0.943 | 60.0 | 16.7 |
+| 1024 | 0.524 | 0.916 | 0.529 | 0.920 | 0.943 | 57.6 | 17.4 |
+
+**Δ vs 640 (same val GT):** 768 → mAP@[.5:.95] **+0.009**, mAP_medium **+0.009**, matched recall **+0.010**, precision **−0.003**; FPS **+2.4**. 896 → mAP@[.5:.95] **−0.009**, mAP_medium **−0.008**. 1024 → mAP@[.5:.95] **−0.112**, mAP_medium **−0.107** (large regression despite similar mAP@.5 and recall).
+
+**Source:** `summary` in [`ants_expA002b_resolution_sweep.json`](../experiments/results/ants_expA002b_resolution_sweep.json); per-run `ants_expA002b_imgsz*_metrics.json`.
+
+**Relative-area preds (score≥0.25):** mean relative bbox area ≈ **0.0045** at 640/768, **0.0047** at 896, **0.0054** at 1024 — see [`ants_expA002b_relative_metrics.json`](../experiments/results/ants_expA002b_relative_metrics.json) (`by_imgsz`).
+
+### Interpretation
+
+- **768 is the clear optimum on this sweep:** best **mAP@[.5:.95]**, **mAP_medium**, **mAP@.5**, **matched recall**, **FPS**, and **lowest latency**. It satisfies the scripted trade-off (FPS ≥ median → max mAP_medium) with **chosen_imgsz = 768** ([`ants_expA002b_recommendation.md`](../experiments/results/ants_expA002b_recommendation.md)).
+- **896** sits between 768 and 640 on strict COCO mAP but **below 640** on mAP@[.5:.95] / mAP_medium — not attractive vs 640 or 768 here.
+- **1024** shows a **strong drop in mAP@[.5:.95] and mAP_medium** while **mAP@.5** and **matched recall** stay high. That pattern is consistent with **many IoU-strict false positives or poorly localized boxes** (good “hit” at 0.5, poor refinement at higher IoU). Relative pred areas **increase** at 1024, which may reflect **larger predicted boxes** or different error modes; worth checking FP/FN panels under `experiments/visualizations/ants_expA002b/imgsz1024/comparisons/`.
+- **Dense scenes:** Matched precision dips slightly at 768 vs 640 while recall rises — more detections, slightly more greedy FP at IoU 0.5 — still a favorable net for mAP on this split.
+
+### Conclusion
+
+For the **ants** val split and **YOLO26n, 20 epochs**, **`imgsz=768`** is the **recommended training/inference resolution**: strictly better **localization / COCO mAP** than 640 and 896 on this run, **faster** than 640/1024 on the `evaluate.py` bench, and **avoid 1024** for this recipe unless you investigate the mAP collapse (train stability, batch/VRAM, or longer schedules).
+
+### Caveats
+
+- Single schedule (20 epochs, batch 4); 1024 might improve with more epochs or tuned aug — not tested here.
+- COCO **mAP_small** / **mAP_large** remain **−1** on this GT (same as EXP-A000); narrative uses **mAP_medium** + matched P/R.
+- Overlay caps during viz default to 250 images unless `ANTS_VIZ_MAX_IMAGES=all`.
+
+### Next steps (research)
+
+1. **EXP-A003:** Run SAHI (or tiling) at inference on val, anchored to **768-trained** weights, vs vanilla 768 predict — same question as EXP-003 on COCO but ants domain.
+2. **Optional ablation:** Short study on **why 1024 underperforms** (learning rate vs image size, box loss, duplicate aug) if deployment truly needs native 1080p tiles.
+3. **Jetson / edge:** Re-bench FPS at 768 vs 640 on target hardware; desktop numbers here favor 768 but edge may differ.
 
 ---
 
@@ -302,5 +348,7 @@ Ultralytics writes **[`experiments/yolo/ants_expA000_full/results.png`](../exper
 | 2026-03-22 | EXP-A000 smoke (numbers) | 1 ep, 640: val mAP@[.5:.95]≈0.429, mAP@.5≈0.711, mAP_medium≈0.431; COCO mAP_small/large −1 (no GT in those area bins); matched P≈0.69, R≈0.80; ~120k boxes, ~23 obj/img; RTX 4070. |
 | 2026-03-22 | EXP-A000 full (documented) | `run_ants_expA000_full.sh`: `ants_expA000_full/`, `ants_expA000_full_metrics.json`, `ants_expA000_relative_metrics.json`, viz `ants_expA000_full/`, `ants_expA000_full_summary.md`; training curves `results.png`. |
 | 2026-03-22 | EXP-A000 full (numbers) | 20 ep, 640: val mAP@[.5:.95]≈0.636, mAP@.5≈0.914, mAP_medium≈0.636; matched P≈0.92, R≈0.94; FP/FN down sharply vs smoke; FPS ~58; reference baseline for ants A002b/A003/A004. |
+| 2026-03-21 | EXP-A002b (documented) | Ants resolution sweep scripted: `run_ants_expA002b.sh`, `yolo_ants_expA002b.yaml`, `summarize_ants_resolution_sweep.py`, `ants_relative_sweep_aggregate.py`, `write_ants_expA002b_summary.py`; 640 reuse from `ants_expA000_full` when applicable. |
+| 2026-03-22 | EXP-A002b (numbers) | Sweep: **768** best mAP@[.5:.95] (~0.645), mAP_medium (~0.645), mAP@.5, matched R, FPS (~60.6), lowest latency; **896** below 640/768 on mAP; **1024** large mAP / mAP_medium drop (~0.52 / ~0.53) with high mAP@.5/R; trade-off rule picks **768**; 640 = reused EXP-A000 full. |
 
 *(Append new rows when you re-run and refresh JSONs.)*

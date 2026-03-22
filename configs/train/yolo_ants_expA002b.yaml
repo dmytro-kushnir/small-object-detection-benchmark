@@ -1,0 +1,17 @@
+# @package _global_
+# EXP-A002b: resolution sweep on datasets/ants_yolo (same 20-ep recipe as EXP-A000 full).
+# Override imgsz and name per run from CLI.
+
+defaults:
+  - yolo
+  - _self_
+
+model: yolo26n.pt
+data: datasets/ants_yolo/dataset.yaml
+epochs: 20
+imgsz: 640
+batch: 4
+workers: 0
+project: experiments/yolo
+name: ants_expA002b_imgsz640
+exist_ok: true

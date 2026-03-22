@@ -58,6 +58,8 @@ Artifacts go under `experiments/yolo/<run_id>/` (weights, Ultralytics logs, plus
 
 **EXP-A000 (ant MOT dataset):** set `ANTS_DATASET_ROOT`, run `./scripts/run_ants_prepare.sh` (writes gitignored `datasets/ants_yolo/`), then `./scripts/run_ants_expA000_full.sh` or `make reproduce-ants-full` for the canonical 20-epoch baseline (optional `./scripts/run_ants_expA000_smoke.sh` for a 1-epoch check); see [`docs/experiments.md`](docs/experiments.md). Legacy output names: `./scripts/run_ants_expA000.sh` (deprecated for new work).
 
+**EXP-A002b (ants resolution sweep):** `./scripts/run_ants_expA002b.sh` or `make reproduce-ants-expA002b` after prepare (and optional full baseline for 640 reuse); see [`docs/experiments.md`](docs/experiments.md).
+
 ## Docker
 
 ```bash
