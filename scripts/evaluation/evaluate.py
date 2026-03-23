@@ -255,6 +255,11 @@ def main() -> None:
         default=None,
         help="If set, FPS/latency uses SAHI sliced inference (YAML; see configs/exp003_sahi.yaml).",
     )
+    p.add_argument(
+        "--skip-inference-benchmark",
+        action="store_true",
+        help="Skip Ultralytics FPS/latency benchmark (e.g. SAHI ablation grids).",
+    )
     args = p.parse_args()
 
     try:
@@ -355,11 +360,16 @@ def main() -> None:
         if cand.is_file():
             paths.append(cand)
 
-    perf = _bench_fps(
-        weights_path, paths, args.device, args.warmup, imgsz=args.imgsz
-    )
-    if args.imgsz is not None:
-        perf = {**perf, "imgsz": int(args.imgsz)}
+    if args.skip_inference_benchmark:
+        perf: dict[str, Any] = {"skipped": True, "note": "--skip-inference-benchmark"}
+        if args.imgsz is not None:
+            perf["imgsz"] = int(args.imgsz)
+    else:
+        perf = _bench_fps(
+            weights_path, paths, args.device, args.warmup, imgsz=args.imgsz
+        )
+        if args.imgsz is not None:
+            perf = {**perf, "imgsz": int(args.imgsz)}
 
     repo_root = Path(__file__).resolve().parents[2]
     payload: dict[str, Any] = {

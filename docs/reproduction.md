@@ -103,6 +103,8 @@ export ANTS_DATASET_ROOT="/path/to/Ant_dataset"
 # legacy artifact names only (deprecated): ./scripts/run_ants_expA000.sh
 # resolution sweep 640–1024 (after prepare; optional ants_expA000_full for 640 reuse):
 # ./scripts/run_ants_expA002b.sh
+# SAHI val vs vanilla imgsz=768 (needs ants_expA002b_imgsz768 artifacts):
+# ./scripts/run_ants_expA003.sh
 ```
 
 ## Make wrappers (optional)
@@ -117,4 +119,6 @@ make reproduce-ants-smoke # ./scripts/run_ants_expA000_smoke.sh (after prepare +
 make reproduce-ants-baseline  # legacy: ./scripts/run_ants_expA000.sh (prefer reproduce-ants-full)
 make reproduce-ants-full      # ./scripts/run_ants_expA000_full.sh (after prepare)
 make reproduce-ants-expA002b  # ./scripts/run_ants_expA002b.sh (after prepare + optional full for 640 reuse)
+make reproduce-ants-expA003   # ./scripts/run_ants_expA003.sh (after prepare + EXP-A002b 768 weights/metrics)
+make reproduce-ants-expA003-ablation  # SAHI grid vs vanilla 768 baseline (long run; see docs/experiments.md)
 ```

@@ -60,6 +60,8 @@ Artifacts go under `experiments/yolo/<run_id>/` (weights, Ultralytics logs, plus
 
 **EXP-A002b (ants resolution sweep):** `./scripts/run_ants_expA002b.sh` or `make reproduce-ants-expA002b` after prepare (and optional full baseline for 640 reuse); see [`docs/experiments.md`](docs/experiments.md).
 
+**EXP-A003 (ants SAHI vs vanilla 768):** `./scripts/run_ants_expA003.sh` or `make reproduce-ants-expA003` after prepare and **`ants_expA002b_imgsz768`** weights + `ants_expA002b_imgsz768_metrics.json`; see [`docs/experiments.md`](docs/experiments.md).
+
 ## Docker
 
 ```bash

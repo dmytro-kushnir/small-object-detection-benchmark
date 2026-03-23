@@ -280,7 +280,7 @@ Ultralytics writes **[`experiments/yolo/ants_expA000_full/results.png`](../exper
 
 ### Recommended next steps
 
-1. **EXP-A003 (ants):** SAHI (or similar tiled inference) on val vs vanilla `infer_yolo` at **`imgsz=768`** using weights from **`ants_expA002b_imgsz768`** (or keep comparing to 640 weights if you want a low-res checkpoint). Reference sweep: [`ants_expA002b_resolution_sweep.json`](../experiments/results/ants_expA002b_resolution_sweep.json).
+1. **EXP-A003 (ants):** **Done:** SAHI underperformed vanilla 768 on mAP and matched P/R ([`ants_expA003_vs_768.json`](../experiments/results/ants_expA003_vs_768.json)); **54-config ablation** ([`ants_expA003_sahi_ablation.json`](../experiments/results/ants_expA003_sahi_ablation.json)) found **no** mAP / mAP_medium win; best settings ≈ **768×768** tiles + higher conf (see below). Optional: Jetson re-bench, or NMS/post-hoc if optimizing matched FP only.
 2. **EXP-A004:** ANTS / domain method (to be defined) vs **`ants_expA002b_imgsz768`** or **`ants_expA000_full`** metrics depending on the hypothesis.
 3. **Optional:** Revisit **1024** with longer training, different aug, or explicit train/infer policy if the sharp mAP drop is a priority to explain.
 4. **Optional:** `stream=True` in [`infer_yolo.py`](../scripts/inference/infer_yolo.py) if val or deployment folders grow very large.
@@ -327,9 +327,70 @@ For the **ants** val split and **YOLO26n, 20 epochs**, **`imgsz=768`** is the **
 
 ### Next steps (research)
 
-1. **EXP-A003:** Run SAHI (or tiling) at inference on val, anchored to **768-trained** weights, vs vanilla 768 predict — same question as EXP-003 on COCO but ants domain.
+1. **EXP-A003:** **Completed** — SAHI vs vanilla 768 summarized below; viz `experiments/visualizations/ants_expA003_sahi/`.
 2. **Optional ablation:** Short study on **why 1024 underperforms** (learning rate vs image size, box loss, duplicate aug) if deployment truly needs native 1080p tiles.
 3. **Jetson / edge:** Re-bench FPS at 768 vs 640 on target hardware; desktop numbers here favor 768 but edge may differ.
+
+---
+
+## EXP-A003 — Ants SAHI vs vanilla imgsz=768
+
+**Goal:** Test whether **tiled SAHI inference** on the fixed ants val split improves **COCO mAP / matched P–R** vs **vanilla** `evaluate.py` at **`imgsz=768`**, using the **same** checkpoint as EXP-A002b 768 (**no retrain**).
+
+**Procedure:** [`scripts/run_ants_expA003.sh`](../scripts/run_ants_expA003.sh) — [`infer_sahi_yolo.py`](../scripts/inference/infer_sahi_yolo.py) → `predictions_val.json`; [`evaluate.py`](../scripts/evaluation/evaluate.py) with **`--imgsz 768`** and **`--sahi-config`** ([`configs/expA003_ants_sahi.yaml`](../configs/expA003_ants_sahi.yaml): 512×512 slices, overlap 0.25, `yolo_imgsz` 768, SAHI merge defaults as in config); [`compare_metrics.py`](../scripts/evaluation/compare_metrics.py) vs **`ants_expA002b_imgsz768_metrics.json`** → [`ants_expA003_vs_768.json`](../experiments/results/ants_expA003_vs_768.json); viz `experiments/visualizations/ants_expA003_sahi/`; [`ants_expA003_summary.md`](../experiments/results/ants_expA003_summary.md).
+
+### Quantitative comparison (recorded run)
+
+Values from **`experiments/results/ants_expA003_vs_768.json`** (`baseline_experiment_id`: EXP-A002b-imgsz768; `compare_experiment_id`: EXP-A003-sahi). **Δ = SAHI − vanilla.** `git_rev` in [`ants_expA003_sahi_metrics.json`](../experiments/results/ants_expA003_sahi_metrics.json). **Re-record when you re-run.**
+
+| Metric | Vanilla 768 | SAHI | Δ |
+|--------|------------:|-----:|--:|
+| mAP@[.50:.95] | 0.645 | 0.601 | **−0.044** |
+| mAP@.50 | 0.922 | 0.897 | −0.025 |
+| mAP_medium | 0.645 | 0.602 | **−0.043** |
+| Precision (IoU≥0.5, score≥0.25, matched) | 0.914 | 0.836 | **−0.078** |
+| Recall (matched) | 0.946 | 0.930 | −0.017 |
+| TP / FP / FN (matched) | 24 183 / 2 277 / 1 367 | 23 749 / 4 651 / 1 801 | fewer TP, **+2 374 FP**, +434 FN |
+| FPS (`evaluate.py` bench) | ~60.6 | ~41.7 | **−18.9** |
+| Latency mean (ms) | ~16.5 | ~24.0 | +7.5 |
+
+**Provenance / fair comparison:** `evaluation_note` in `ants_expA003_vs_768.json` — baseline FPS/latency used **Ultralytics `predict`** at imgsz=768; SAHI branch times **sliced inference per full image** via `evaluate.py --sahi-config`. Treat throughput deltas as **indicative** (different code paths), not a single micro-benchmark.
+
+### Interpretation (draft for paper / discussion)
+
+On this **ants val** split, **SAHI did not improve** the already strong **768** checkpoint: **mAP@[.5:.95]** and **mAP_medium** fall by ~0.04 absolute, and **matched precision** drops sharply (~0.08) while **matched recall** dips slightly. The matched **TP/FP/FN** breakdown is consistent with **many extra unmatched predictions** (**FP +2.3k**) and **slightly fewer correct matches** (**TP −434**, **FN +434**) — a pattern that often appears when **tiling + merge** duplicate or fragment boxes in **dense single-class** scenes, or when slice boundaries interact badly with **small–medium** instances that already fill most of the frame at **768** native resize.
+
+**Throughput:** SAHI is **~31% slower** in this bench (~61 → ~42 FPS; ~16.5 → ~24 ms mean), on top of the accuracy regression — so there is **no accuracy–speed trade-off** favoring SAHI here.
+
+**Working conclusion:** For **YOLO26n ants at 768**, **vanilla full-frame inference is preferable** to the default SAHI recipe in EXP-A003. A **54-config ablation** (below) shows **no** tiling setting beats vanilla **mAP@[.5:.95]** or **mAP_medium**; the best grid points use **768×768** slices and **higher** `confidence_threshold`, i.e. they move SAHI closer to full-frame behavior. SAHI remains plausible only if you explicitly optimize **matched FP** at fixed IoU 0.5 (see ablation), not COCO localization.
+
+### SAHI merge ablation (scripted)
+
+To test whether the negative EXP-A003 result is **merge / tiling settings** rather than SAHI in general, run [`scripts/evaluation/run_ants_expA003_sahi_ablation.py`](../scripts/evaluation/run_ants_expA003_sahi_ablation.py) (`make reproduce-ants-expA003-ablation`). It sweeps `perform_standard_pred`, slice size {512, 640, 768}, overlap {0.10, 0.15, 0.25}, and `confidence_threshold` {0.25, 0.35, 0.45} against **`ants_expA002b_imgsz768_metrics.json`**, and writes [`ants_expA003_sahi_ablation.json`](../experiments/results/ants_expA003_sahi_ablation.json) plus [`ants_expA003_sahi_ablation_summary.md`](../experiments/results/ants_expA003_sahi_ablation_summary.md).
+
+#### Ablation results (recorded run, `n_runs` = 54, `early_stopped` = false)
+
+Source: **`ants_expA003_sahi_ablation.json`** / **`ants_expA003_sahi_ablation_summary.md`** (`git_rev` in JSON). **Baseline** = vanilla 768 from **`ants_expA002b_imgsz768_metrics.json`**.
+
+| Question | Answer |
+|----------|--------|
+| Any SAHI config **>** baseline mAP@[.5:.95] (0.645)? | **No** |
+| Any SAHI config **>** baseline mAP_medium (0.645)? | **No** |
+| Any config **lower** matched FP than baseline (2277)? | **Yes** (best FP **1897**, **−380**) |
+
+**Best in grid (by mAP@[.5:.95] and mAP_medium, same run):** `perform_standard_pred: true`, **slice 768**, **overlap 0.15**, **`confidence_threshold` 0.35** — mAP@[.5:.95] **0.614** (Δ **≈ −0.031** vs vanilla), mAP_medium **0.616** (Δ **≈ −0.030**), matched P **0.919** / R **0.938**, TP **23 961** / FP **2122** / FN **1589**. This is the strongest SAHI recipe in the sweep but still **below** vanilla on strict COCO AP.
+
+**Lowest matched FP in grid:** slice **768**, overlap **0.25**, **conf 0.45** — FP **1897** (Δ **−380**), mAP_medium **0.615**, mAP@[.5:.95] **0.614**, R **0.933** (TP **23 839**, FN **1711**). Useful if the deployment metric is **greedy matched precision** at IoU 0.5, not mAP.
+
+**Pattern:** All **top-5 mAP_medium** rows in the auto-summary use **`perform_standard_pred: true`** and **slice size 768** (not 512/640), with overlap **0.15–0.25** and conf **0.25–0.45**. Smaller tiles in the grid stayed **further** below vanilla mAP, consistent with seam/merge noise on **dense** ants val at **768** inference scale.
+
+**Verdict:** Tiling hyperparameters **do not overturn** the EXP-A003 conclusion for **COCO mAP / mAP_medium**; they can **reduce matched FP** at the cost of mAP and recall vs vanilla 768. Re-record this subsection if you re-run the grid.
+
+### Caveats
+
+- One SAHI configuration in the main EXP-A003 table; the ablation above covers a small grid.
+- Single GPU bench (RTX 4070 in recorded `ants_expA003_sahi_metrics.json`); edge FPS may differ.
+- Overlay inspection (`experiments/visualizations/ants_expA003_sahi/`) can localize failure modes (duplicate FPs at slice seams).
 
 ---
 
@@ -350,5 +411,9 @@ For the **ants** val split and **YOLO26n, 20 epochs**, **`imgsz=768`** is the **
 | 2026-03-22 | EXP-A000 full (numbers) | 20 ep, 640: val mAP@[.5:.95]≈0.636, mAP@.5≈0.914, mAP_medium≈0.636; matched P≈0.92, R≈0.94; FP/FN down sharply vs smoke; FPS ~58; reference baseline for ants A002b/A003/A004. |
 | 2026-03-21 | EXP-A002b (documented) | Ants resolution sweep scripted: `run_ants_expA002b.sh`, `yolo_ants_expA002b.yaml`, `summarize_ants_resolution_sweep.py`, `ants_relative_sweep_aggregate.py`, `write_ants_expA002b_summary.py`; 640 reuse from `ants_expA000_full` when applicable. |
 | 2026-03-22 | EXP-A002b (numbers) | Sweep: **768** best mAP@[.5:.95] (~0.645), mAP_medium (~0.645), mAP@.5, matched R, FPS (~60.6), lowest latency; **896** below 640/768 on mAP; **1024** large mAP / mAP_medium drop (~0.52 / ~0.53) with high mAP@.5/R; trade-off rule picks **768**; 640 = reused EXP-A000 full. |
+| 2026-03-22 | EXP-A003 (documented) | Ants SAHI pipeline: `run_ants_expA003.sh`, `expA003_ants_sahi.yaml`, `ants_expA003_vs_768.json`, `write_ants_expA003_summary.py`, `make reproduce-ants-expA003`; compare vs `ants_expA002b_imgsz768_metrics.json`. |
+| 2026-03-22 | EXP-A003 (numbers) | SAHI vs vanilla 768: mAP@[.5:.95] **−0.044**, mAP_medium **−0.043**, matched P **−0.078**, R **−0.017**; TP 24183→23749, FP 2277→4651, FN 1367→1801; FPS ~60.6→~41.7, latency ~16.5→~24 ms — **prefer vanilla 768** for this setup. |
+| 2026-03-22 | EXP-A003 SAHI ablation (documented) | `run_ants_expA003_sahi_ablation.py`, `evaluate.py --skip-inference-benchmark`, `ants_expA003_sahi_ablation.json` + `_summary.md`, `make reproduce-ants-expA003-ablation`. |
+| 2026-03-22 | EXP-A003 SAHI ablation (numbers) | Full grid 54: **no** SAHI config beats vanilla mAP@[.5:.95] or mAP_medium; best grid ~**0.614 / 0.616** (768 slice, ov 0.15, conf 0.35, std_pred true) vs vanilla **0.645**; **lowest FP 1897** (−380 vs 2277) at 768 / ov 0.25 / conf 0.45 — precision lever only, not mAP. |
 
 *(Append new rows when you re-run and refresh JSONs.)*

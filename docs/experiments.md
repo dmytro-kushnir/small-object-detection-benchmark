@@ -229,7 +229,37 @@ export ANTS_DATASET_ROOT="/path/to/Ant_dataset"   # if not already prepared
 ./scripts/run_ants_expA002b.sh
 ```
 
-**Next (not automated here):** EXP-A003 SAHI, EXP-A004 ANTS.
+**Next (not scripted in repo):** EXP-A004 ANTS.
+
+---
+
+### EXP-A003: Ants SAHI vs vanilla imgsz=768 (no retrain)
+
+* **Same** val COCO GT and images as EXP-A000 / EXP-A002b; **no training** — uses weights from **`experiments/yolo/ants_expA002b_imgsz768`** (`best.pt` or `last.pt`).
+* **SAHI defaults:** [`configs/expA003_ants_sahi.yaml`](../configs/expA003_ants_sahi.yaml) (512×512 slices, overlap 0.25, `yolo_imgsz: 768`). Override path with **`EXP_A003_SAHI_CONFIG`**.
+* **Orchestrator:** [`scripts/run_ants_expA003.sh`](../scripts/run_ants_expA003.sh) (`make reproduce-ants-expA003`).
+* **Outputs:** preds `experiments/yolo/ants_expA003_sahi/predictions_val.json`; metrics `experiments/results/ants_expA003_sahi_metrics.json`; compare `experiments/results/ants_expA003_vs_768.json` (baseline: `ants_expA002b_imgsz768_metrics.json`); viz `experiments/visualizations/ants_expA003_sahi/`; report `experiments/results/ants_expA003_summary.md` from [`write_ants_expA003_summary.py`](../scripts/evaluation/write_ants_expA003_summary.py).
+* **Fair comparison:** `evaluation_note` in the compare JSON — vanilla 768 uses Ultralytics `predict` timing in baseline metrics; SAHI uses `evaluate.py` with `--sahi-config` (sliced path per full image). Interpret FPS/latency deltas cautiously.
+
+**Prerequisite:** prepared `datasets/ants_yolo/`; completed EXP-A002b **768** run (weights + `ants_expA002b_imgsz768_metrics.json`).
+
+```bash
+chmod +x scripts/run_ants_expA003.sh   # once
+export ANTS_DATASET_ROOT="/path/to/Ant_dataset"   # if not already prepared
+./scripts/run_ants_prepare.sh          # if needed
+./scripts/run_ants_expA002b.sh         # if 768 weights/metrics missing
+./scripts/run_ants_expA003.sh
+```
+
+* **SAHI merge / tiling ablation (optional):** [`scripts/evaluation/run_ants_expA003_sahi_ablation.py`](../scripts/evaluation/run_ants_expA003_sahi_ablation.py) — 54 configs (`perform_standard_pred` × slice size × overlap × `confidence_threshold`) on the same val split and **`ants_expA002b_imgsz768`** weights; writes [`experiments/results/ants_expA003_sahi_ablation.json`](../experiments/results/ants_expA003_sahi_ablation.json) and [`ants_expA003_sahi_ablation_summary.md`](../experiments/results/ants_expA003_sahi_ablation_summary.md). Uses `evaluate.py --skip-inference-benchmark` (COCO + matched P/R only). Temp files under `experiments/yolo/ants_expA003_ablation_scratch/` (gitignored with `experiments/yolo/`).
+
+```bash
+chmod +x scripts/run_ants_expA003_sahi_ablation.sh   # once
+./scripts/run_ants_expA003_sahi_ablation.sh
+# or: make reproduce-ants-expA003-ablation
+# smoke: python3 scripts/evaluation/run_ants_expA003_sahi_ablation.py --max-runs 2
+# optional early exit: --early-stop-consecutive 12
+```
 
 ---
 
@@ -262,6 +292,7 @@ Each experiment must report:
 * Latency (mean ms per image in `evaluate.py` benchmark; compare via `compare_metrics.py` for A/B)
 * For **EXP-003**, FPS/latency are measured over **SAHI sliced** inference per full image when evaluation is run with `--sahi-config` (see [`scripts/evaluation/sahi_bench.py`](../scripts/evaluation/sahi_bench.py))
 * For **EXP-A002b** (ants), treat **mAP_medium** as the primary COCO bucket when interpreting the sweep (mAP_small is often −1 on this GT); aggregated JSON uses `latency_ms` (= `evaluate.py` mean latency).
+* For **EXP-A003** (ants SAHI), primary readout is **`ants_expA003_vs_768.json`** (Δ vs vanilla 768); see `evaluation_note` for inference-path differences when comparing FPS/latency.
 
 ---
 

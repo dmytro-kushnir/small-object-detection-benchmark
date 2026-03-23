@@ -1,4 +1,4 @@
-.PHONY: reproduce-baseline reproduce-exp001 reproduce-exp002 reproduce-exp002b reproduce-exp003 reproduce-ants-smoke reproduce-ants-baseline reproduce-ants-full reproduce-ants-expA002b
+.PHONY: reproduce-baseline reproduce-exp001 reproduce-exp002 reproduce-exp002b reproduce-exp003 reproduce-ants-smoke reproduce-ants-baseline reproduce-ants-full reproduce-ants-expA002b reproduce-ants-expA003 reproduce-ants-expA003-ablation
 
 reproduce-baseline:
 	./scripts/run_smoke_test.sh
@@ -28,3 +28,9 @@ reproduce-ants-full:
 
 reproduce-ants-expA002b:
 	./scripts/run_ants_expA002b.sh
+
+reproduce-ants-expA003:
+	./scripts/run_ants_expA003.sh
+
+reproduce-ants-expA003-ablation:
+	./scripts/run_ants_expA003_sahi_ablation.sh

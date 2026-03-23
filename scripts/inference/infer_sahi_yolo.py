@@ -10,6 +10,8 @@ import sys
 from pathlib import Path
 from typing import Any
 
+from tqdm import tqdm
+
 
 def _load_gt_name_to_id(coco_gt_path: Path) -> dict[str, int]:
     data = json.loads(coco_gt_path.read_text(encoding="utf-8"))
@@ -67,9 +69,26 @@ def main() -> None:
         "--sahi-config",
         type=str,
         default="configs/exp003_sahi.yaml",
-        help="YAML with slice_height, slice_width, overlap_*, confidence_threshold, model_type",
+        help="YAML: slice_*, overlap_*, confidence_threshold, model_type (ultralytics), yolo_imgsz, optional SAHI merge keys",
     )
-    p.add_argument("--device", type=str, default=None, help='e.g. "0", "cpu"')
+    p.add_argument(
+        "--device",
+        type=str,
+        default=None,
+        help='Ultralytics/SAHI device: "0", "cuda:0", "cpu", or omit for ANTS_DEVICE / SMOKE_DEVICE / auto CUDA.',
+    )
+    p.add_argument(
+        "--no-progress",
+        action="store_true",
+        help="Disable tqdm bar (e.g. logs only); use with --progress-every for sparse prints.",
+    )
+    p.add_argument(
+        "--progress-every",
+        type=int,
+        default=100,
+        metavar="N",
+        help="With --no-progress, print every N images (0 = silent). Ignored when tqdm is enabled.",
+    )
     p.add_argument("--slice-height", type=int, default=None)
     p.add_argument("--slice-width", type=int, default=None)
     p.add_argument("--overlap-height-ratio", type=float, default=None)
@@ -115,7 +134,19 @@ def main() -> None:
         print(f"Failed to load sahi_bench: {e}", file=sys.stderr)
         sys.exit(1)
 
+    resolved_dev = sb.resolve_sahi_device(args.device)
     try:
+        cuda_ok = False
+        try:
+            import torch
+
+            cuda_ok = bool(torch.cuda.is_available())
+        except ImportError:
+            pass
+        print(
+            f"infer_sahi_yolo: device={resolved_dev!r} (torch.cuda_available={cuda_ok})",
+            flush=True,
+        )
         model = sb.build_sahi_detection_model(weights, args.device, sahi_params)
     except ImportError:
         print("Install sahi (pip install -r requirements.txt).", file=sys.stderr)
@@ -125,9 +156,8 @@ def main() -> None:
     coco = json.loads(gt_path.read_text(encoding="utf-8"))
     images = coco.get("images", [])
 
-    detections: list[dict[str, Any]] = []
+    work: list[tuple[Path, int]] = []
     missing: set[str] = set()
-
     for im in images:
         fn = im.get("file_name")
         iid = im.get("id")
@@ -142,8 +172,23 @@ def main() -> None:
             missing.add(base)
             continue
         im_id = int(name_to_id[base])
+        work.append((img_path, im_id))
+
+    detections: list[dict[str, Any]] = []
+    n_work = len(work)
+    use_tqdm = not args.no_progress and n_work > 0
+    it = work
+    if use_tqdm:
+        it = tqdm(work, desc="SAHI infer", unit="img", file=sys.stderr)
+    for i, (img_path, im_id) in enumerate(it, start=1):
         result = sb.run_sahi_sliced_on_path(img_path, model, sahi_params)
         detections.extend(sb.predictions_to_coco_dets(result, im_id))
+        if (
+            not use_tqdm
+            and args.progress_every > 0
+            and i % args.progress_every == 0
+        ):
+            print(f"infer_sahi_yolo: {i}/{n_work} images", flush=True)
 
     if missing:
         print(
@@ -162,6 +207,7 @@ def main() -> None:
         "coco_gt": str(gt_path),
         "source": str(source_path),
         "predictions_out": str(out_path),
+        "device_resolved": resolved_dev,
     }
     (out_path.parent / "sahi_config.json").write_text(
         json.dumps(meta, indent=2), encoding="utf-8"

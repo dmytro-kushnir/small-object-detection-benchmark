@@ -1,0 +1,19 @@
+# EXP-A003 (ants): SAHI tiled inference — plain YAML for infer_sahi_yolo.py / evaluate.py --sahi-config.
+# Matches EXP-A002b best train/infer resolution (768). Override via EXP_A003_SAHI_CONFIG or CLI flags on infer_sahi_yolo.py.
+
+model_type: ultralytics
+slice_height: 512
+slice_width: 512
+overlap_height_ratio: 0.25
+overlap_width_ratio: 0.25
+confidence_threshold: 0.25
+# Must match ants_expA002b_imgsz768 training resolution for fair inference.
+yolo_imgsz: 768
+
+# get_sliced_prediction — explicit SAHI defaults for reproducibility (see SAHI / Ultralytics SAHI guides).
+sahi_verbose: 0
+perform_standard_pred: true
+postprocess_type: GREEDYNMM
+postprocess_match_metric: IOS
+postprocess_match_threshold: 0.5
+postprocess_class_agnostic: false

@@ -1,7 +1,8 @@
 # EXP-003: SAHI sliced inference defaults (plain YAML; no Hydra).
 # Override on CLI in infer_sahi_yolo.py / evaluate.py --sahi-config path.
+# model_type ultralytics = YOLOv8 / YOLO11 / YOLO26 via SAHI (yolov8 is an accepted alias).
 
-model_type: yolov8
+model_type: ultralytics
 slice_height: 512
 slice_width: 512
 overlap_height_ratio: 0.25
@@ -9,3 +10,5 @@ overlap_width_ratio: 0.25
 confidence_threshold: 0.25
 # If set (int), passed to Ultralytics model inside SAHI as image_size; if null, library default.
 yolo_imgsz: null
+# get_sliced_prediction verbose level (int); 0 = no per-image slice prints.
+sahi_verbose: 0
