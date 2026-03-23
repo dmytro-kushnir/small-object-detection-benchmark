@@ -14,22 +14,24 @@ This document summarizes how the repo stays **simple**, **comparable across mode
 
 ## Extension contract (RF-DETR or any detector)
 
-1. **Training** — Implement `scripts/train/train_detr.py` to write under `experiments/detr/<run_id>/` with the same *kind* of metadata as YOLO (`config.yaml`, `metrics.json`, `system_info.json` where applicable). Use `configs/train/rf_detr.yaml` as the single source of hyperparameters.
+1. **Training (ants EXP-A005)** — [`scripts/train/train_rfdetr_ants.py`](../scripts/train/train_rfdetr_ants.py) + [`configs/expA005_ants_rfdetr.yaml`](../configs/expA005_ants_rfdetr.yaml) → `experiments/rfdetr/ants_expA005/` (`weights/best.pth`, `config.yaml`, `system_info.json`). [`train_detr.py`](../scripts/train/train_detr.py) forwards to this script.
 
-2. **Inference** — Implement `scripts/inference/infer_detr.py` to emit a **JSON list** of detections:
+2. **Inference** — [`infer_rfdetr.py`](../scripts/inference/infer_rfdetr.py) emits the same **JSON list** as YOLO:
 
    - `image_id` (int, must match COCO GT)
-   - `category_id` (int)
+   - `category_id` (int; ants use **0**)
    - `bbox`: `[x, y, w, h]` absolute pixels (xywh)
    - `score` (float)
 
-   Use `load_gt_filename_to_image_id()` and `write_coco_predictions_json()` from `coco_pred_common.py`.
+   [`infer_detr.py`](../scripts/inference/infer_detr.py) forwards to `infer_rfdetr.py`.
 
-3. **Evaluate & compare** — Reuse `evaluate.py` and `compare_metrics.py` with the DETR preds and the **same** `--gt` as the YOLO run. If vanilla Ultralytics FPS is meaningless for DETR, pass `--skip-inference-benchmark` and add a small DETR-specific bench script later (same pattern as `bench_ants_v1.py`).
+3. **Throughput** — [`bench_rfdetr.py`](../scripts/evaluation/bench_rfdetr.py) times full-image RF-DETR `predict`; embed in metrics via `evaluate.py --inference-benchmark-json` (same pattern as `bench_ants_v1.py`).
+
+4. **Evaluate & compare** — `evaluate.py` + [`compare_ants_expA005.py`](../scripts/evaluation/compare_ants_expA005.py) vs YOLO768 metrics.
 
 ## Scalability notes
 
-- **Ants / ANTS v1** adds many YOLO-specific scripts under `scripts/`; that is **domain + model** logic. Keep new DETR-specific code similarly namespaced (`infer_detr.py`, optional `scripts/inference/detr_*/`) and **never** fork COCOeval inside DETR scripts — always call `evaluate.py`.
+- **Ants / ANTS v1** adds many YOLO-specific scripts under `scripts/`; that is **domain + model** logic. RF-DETR ants code lives in `train_rfdetr_ants.py`, `infer_rfdetr.py`, `bench_rfdetr.py` (wrappers `train_detr.py` / `infer_detr.py` forward to these). **Never** fork COCOeval inside model scripts — always call `evaluate.py`.
 - **`models/`** is intentionally lightweight: pointers and small files only (see `models/README.md`).
 - **Hydra** is used for YOLO training; DETR can use the same or plain argparse — consistency of **output paths** matters more than the config loader.
 

@@ -1,0 +1,39 @@
+# EXP-A005: RF-DETR baseline on ants (paths relative to repo root when resolved by scripts).
+
+# COCO export for RF-DETR (Roboflow layout: train/valid + _annotations.coco.json)
+dataset_dir: datasets/ants_coco
+
+# Training output (rfdetr writes checkpoints here; see train_rfdetr_ants.py)
+output_dir: experiments/rfdetr/ants_expA005
+
+# rfdetr class name (Apache-licensed: RFDETRSmall, RFDETRMedium, RFDETRLarge)
+model_class: RFDETRSmall
+
+# Optional: start from existing checkpoint path (null = COCO-pretrained default)
+resume_checkpoint: null
+
+epochs: 30
+batch_size: 4
+grad_accum_steps: 4
+lr: 1.0e-4
+seed: 42
+tensorboard: false
+
+# Inference / bench (not all may be accepted by model.predict — script filters)
+conf_threshold: 0.25
+
+# Val outputs (inference uses same GT ids as ants_yolo)
+coco_gt_val: datasets/ants_coco/valid/_annotations.coco.json
+images_val_dir: datasets/ants_coco/valid
+predictions_out: experiments/rfdetr/ants_expA005/predictions_val.json
+inference_benchmark_out: experiments/rfdetr/ants_expA005/inference_benchmark.json
+
+metrics_out: experiments/results/ants_expA005_rfdetr_metrics.json
+compare_out: experiments/results/ants_expA005_rfdetr_vs_yolo.json
+baseline_yolo_metrics: experiments/results/ants_expA002b_imgsz768_metrics.json
+
+viz_out_dir: experiments/visualizations/ants_expA005_rfdetr
+summary_md: experiments/results/ants_expA005_rfdetr_summary.md
+
+# YOLO 768 preds for side-by-side viz
+yolo_baseline_pred: experiments/yolo/ants_expA002b_imgsz768/predictions_val.json

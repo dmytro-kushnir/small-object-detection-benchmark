@@ -1,4 +1,4 @@
-.PHONY: reproduce-baseline reproduce-exp001 reproduce-exp002 reproduce-exp002b reproduce-exp003 reproduce-ants-smoke reproduce-ants-baseline reproduce-ants-full reproduce-ants-expA002b reproduce-ants-expA003 reproduce-ants-expA003-ablation reproduce-ants-expA004 reproduce-ants-expA004-fixed
+.PHONY: reproduce-baseline reproduce-exp001 reproduce-exp002 reproduce-exp002b reproduce-exp003 reproduce-ants-smoke reproduce-ants-baseline reproduce-ants-full reproduce-ants-expA002b reproduce-ants-expA003 reproduce-ants-expA003-ablation reproduce-ants-expA004 reproduce-ants-expA004-fixed reproduce-ants-expA005
 
 reproduce-baseline:
 	./scripts/run_smoke_test.sh
@@ -41,3 +41,6 @@ reproduce-ants-expA004:
 # Fixed ANTS run: metrics + compare JSON use *_fixed* filenames (override paths via env if needed).
 reproduce-ants-expA004-fixed:
 	EXP_A004_METRICS_OUT=experiments/results/ants_expA004_fixed_metrics.json EXP_A004_COMPARE_OUT=experiments/results/ants_expA004_fixed_vs_baseline.json EXP_A004_SUMMARY_OUT=experiments/results/ants_expA004_fixed_summary.md EXP_A004_EXPERIMENT_ID=EXP-A004-ANTS-v1-fixed ./scripts/run_ants_expA004.sh
+
+reproduce-ants-expA005:
+	./scripts/run_ants_expA005.sh

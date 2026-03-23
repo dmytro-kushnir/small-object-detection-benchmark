@@ -49,6 +49,8 @@ Cross-model comparison uses the **same** COCO preds + [`scripts/evaluation/evalu
 - [`scripts/inference/coco_pred_common.py`](scripts/inference/coco_pred_common.py) — shared GT mapping + pred writer
 - [`models/README.md`](models/README.md) — local checkpoints / manifests (no large blobs in git)
 
+**EXP-A005 (ants RF-DETR vs YOLO768):** `pip install rfdetr`, `./scripts/run_ants_prepare_coco.sh`, `./scripts/run_ants_expA005.sh` or `make reproduce-ants-expA005` — see [`docs/experiments.md`](docs/experiments.md).
+
 ## Other scripts
 
 - `python scripts/inference/infer_yolo.py --weights … --source … --coco-gt …/instances_val.json --out preds.json` — COCO **list** JSON for `pycocotools` (`image_id` aligned to GT)

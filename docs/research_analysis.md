@@ -282,8 +282,9 @@ Ultralytics writes **[`experiments/yolo/ants_expA000_full/results.png`](../exper
 
 1. **EXP-A003 (ants):** **Done:** SAHI underperformed vanilla 768 on mAP and matched P/R ([`ants_expA003_vs_768.json`](../experiments/results/ants_expA003_vs_768.json)); **54-config ablation** ([`ants_expA003_sahi_ablation.json`](../experiments/results/ants_expA003_sahi_ablation.json)) found **no** mAP / mAP_medium win; best settings ≈ **768×768** tiles + higher conf (see below). Optional: Jetson re-bench, or NMS/post-hoc if optimizing matched FP only.
 2. **EXP-A004 (ants):** **Post-fix** run ([`ants_expA004_fixed_vs_baseline.json`](../experiments/results/ants_expA004_fixed_vs_baseline.json)) confirms **merge/parity correctness** but **no material mAP rescue** vs vanilla **768** or **SAHI** (tables below). Optional: full-val **`debug_ants_baseline_parity.py`** (no `--max-images`) if you want parity beyond the recorded 50-image check.
-3. **Optional:** Revisit **1024** with longer training, different aug, or explicit train/infer policy if the sharp mAP drop is a priority to explain.
-4. **Optional:** `stream=True` in [`infer_yolo.py`](../scripts/inference/infer_yolo.py) if val or deployment folders grow very large.
+3. **EXP-A005 (ants):** **RF-DETR** vs YOLO26 @768 — run [`run_ants_expA005.sh`](../scripts/run_ants_expA005.sh); read [`ants_expA005_rfdetr_vs_yolo.json`](../experiments/results/ants_expA005_rfdetr_vs_yolo.json) and [`ants_expA005_rfdetr_summary.md`](../experiments/results/ants_expA005_rfdetr_summary.md) after recording numbers (section below stays a placeholder until then).
+4. **Optional:** Revisit **1024** with longer training, different aug, or explicit train/infer policy if the sharp mAP drop is a priority to explain.
+5. **Optional:** `stream=True` in [`infer_yolo.py`](../scripts/inference/infer_yolo.py) if val or deployment folders grow very large.
 
 ---
 
@@ -455,6 +456,27 @@ The regression above was traced to **post-merge NMS on the full stage-1 set** (U
 
 ---
 
+## EXP-A005 — RF-DETR vs YOLO26 (ants)
+
+**Goal:** Same **train/val split** and COCO **category id 0** as YOLO ants; compare **architecture-level** detection on dense ants after fine-tuning [RF-DETR](https://rfdetr.roboflow.com/latest/) (see [`experiments.md`](experiments.md)).
+
+**Procedure:** [`datasets/ants_coco/`](../datasets/ants_coco/README.md) via [`prepare_ants_coco_rfdetr.py`](../scripts/datasets/prepare_ants_coco_rfdetr.py); [`train_rfdetr_ants.py`](../scripts/train/train_rfdetr_ants.py) + [`infer_rfdetr.py`](../scripts/inference/infer_rfdetr.py); [`bench_rfdetr.py`](../scripts/evaluation/bench_rfdetr.py) + [`evaluate.py`](../scripts/evaluation/evaluate.py) **`--inference-benchmark-json`**; [`compare_ants_expA005.py`](../scripts/evaluation/compare_ants_expA005.py) vs [`ants_expA002b_imgsz768_metrics.json`](../experiments/results/ants_expA002b_imgsz768_metrics.json); viz [`viz_ants_expA005_comparisons.py`](../scripts/visualization/viz_ants_expA005_comparisons.py); orchestrator [`run_ants_expA005.sh`](../scripts/run_ants_expA005.sh) / `make reproduce-ants-expA005`.
+
+**Quantitative comparison (recorded, unoptimized inference):** RF-DETR vs YOLO768: mAP@[.5:.95] `0.645→0.663` (Δ `+0.018`), mAP@0.5 `0.922→0.931` (Δ `+0.009`), mAP_medium `0.645→0.664` (Δ `+0.018`); matched precision (IoU0.5, score>=0.25) `0.914→0.923` (Δ `+0.009`), matched recall `0.946→0.962` (Δ `+0.015`); FPS `~60.6→~29.6` (Δ `-31.0`), latency mean `~16.5→~33.8 ms` (Δ `+17.3`). Matched counts: TP `24183→24568` (+385), FP `2277→2057` (-220), FN `1367→982` (-385). See [`ants_expA005_rfdetr_vs_yolo.json`](../experiments/results/ants_expA005_rfdetr_vs_yolo.json) and [`ants_expA005_rfdetr_metrics.json`](../experiments/results/ants_expA005_rfdetr_metrics.json) for `git_rev` and the full tables. Note **train/input resolution** may differ from YOLO **imgsz=768** — see `evaluation_note` in the compare JSON before attributing differences to backbone alone.
+
+**Quantitative comparison (optimized inference; `optimize_for_inference()` enabled):** RF-DETR vs YOLO768: mAP@[.5:.95] `0.645→0.663` (Δ `+0.018`), mAP@0.5 `0.922→0.931` (Δ `+0.009`), mAP_medium `0.645→0.664` (Δ `+0.018`); matched precision `0.914→0.923` (Δ `+0.009`), matched recall `0.946→0.962` (Δ `+0.015`); FPS `~60.6→~33.3` (Δ `-27.2`), latency mean `~16.5→~30.0 ms` (Δ `+13.5`). Relative to unoptimized RF-DETR: FPS `~29.6→~33.3` (+3.8), latency mean `~33.8→~30.0 ms` (-3.8). Matched counts: TP `24183→24567` (+384), FP `2277→2058` (-219), FN `1367→983` (-384). See [`ants_expA005_optinfer_rfdetr_vs_yolo.json`](../experiments/results/ants_expA005_optinfer_rfdetr_vs_yolo.json) and [`ants_expA005_optinfer_rfdetr_metrics.json`](../experiments/results/ants_expA005_optinfer_rfdetr_metrics.json) for `git_rev` and full tables.
+
+**Interpretation (recorded):**
+
+* **Accuracy:** RF-DETR is consistently better than YOLO768 on this ants split for both unoptimized and optimized runs: mAP@[.5:.95] improves by about **+0.018**, mAP@0.5 by about **+0.009**, and matched recall by about **+0.015**. The matched-count pattern is stable across both RF-DETR runs (**~+384 TP**, **~−219 FP**, **~−384 FN** vs YOLO), indicating fewer duplicate/false detections and fewer misses in dense scenes.
+* **Latency/throughput trade-off:** YOLO768 remains much faster. RF-DETR unoptimized is **~29.6 FPS / ~33.8 ms**, optimized is **~33.3 FPS / ~30.0 ms**, while YOLO768 is **~60.6 FPS / ~16.5 ms**.
+* **Impact of `optimize_for_inference()`:** Optimization changes speed meaningfully (**+3.8 FPS**, **−3.8 ms** vs unoptimized RF-DETR) with negligible metric movement (differences around 1e-5 to 1e-4 scale, likely non-material).
+* **Qualitative expectation:** Given TP/FP/FN shifts and higher recall, RF-DETR should show better dense-cluster behavior and fewer duplicate boxes in `side_by_side/` panels, but this comes at a clear runtime cost.
+
+**Conclusion:** If the priority is **best detection quality** on dense ants, choose **RF-DETR with optimized inference** as the default RF-DETR setting. If the priority is **real-time throughput / latency margin**, keep **YOLO768** as the deployment-first baseline. For next iterations, the most useful direction is reducing RF-DETR latency further (export/engine optimization, quantization, or lighter RF-DETR variants) while preserving the observed recall/FP gains.
+
+---
+
 ## Changelog
 
 | Date | Experiment(s) | Summary |
@@ -480,5 +502,7 @@ The regression above was traced to **post-merge NMS on the full stage-1 set** (U
 | 2026-03-21 | EXP-A004 (numbers, RTX 4070, pre-fix compare JSON) | vs 768: mAP@[.5:.95] **0.645→0.535** (Δ **−0.110**); superseded by **fixed** bundle below (~**0.536** mAP, Δ **−0.109**). |
 | 2026-03-21 | EXP-A004 (parity / merge fix) | Empty-refined passthrough; no extra NMS on stage-1-only; `predict(conf)`; `enable_dense_rois` / `pipeline_mode` / debug scripts; `make reproduce-ants-expA004-fixed`; `run_ants_expA004_staged_eval.sh`. |
 | 2026-03-21 | EXP-A004 (post-fix checks + fixed metrics) | Round-trip **1073**/0; parity **50**/0; `ants_expA004_fixed_*`, `git_rev` **8e3356a**. vs 768: mAP@[.5:.95] **0.645→0.536** (Δ **−0.109**), mAP_medium **−0.106**, matched P **−0.141**, R **−0.153**; TP 24183→20286, FP 2277→5957, FN 1367→5264; FPS ~60.6→~28.9, latency ~16.5→~34.6 ms. vs SAHI: mAP **−0.064**, R **−0.136**; FPS ~41.7→~28.9 — **no** accuracy rescue vs 768/SAHI. |
+| 2026-03-23 | EXP-A005 (numbers) | RF-DETR ants (unoptimized inference): mAP@[.5:.95] `0.645→0.663` (Δ `+0.018`), mAP@0.5 `0.922→0.931` (Δ `+0.009`), mAP_medium `0.645→0.664` (Δ `+0.018`); precision `0.914→0.923` (Δ `+0.009`), recall `0.946→0.962` (Δ `+0.015`); TP `24183→24568` (+385), FP `2277→2057` (-220), FN `1367→982` (-385); FPS `~60.6→~29.6` (Δ `-31.0`), latency mean `~16.5→~33.8 ms` (Δ `+17.3`). |
+| 2026-03-23 | EXP-A005 (opt-infer) | RF-DETR ants (optimized inference): mAP@[.5:.95] `0.645→0.663` (Δ `+0.0183`), mAP@0.5 `0.922→0.931` (Δ `+0.0087`), mAP_medium `0.645→0.664` (Δ `+0.0185`); precision `0.914→0.923` (Δ `+0.0088`), recall `0.946→0.962` (Δ `+0.0150`); TP `24183→24567` (+384), FP `2277→2058` (-219), FN `1367→983` (-384); FPS `~60.6→~33.3` (Δ `-27.2`), latency mean `~16.5→~30.0 ms` (Δ `+13.5`). Relative to unoptimized RF-DETR: FPS `~29.6→~33.3` (+3.8), latency mean `~33.8→~30.0 ms` (-3.8). |
 
 *(Append new rows when you re-run and refresh JSONs.)*

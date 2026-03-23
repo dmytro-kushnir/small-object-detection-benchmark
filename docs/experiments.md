@@ -296,6 +296,33 @@ chmod +x scripts/run_ants_expA004.sh   # once
 
 ---
 
+### EXP-A005: RF-DETR baseline on ants (vs YOLO26)
+
+* **Same** val COCO GT and split as EXP-A002b (category id **0** = ant). **No** SAHI/ANTS in this experiment.
+* **COCO for RF-DETR:** Roboflow layout under `datasets/ants_coco/` — `train/_annotations.coco.json`, `valid/_annotations.coco.json` ( **`valid/`** = same images as `ants_yolo/images/val/`). Build with [`prepare_ants_coco_rfdetr.py`](../scripts/datasets/prepare_ants_coco_rfdetr.py) / `./scripts/run_ants_prepare_coco.sh`.
+* **Config:** [`configs/expA005_ants_rfdetr.yaml`](../configs/expA005_ants_rfdetr.yaml). **Train:** [`train_rfdetr_ants.py`](../scripts/train/train_rfdetr_ants.py). **Infer:** [`infer_rfdetr.py`](../scripts/inference/infer_rfdetr.py). **Bench:** [`bench_rfdetr.py`](../scripts/evaluation/bench_rfdetr.py).
+* **Artifacts:** `experiments/rfdetr/ants_expA005/` — `weights/best.pth`, `predictions_val.json`, `inference_benchmark.json`, `config.yaml`, `system_info.json`.
+* **Metrics:** `experiments/results/ants_expA005_rfdetr_metrics.json` — `evaluate.py` with **`--inference-benchmark-json`** (RF-DETR timed path).
+* **Compare:** `experiments/results/ants_expA005_rfdetr_vs_yolo.json` ([`compare_ants_expA005.py`](../scripts/evaluation/compare_ants_expA005.py)) vs **`ants_expA002b_imgsz768_metrics.json`**.
+* **Viz:** `experiments/visualizations/ants_expA005_rfdetr/` — YOLO panels, RF-DETR panels, `side_by_side/` ([`viz_ants_expA005_comparisons.py`](../scripts/visualization/viz_ants_expA005_comparisons.py)).
+* **Report:** `experiments/results/ants_expA005_rfdetr_summary.md` ([`write_ants_expA005_summary.py`](../scripts/evaluation/write_ants_expA005_summary.py)).
+
+**Prerequisite:** `pip install rfdetr` (or `pip install -e .[rfdetr]`); prepared `datasets/ants_yolo/`; EXP-A002b **768** weights + `predictions_val.json` + metrics for compare/viz.
+
+```bash
+chmod +x scripts/run_ants_expA005.sh   # once
+./scripts/run_ants_prepare_coco.sh    # if datasets/ants_coco missing
+# optional: EXP_A005_SKIP_TRAIN=1 if weights already in experiments/rfdetr/ants_expA005/weights/best.pth
+./scripts/run_ants_expA005.sh
+# or: make reproduce-ants-expA005
+```
+
+**Smoke:** `EXP_A005_MAX_IMAGES=20 ./scripts/run_ants_expA005.sh` (caps infer + bench only).
+
+**Env:** `EXP_A005_CONFIG`, `RFDETR_DEVICE`, `EXP_A005_SKIP_TRAIN`, `EXP_A005_METRICS_OUT`, `EXP_A005_YOLO_METRICS`, `EXP_A005_VIZ_MAX_IMAGES`, etc. (see [`run_ants_expA005.sh`](../scripts/run_ants_expA005.sh)).
+
+---
+
 ### EXP-004: Dataset balancing (future)
 
 * Oversample images with small objects
@@ -327,6 +354,7 @@ Each experiment must report:
 * For **EXP-A002b** (ants), treat **mAP_medium** as the primary COCO bucket when interpreting the sweep (mAP_small is often −1 on this GT); aggregated JSON uses `latency_ms` (= `evaluate.py` mean latency).
 * For **EXP-A003** (ants SAHI), primary readout is **`ants_expA003_vs_768.json`** (Δ vs vanilla 768); see `evaluation_note` for inference-path differences when comparing FPS/latency.
 * For **EXP-A004** (ANTS v1), primary readout is **`ants_expA004_vs_baseline.json`** (or **`ants_expA004_fixed_vs_baseline.json`** after `make reproduce-ants-expA004-fixed`); throughput in the metrics JSON comes from **`bench_ants_v1.py`** via **`evaluate.py --inference-benchmark-json`** (full two-stage path).
+* For **EXP-A005** (ants RF-DETR), primary readout is **`ants_expA005_rfdetr_vs_yolo.json`**; throughput from **`bench_rfdetr.py`** via **`evaluate.py --inference-benchmark-json`**. Resolution/train budget may differ from YOLO `imgsz=768` — see `evaluation_note` in the compare JSON.
 
 ---
 

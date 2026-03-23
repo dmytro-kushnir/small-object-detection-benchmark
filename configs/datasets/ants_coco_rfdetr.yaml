@@ -1,0 +1,6 @@
+# Export ants YOLO tree → Roboflow RF-DETR COCO layout (train/valid + _annotations.coco.json).
+
+ants_yolo_root: datasets/ants_yolo
+out_root: datasets/ants_coco
+# "copy" | "hardlink" (hardlink falls back to copy if EXDEV etc.)
+copy_mode: copy

@@ -1,19 +1,15 @@
-# Placeholder for RF-DETR / DETR-family training (see scripts/train/train_detr.py).
-# Keep dataset and experiment paths config-driven (no hardcoded absolute paths).
+# Generic RF-DETR placeholder. For **ants EXP-A005**, use:
+#   configs/expA005_ants_rfdetr.yaml
+#   scripts/train/train_rfdetr_ants.py
+# `train_detr.py` forwards to train_rfdetr_ants with that config by default.
 
-# Prepared data: same COCO/YOLO layout from scripts/datasets/prepare_dataset.py when applicable
 dataset_yaml: datasets/processed/example/dataset.yaml
-
-# Upstream model id or checkpoint URL (set when you choose an RF-DETR distribution)
 model: null
-
 epochs: 50
 batch_size: 8
 imgsz: 640
 workers: 4
-device: null  # null = auto; or "cpu", "cuda:0"
-
-# Mirror YOLO convention for experiment roots
+device: null
 project: experiments/detr
 name: null
 seed: 42

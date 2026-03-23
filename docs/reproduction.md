@@ -111,6 +111,10 @@ export ANTS_DATASET_ROOT="/path/to/Ant_dataset"
 # smoke: EXP_A004_MAX_IMAGES=5 ./scripts/run_ants_expA004.sh
 # merge sanity (COCO + merge only): debug_ants_merge_roundtrip.py --pred .../predictions_val.json --coco-gt .../instances_val.json
 # parity vs baseline preds: debug_ants_baseline_parity.py --weights .../best.pt --source .../val ...
+# RF-DETR ants EXP-A005 (pip install rfdetr; needs ants_coco + YOLO768 metrics for compare):
+# ./scripts/run_ants_prepare_coco.sh
+# ./scripts/run_ants_expA005.sh
+# smoke: EXP_A005_MAX_IMAGES=20 ./scripts/run_ants_expA005.sh
 ```
 
 ## Make wrappers (optional)
@@ -129,4 +133,5 @@ make reproduce-ants-expA003   # ./scripts/run_ants_expA003.sh (after prepare + E
 make reproduce-ants-expA003-ablation  # SAHI grid vs vanilla 768 baseline (long run; see docs/experiments.md)
 make reproduce-ants-expA004   # ANTS v1 infer+bench+eval+compare+viz (after prepare + EXP-A002b 768)
 make reproduce-ants-expA004-fixed  # same, but metrics/compare filenames *fixed* (see docs/experiments.md)
+make reproduce-ants-expA005   # RF-DETR train+eval+compare vs YOLO768 (see docs/experiments.md)
 ```
