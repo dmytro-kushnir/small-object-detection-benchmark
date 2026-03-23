@@ -1,0 +1,48 @@
+# EXP-A006: RF-DETR + ByteTrack + temporal smoothing on ants val.
+
+experiment_id: EXP-A006-ANTS-RFDETR-TRACKING
+
+# Reuse optimized RF-DETR val predictions when present; otherwise rerun optimized inference.
+reuse_predictions: true
+
+# RF-DETR baseline bundle (EXP-A005 optimized)
+rfdetr_model_class: RFDETRSmall
+rfdetr_conf_threshold: 0.25
+rfdetr_weights: experiments/rfdetr/ants_expA005/weights/best.pth
+rfdetr_gt_val: datasets/ants_coco/valid/_annotations.coco.json
+rfdetr_images_val_dir: datasets/ants_coco/valid
+rfdetr_pred_optimized: experiments/rfdetr/ants_expA005/predictions_val_optinfer.json
+rfdetr_bench_optimized: experiments/rfdetr/ants_expA005/inference_benchmark_optinfer.json
+rfdetr_train_config: experiments/rfdetr/ants_expA005/config.yaml
+
+# Sequence metadata (optional). If missing or no sequence map key: single sequence fallback.
+sequence_manifest: datasets/ants_coco/ants_coco_manifest.json
+
+# Tracking params (supervision ByteTrack)
+track_thresh: 0.25
+match_thresh: 0.8
+track_buffer: 30
+# Optional segmentation cleanup via supervision>=0.27.0 (used only when masks exist).
+seg_filter_distance_abs:
+seg_filter_distance_ratio:
+
+# Temporal smoothing rules
+min_track_len: 3
+fill_gap_max: 1
+
+# EXP-A006 outputs
+tracks_out: experiments/rfdetr/ants_expA006_tracks.json
+tracking_stats_out: experiments/rfdetr/ants_expA006_tracking_stats.json
+smoothed_tracks_out: experiments/rfdetr/ants_expA006_smoothed_tracks.json
+smoothed_predictions_out: experiments/rfdetr/ants_expA006_smoothed_predictions.json
+smoothing_stats_out: experiments/rfdetr/ants_expA006_smoothing_stats.json
+pipeline_benchmark_out: experiments/rfdetr/ants_expA006_tracking_benchmark.json
+config_out: experiments/rfdetr/ants_expA006_config.yaml
+system_info_out: experiments/rfdetr/ants_expA006_system_info.json
+
+# Eval / compare / reporting
+metrics_out: experiments/results/ants_expA006_tracking_metrics.json
+baseline_metrics: experiments/results/ants_expA005_optinfer_rfdetr_metrics.json
+compare_out: experiments/results/ants_expA006_vs_baseline.json
+summary_out: experiments/results/ants_expA006_summary.md
+viz_out_dir: experiments/visualizations/ants_expA006_tracking

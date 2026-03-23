@@ -30,4 +30,5 @@ rfdetr = [
     "pytorch-lightning>=2.6.1",
     "jsonargparse[signatures]>=4.27.7",
     "faster-coco-eval>=1.6.5",
+    "supervision>=0.27.0",
 ]

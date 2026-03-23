@@ -323,6 +323,30 @@ chmod +x scripts/run_ants_expA005.sh   # once
 
 ---
 
+### EXP-A006: RF-DETR + ByteTrack + temporal smoothing (ants)
+
+* Detector input is EXP-A005 optimized RF-DETR predictions (`predictions_val_optinfer.json`) by default; if missing, EXP-A006 reruns optimized inference.
+* Tracking uses [`track_rfdetr_bytetrack.py`](../scripts/inference/track_rfdetr_bytetrack.py) with `supervision.ByteTrack`; sequence reset uses manifest `sequence_map` when available, otherwise single-sequence fallback.
+* Smoothing uses [`smooth_tracks_expA006.py`](../scripts/inference/smooth_tracks_expA006.py): remove tracks shorter than 3 frames, fill 1-frame gaps (linear bbox interpolation), replace confidence with track-average score.
+* Pipeline benchmark combines detector latency + tracking/smoothing overhead via [`bench_expA006_tracking.py`](../scripts/evaluation/bench_expA006_tracking.py).
+* Outputs:
+  * `experiments/rfdetr/ants_expA006_tracks.json`
+  * `experiments/rfdetr/ants_expA006_smoothed_predictions.json`
+  * `experiments/results/ants_expA006_tracking_metrics.json`
+  * `experiments/results/ants_expA006_vs_baseline.json`
+  * `experiments/visualizations/ants_expA006_tracking/`
+  * `experiments/results/ants_expA006_summary.md`
+
+```bash
+chmod +x scripts/run_ants_expA006.sh   # once
+./scripts/run_ants_expA006.sh
+# or: make reproduce-ants-expA006
+```
+
+**Config:** [`configs/expA006_ants_tracking.yaml`](../configs/expA006_ants_tracking.yaml)
+
+---
+
 ### EXP-004: Dataset balancing (future)
 
 * Oversample images with small objects
@@ -355,6 +379,7 @@ Each experiment must report:
 * For **EXP-A003** (ants SAHI), primary readout is **`ants_expA003_vs_768.json`** (Δ vs vanilla 768); see `evaluation_note` for inference-path differences when comparing FPS/latency.
 * For **EXP-A004** (ANTS v1), primary readout is **`ants_expA004_vs_baseline.json`** (or **`ants_expA004_fixed_vs_baseline.json`** after `make reproduce-ants-expA004-fixed`); throughput in the metrics JSON comes from **`bench_ants_v1.py`** via **`evaluate.py --inference-benchmark-json`** (full two-stage path).
 * For **EXP-A005** (ants RF-DETR), primary readout is **`ants_expA005_rfdetr_vs_yolo.json`**; throughput from **`bench_rfdetr.py`** via **`evaluate.py --inference-benchmark-json`**. Resolution/train budget may differ from YOLO `imgsz=768` — see `evaluation_note` in the compare JSON.
+* For **EXP-A006** (RF-DETR temporal), primary readout is **`ants_expA006_vs_baseline.json`**; throughput from combined detector+temporal benchmark JSON (`bench_expA006_tracking.py`) passed through `evaluate.py --inference-benchmark-json`.
 
 ---
 

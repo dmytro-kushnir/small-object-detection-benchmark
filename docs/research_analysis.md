@@ -282,9 +282,10 @@ Ultralytics writes **[`experiments/yolo/ants_expA000_full/results.png`](../exper
 
 1. **EXP-A003 (ants):** **Done:** SAHI underperformed vanilla 768 on mAP and matched P/R ([`ants_expA003_vs_768.json`](../experiments/results/ants_expA003_vs_768.json)); **54-config ablation** ([`ants_expA003_sahi_ablation.json`](../experiments/results/ants_expA003_sahi_ablation.json)) found **no** mAP / mAP_medium win; best settings ≈ **768×768** tiles + higher conf (see below). Optional: Jetson re-bench, or NMS/post-hoc if optimizing matched FP only.
 2. **EXP-A004 (ants):** **Post-fix** run ([`ants_expA004_fixed_vs_baseline.json`](../experiments/results/ants_expA004_fixed_vs_baseline.json)) confirms **merge/parity correctness** but **no material mAP rescue** vs vanilla **768** or **SAHI** (tables below). Optional: full-val **`debug_ants_baseline_parity.py`** (no `--max-images`) if you want parity beyond the recorded 50-image check.
-3. **EXP-A005 (ants):** **RF-DETR** vs YOLO26 @768 — run [`run_ants_expA005.sh`](../scripts/run_ants_expA005.sh); read [`ants_expA005_rfdetr_vs_yolo.json`](../experiments/results/ants_expA005_rfdetr_vs_yolo.json) and [`ants_expA005_rfdetr_summary.md`](../experiments/results/ants_expA005_rfdetr_summary.md) after recording numbers (section below stays a placeholder until then).
-4. **Optional:** Revisit **1024** with longer training, different aug, or explicit train/infer policy if the sharp mAP drop is a priority to explain.
-5. **Optional:** `stream=True` in [`infer_yolo.py`](../scripts/inference/infer_yolo.py) if val or deployment folders grow very large.
+3. **EXP-A005 (ants):** **Done** — RF-DETR baseline numbers recorded below.
+4. **EXP-A006 (ants temporal):** Run [`run_ants_expA006.sh`](../scripts/run_ants_expA006.sh) for RF-DETR + ByteTrack + temporal smoothing; primary readout [`ants_expA006_vs_baseline.json`](../experiments/results/ants_expA006_vs_baseline.json).
+5. **Optional:** Revisit **1024** with longer training, different aug, or explicit train/infer policy if the sharp mAP drop is a priority to explain.
+6. **Optional:** `stream=True` in [`infer_yolo.py`](../scripts/inference/infer_yolo.py) if val or deployment folders grow very large.
 
 ---
 
@@ -477,6 +478,24 @@ The regression above was traced to **post-merge NMS on the full stage-1 set** (U
 
 ---
 
+## EXP-A006 — RF-DETR + ByteTrack + temporal smoothing (ants)
+
+**Goal:** Evaluate whether temporal consistency on sequential frames reduces FP, recovers misses, and stabilizes predictions versus single-frame RF-DETR optimized baseline.
+
+**Procedure:** [`run_ants_expA006.sh`](../scripts/run_ants_expA006.sh) orchestrates optimized prediction reuse/rerun, [`track_rfdetr_bytetrack.py`](../scripts/inference/track_rfdetr_bytetrack.py), [`smooth_tracks_expA006.py`](../scripts/inference/smooth_tracks_expA006.py), composed benchmark [`bench_expA006_tracking.py`](../scripts/evaluation/bench_expA006_tracking.py), eval with [`evaluate.py`](../scripts/evaluation/evaluate.py), compare via [`compare_ants_expA006.py`](../scripts/evaluation/compare_ants_expA006.py), viz via [`viz_ants_expA006_tracking.py`](../scripts/visualization/viz_ants_expA006_tracking.py), and report [`write_ants_expA006_summary.py`](../scripts/evaluation/write_ants_expA006_summary.py).
+
+**Smoothing rules:** remove tracks with length `<3`, fill 1-frame gaps by linear interpolation, set score to per-track average confidence.
+
+**Quantitative comparison (A006 vs EXP-A005 optimized baseline):** mAP@[.5:.95] `0.6634→0.6635` (Δ `+0.00014`), mAP@0.5 `0.9309→0.9357` (Δ `+0.00478`), mAP_medium `0.6639→0.6645` (Δ `+0.00053`); matched precision `0.9227→0.9388` (Δ `+0.0161`), matched recall `0.9615→0.9553` (Δ `-0.0063`). Matched counts: TP `24567→24407` (`-160`), FP `2058→1590` (`-468`), FN `983→1143` (`+160`). Throughput: FPS `33.34→30.51` (Δ `-2.83`), latency mean `29.99→32.77 ms` (Δ `+2.78`). See [`ants_expA006_tracking_metrics.json`](../experiments/results/ants_expA006_tracking_metrics.json) and [`ants_expA006_vs_baseline.json`](../experiments/results/ants_expA006_vs_baseline.json).
+
+**Tracking stats:** `401` total tracks, `384` kept after smoothing (`17` removed for short length), average kept track length `~67.4` frames, tracked detections `25907`, smoothed detections `25997`. Benchmark decomposition: detector `~29.99 ms`, tracking overhead `~2.69 ms/img`, smoothing overhead `~0.09 ms/img`. Current run had `segmentation_filter_enabled: false` in tracking stats (as expected for bbox-only predictions) ([`ants_expA006_tracking_stats.json`](../experiments/rfdetr/ants_expA006_tracking_stats.json), [`ants_expA006_smoothing_stats.json`](../experiments/rfdetr/ants_expA006_smoothing_stats.json), [`ants_expA006_tracking_benchmark.json`](../experiments/rfdetr/ants_expA006_tracking_benchmark.json)).
+
+**Interpretation:** For this configuration, temporal modeling mainly improves **precision / FP suppression** (large FP drop), while slightly reducing recall (more FN). COCO mAP@[.5:.95] is effectively unchanged versus the optimized detector-only baseline; mAP@0.5 improves modestly. Runtime impact is moderate (+~2.7 ms mean latency).
+
+**Conclusion:** EXP-A006 is useful as a **precision-stability mode** for dense scenes where duplicate/false detections matter more than maximum recall. It does not provide a large overall mAP lift over optimized RF-DETR baseline, and it adds runtime overhead.
+
+---
+
 ## Changelog
 
 | Date | Experiment(s) | Summary |
@@ -504,5 +523,6 @@ The regression above was traced to **post-merge NMS on the full stage-1 set** (U
 | 2026-03-21 | EXP-A004 (post-fix checks + fixed metrics) | Round-trip **1073**/0; parity **50**/0; `ants_expA004_fixed_*`, `git_rev` **8e3356a**. vs 768: mAP@[.5:.95] **0.645→0.536** (Δ **−0.109**), mAP_medium **−0.106**, matched P **−0.141**, R **−0.153**; TP 24183→20286, FP 2277→5957, FN 1367→5264; FPS ~60.6→~28.9, latency ~16.5→~34.6 ms. vs SAHI: mAP **−0.064**, R **−0.136**; FPS ~41.7→~28.9 — **no** accuracy rescue vs 768/SAHI. |
 | 2026-03-23 | EXP-A005 (numbers) | RF-DETR ants (unoptimized inference): mAP@[.5:.95] `0.645→0.663` (Δ `+0.018`), mAP@0.5 `0.922→0.931` (Δ `+0.009`), mAP_medium `0.645→0.664` (Δ `+0.018`); precision `0.914→0.923` (Δ `+0.009`), recall `0.946→0.962` (Δ `+0.015`); TP `24183→24568` (+385), FP `2277→2057` (-220), FN `1367→982` (-385); FPS `~60.6→~29.6` (Δ `-31.0`), latency mean `~16.5→~33.8 ms` (Δ `+17.3`). |
 | 2026-03-23 | EXP-A005 (opt-infer) | RF-DETR ants (optimized inference): mAP@[.5:.95] `0.645→0.663` (Δ `+0.0183`), mAP@0.5 `0.922→0.931` (Δ `+0.0087`), mAP_medium `0.645→0.664` (Δ `+0.0185`); precision `0.914→0.923` (Δ `+0.0088`), recall `0.946→0.962` (Δ `+0.0150`); TP `24183→24567` (+384), FP `2277→2058` (-219), FN `1367→983` (-384); FPS `~60.6→~33.3` (Δ `-27.2`), latency mean `~16.5→~30.0 ms` (Δ `+13.5`). Relative to unoptimized RF-DETR: FPS `~29.6→~33.3` (+3.8), latency mean `~33.8→~30.0 ms` (-3.8). |
+| 2026-03-23 | EXP-A006 (numbers) | RF-DETR + ByteTrack + smoothing vs A005 opt baseline: mAP@[.5:.95] `0.6634→0.6635` (Δ `+0.00014`), mAP@0.5 `+0.00478`, mAP_medium `+0.00053`; precision `+0.0161`, recall `-0.0063`; TP `-160`, FP `-468`, FN `+160`; FPS `33.34→30.51` (Δ `-2.83`), latency `29.99→32.77 ms` (Δ `+2.78`). Tracks: `401` total, `17` short tracks removed, avg kept length `~67.4` frames; segmentation filter disabled (`bbox` predictions). |
 
 *(Append new rows when you re-run and refresh JSONs.)*

@@ -115,6 +115,8 @@ export ANTS_DATASET_ROOT="/path/to/Ant_dataset"
 # ./scripts/run_ants_prepare_coco.sh
 # ./scripts/run_ants_expA005.sh
 # smoke: EXP_A005_MAX_IMAGES=20 ./scripts/run_ants_expA005.sh
+# RF-DETR temporal EXP-A006 (ByteTrack + smoothing; no retraining):
+# ./scripts/run_ants_expA006.sh
 ```
 
 ## Make wrappers (optional)
@@ -134,4 +136,5 @@ make reproduce-ants-expA003-ablation  # SAHI grid vs vanilla 768 baseline (long 
 make reproduce-ants-expA004   # ANTS v1 infer+bench+eval+compare+viz (after prepare + EXP-A002b 768)
 make reproduce-ants-expA004-fixed  # same, but metrics/compare filenames *fixed* (see docs/experiments.md)
 make reproduce-ants-expA005   # RF-DETR train+eval+compare vs YOLO768 (see docs/experiments.md)
+make reproduce-ants-expA006   # RF-DETR temporal tracking/smoothing vs A005 optimized baseline
 ```
