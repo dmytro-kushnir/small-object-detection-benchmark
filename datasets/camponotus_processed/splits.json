@@ -1,0 +1,34 @@
+{
+  "schema_version": 1,
+  "policy": {
+    "split_by_sequence": true,
+    "val_test_only_in_situ": true,
+    "external_to_train_only": true
+  },
+  "ratios": {
+    "train": 0.7,
+    "val": 0.15,
+    "test": 0.15
+  },
+  "seed": 42,
+  "in_situ_sequences": {
+    "train": [],
+    "val": [],
+    "test": []
+  },
+  "images": {
+    "train": [],
+    "val": [],
+    "test": []
+  },
+  "counts": {
+    "sequences_total": 0,
+    "sequences_train": 0,
+    "sequences_val": 0,
+    "sequences_test": 0,
+    "images_train": 0,
+    "images_val": 0,
+    "images_test": 0,
+    "images_external_train": 0
+  }
+}

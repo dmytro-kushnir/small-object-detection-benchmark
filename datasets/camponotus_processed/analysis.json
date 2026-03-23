@@ -1,0 +1,14 @@
+{
+  "splits": {},
+  "class_totals": {
+    "0": 0,
+    "1": 0
+  },
+  "objects_total": 0,
+  "images_total": 0,
+  "class_balance": {
+    "ant_fraction": 0.0,
+    "trophallaxis_fraction": 0.0
+  },
+  "source_distribution": {}
+}

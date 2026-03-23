@@ -32,3 +32,22 @@ Under `output_dir`:
 - `prepare_manifest.json` — counts, filter params, seed
 
 See `configs/prepare_dataset.yaml` for all options. Bbox filters use `filter.apply_to`: `all` (every split) or `train` (val/test GT unchanged—used for EXP-001 vs baseline).
+
+## Camponotus Workflow (custom dataset)
+
+For the two-class Camponotus dataset (`ant`, `trophallaxis`), use:
+
+- Raw layout: `datasets/camponotus_raw/`
+- Processed manifests: `datasets/camponotus_processed/`
+- Exports: `datasets/camponotus_yolo/` and `datasets/camponotus_coco/`
+
+Main entrypoint:
+
+```bash
+./scripts/run_camponotus_dataset_workflow.sh
+```
+
+Supporting docs:
+
+- `docs/camponotus_labeling_guidelines.md`
+- `docs/camponotus_cvat_workflow.md`

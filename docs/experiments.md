@@ -347,6 +347,41 @@ chmod +x scripts/run_ants_expA006.sh   # once
 
 ---
 
+### Camponotus Dataset Workflow (data prep + labeling, no training)
+
+Goal: prepare a two-class detection dataset (`ant`, `trophallaxis`) from in-situ and external sources, ready for later YOLO/RF-DETR experiments.
+
+Core assets:
+
+* Labeling policy: [`camponotus_labeling_guidelines.md`](camponotus_labeling_guidelines.md)
+* CVAT workflow: [`camponotus_cvat_workflow.md`](camponotus_cvat_workflow.md)
+* Workflow config: [`configs/datasets/camponotus_workflow.yaml`](../configs/datasets/camponotus_workflow.yaml)
+* Orchestrator: [`scripts/run_camponotus_dataset_workflow.sh`](../scripts/run_camponotus_dataset_workflow.sh)
+* Key scripts:
+  * frame extraction: [`extract_camponotus_frames.py`](../scripts/datasets/extract_camponotus_frames.py)
+  * prelabels: [`bootstrap_camponotus_autolabel.py`](../scripts/datasets/bootstrap_camponotus_autolabel.py)
+  * split manifest: [`split_camponotus_dataset.py`](../scripts/datasets/split_camponotus_dataset.py)
+  * conversion/export: [`prepare_camponotus_detection_dataset.py`](../scripts/datasets/prepare_camponotus_detection_dataset.py)
+  * analysis: [`analyze_camponotus_dataset.py`](../scripts/datasets/analyze_camponotus_dataset.py)
+  * validation: [`validate_camponotus_dataset.py`](../scripts/datasets/validate_camponotus_dataset.py)
+  * sample viz: [`viz_camponotus_dataset_samples.py`](../scripts/visualization/viz_camponotus_dataset_samples.py)
+
+Outputs:
+
+* `datasets/camponotus_processed/splits.json`
+* `datasets/camponotus_processed/analysis.json`
+* `datasets/camponotus_yolo/`
+* `datasets/camponotus_coco/annotations/instances_{train,val,test}.json`
+* `experiments/visualizations/camponotus_dataset/`
+
+```bash
+chmod +x scripts/run_camponotus_dataset_workflow.sh   # once
+./scripts/run_camponotus_dataset_workflow.sh
+# or: make prepare-camponotus-dataset
+```
+
+---
+
 ### EXP-004: Dataset balancing (future)
 
 * Oversample images with small objects

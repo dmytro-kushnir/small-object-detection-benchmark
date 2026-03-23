@@ -117,6 +117,14 @@ export ANTS_DATASET_ROOT="/path/to/Ant_dataset"
 # smoke: EXP_A005_MAX_IMAGES=20 ./scripts/run_ants_expA005.sh
 # RF-DETR temporal EXP-A006 (ByteTrack + smoothing; no retraining):
 # ./scripts/run_ants_expA006.sh
+#
+# Camponotus dataset workflow (data prep only; no training):
+# 1) extract frames from videos (optional if already extracted):
+# python scripts/datasets/extract_camponotus_frames.py --videos-root /path/to/videos --out-root datasets/camponotus_raw/in_situ --fps 2
+# 2) generate optional model prelabels:
+# python scripts/datasets/bootstrap_camponotus_autolabel.py --images-root datasets/camponotus_raw --backend auto --yolo-weights /path/to/yolo.pt --out datasets/camponotus_processed/prelabels/camponotus_prelabels_coco.json
+# 3) run full conversion/analysis/validation workflow (expects corrected CVAT COCO export path in configs/datasets/camponotus_workflow.yaml):
+# ./scripts/run_camponotus_dataset_workflow.sh
 ```
 
 ## Make wrappers (optional)
@@ -137,4 +145,5 @@ make reproduce-ants-expA004   # ANTS v1 infer+bench+eval+compare+viz (after prep
 make reproduce-ants-expA004-fixed  # same, but metrics/compare filenames *fixed* (see docs/experiments.md)
 make reproduce-ants-expA005   # RF-DETR train+eval+compare vs YOLO768 (see docs/experiments.md)
 make reproduce-ants-expA006   # RF-DETR temporal tracking/smoothing vs A005 optimized baseline
+make prepare-camponotus-dataset  # Camponotus data prep workflow (splits, conversion, analysis, QC, viz)
 ```

@@ -1,0 +1,32 @@
+# Camponotus dataset workflow defaults (data-prep only; no training).
+
+paths:
+  raw_root: datasets/camponotus_raw
+  in_situ_root: datasets/camponotus_raw/in_situ
+  external_images_dir: datasets/camponotus_raw/external/images
+  processed_root: datasets/camponotus_processed
+  cvat_coco_annotations: datasets/camponotus_processed/annotations/cvat_coco/cvat_camponotus_all.json
+  split_manifest: datasets/camponotus_processed/splits.json
+  analysis_json: datasets/camponotus_processed/analysis.json
+  yolo_root: datasets/camponotus_yolo
+  coco_root: datasets/camponotus_coco
+
+classes:
+  - ant
+  - trophallaxis
+
+split:
+  train_ratio: 0.70
+  val_ratio: 0.15
+  test_ratio: 0.15
+  seed: 42
+
+frame_extraction:
+  fps: 2.0
+  image_ext: .jpg
+  seq_prefix: seq_
+
+bootstrap:
+  backend: auto
+  conf: 0.25
+  max_images:
