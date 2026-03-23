@@ -10,6 +10,9 @@ datasets/ants_yolo/
 
 # Training runs (Ultralytics)
 experiments/yolo/
+# RF-DETR / DETR runs (same policy as yolo/); keep folder README tracked
+experiments/detr/*
+!experiments/detr/README.md
 
 # EXP-000 / smoke metrics (regenerate via scripts/run_smoke_test.sh)
 experiments/results/*.json
@@ -17,9 +20,10 @@ experiments/results/*.json
 # EXP-000 figures (regenerate via scripts/run_visualization.sh)
 experiments/visualizations/
 
-# Local weights / exports (keep models/.gitkeep only)
+# Local weights / exports (keep models/.gitkeep + README only)
 models/*
 !models/.gitkeep
+!models/README.md
 
 # Python bytecode and caches (local / version-specific; do not commit)
 __pycache__/

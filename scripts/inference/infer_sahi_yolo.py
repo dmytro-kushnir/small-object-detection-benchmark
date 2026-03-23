@@ -12,16 +12,11 @@ from typing import Any
 
 from tqdm import tqdm
 
+_INF = Path(__file__).resolve().parent
+if str(_INF) not in sys.path:
+    sys.path.insert(0, str(_INF))
 
-def _load_gt_name_to_id(coco_gt_path: Path) -> dict[str, int]:
-    data = json.loads(coco_gt_path.read_text(encoding="utf-8"))
-    out: dict[str, int] = {}
-    for im in data.get("images", []):
-        fn = im.get("file_name")
-        iid = im.get("id")
-        if fn is not None and iid is not None:
-            out[Path(str(fn)).name] = int(iid)
-    return out
+from coco_pred_common import load_gt_filename_to_image_id, write_coco_predictions_json
 
 
 def _load_sahi_bench_module() -> Any:
@@ -152,7 +147,7 @@ def main() -> None:
         print("Install sahi (pip install -r requirements.txt).", file=sys.stderr)
         sys.exit(1)
 
-    name_to_id = _load_gt_name_to_id(gt_path)
+    name_to_id = load_gt_filename_to_image_id(gt_path)
     coco = json.loads(gt_path.read_text(encoding="utf-8"))
     images = coco.get("images", [])
 
@@ -197,8 +192,7 @@ def main() -> None:
             file=sys.stderr,
         )
 
-    out_path.parent.mkdir(parents=True, exist_ok=True)
-    out_path.write_text(json.dumps(detections, indent=2), encoding="utf-8")
+    write_coco_predictions_json(out_path, detections)
 
     meta = {
         "sahi_params": sahi_params,

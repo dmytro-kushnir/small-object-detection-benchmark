@@ -98,12 +98,14 @@ Responsibilities:
 
 ### RF-DETR
 
-* Same structure:
+* Same structure (stubs + contract documented in [`docs/architecture.md`](docs/architecture.md)):
 
-  ```
-  /scripts/train/train_detr.py
-  /scripts/inference/infer_detr.py
-  ```
+ ```
+ /scripts/train/train_detr.py
+ /scripts/inference/infer_detr.py
+ ```
+
+* Reuse **COCO list JSON** from `infer_detr.py` with **`evaluate.py`** — do not duplicate COCOeval in DETR code. Shared helpers: **`scripts/inference/coco_pred_common.py`**.
 
 ---
 

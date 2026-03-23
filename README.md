@@ -39,6 +39,16 @@ python scripts/train/train_yolo.py data=datasets/processed/my_run/dataset.yaml m
 
 Artifacts go under `experiments/yolo/<run_id>/` (weights, Ultralytics logs, plus `config.yaml`, `metrics.json`, `system_info.json`). Options live in [`configs/train/yolo.yaml`](configs/train/yolo.yaml).
 
+## RF-DETR (planned)
+
+Cross-model comparison uses the **same** COCO preds + [`scripts/evaluation/evaluate.py`](scripts/evaluation/evaluate.py). Stubs and layout:
+
+- [`docs/architecture.md`](docs/architecture.md) — extension contract, what stays unified vs model-specific
+- [`scripts/train/train_detr.py`](scripts/train/train_detr.py) / [`configs/train/rf_detr.yaml`](configs/train/rf_detr.yaml) — training placeholder → `experiments/detr/<run_id>/`
+- [`scripts/inference/infer_detr.py`](scripts/inference/infer_detr.py) — inference placeholder (same JSON contract as `infer_yolo.py`)
+- [`scripts/inference/coco_pred_common.py`](scripts/inference/coco_pred_common.py) — shared GT mapping + pred writer
+- [`models/README.md`](models/README.md) — local checkpoints / manifests (no large blobs in git)
+
 ## Other scripts
 
 - `python scripts/inference/infer_yolo.py --weights … --source … --coco-gt …/instances_val.json --out preds.json` — COCO **list** JSON for `pycocotools` (`image_id` aligned to GT)
