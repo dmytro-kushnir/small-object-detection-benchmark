@@ -281,7 +281,7 @@ Ultralytics writes **[`experiments/yolo/ants_expA000_full/results.png`](../exper
 ### Recommended next steps
 
 1. **EXP-A003 (ants):** **Done:** SAHI underperformed vanilla 768 on mAP and matched P/R ([`ants_expA003_vs_768.json`](../experiments/results/ants_expA003_vs_768.json)); **54-config ablation** ([`ants_expA003_sahi_ablation.json`](../experiments/results/ants_expA003_sahi_ablation.json)) found **no** mAP / mAP_medium win; best settings ≈ **768×768** tiles + higher conf (see below). Optional: Jetson re-bench, or NMS/post-hoc if optimizing matched FP only.
-2. **EXP-A004:** ANTS / domain method (to be defined) vs **`ants_expA002b_imgsz768`** or **`ants_expA000_full`** metrics depending on the hypothesis.
+2. **EXP-A004 (ants):** **Post-fix** run ([`ants_expA004_fixed_vs_baseline.json`](../experiments/results/ants_expA004_fixed_vs_baseline.json)) confirms **merge/parity correctness** but **no material mAP rescue** vs vanilla **768** or **SAHI** (tables below). Optional: full-val **`debug_ants_baseline_parity.py`** (no `--max-images`) if you want parity beyond the recorded 50-image check.
 3. **Optional:** Revisit **1024** with longer training, different aug, or explicit train/infer policy if the sharp mAP drop is a priority to explain.
 4. **Optional:** `stream=True` in [`infer_yolo.py`](../scripts/inference/infer_yolo.py) if val or deployment folders grow very large.
 
@@ -394,6 +394,67 @@ Source: **`ants_expA003_sahi_ablation.json`** / **`ants_expA003_sahi_ablation_su
 
 ---
 
+## EXP-A004 — ANTS v1 (region-aware refinement)
+
+**Hypothesis (informal):** In **dense** frames, a **second YOLO pass** on **padded ROIs** built from **stage-1** detections may improve **localization** (COCO AP) vs a **single** full-frame pass at 768, at the cost of **extra forward passes**.
+
+**Procedure:** [`scripts/run_ants_expA004.sh`](../scripts/run_ants_expA004.sh) — [`infer_ants_v1.py`](../scripts/inference/infer_ants_v1.py) + [`configs/expA004_ants_v1.yaml`](../configs/expA004_ants_v1.yaml); [`bench_ants_v1.py`](../scripts/evaluation/bench_ants_v1.py) times the **full** pipeline; [`evaluate.py`](../scripts/evaluation/evaluate.py) with **`--inference-benchmark-json`** → metrics JSON (default [`ants_expA004_ants_metrics.json`](../experiments/results/ants_expA004_ants_metrics.json); post-merge-fix bundle [`ants_expA004_fixed_metrics.json`](../experiments/results/ants_expA004_fixed_metrics.json)); [`compare_ants_expA004.py`](../scripts/evaluation/compare_ants_expA004.py) → compare JSON (default [`ants_expA004_vs_baseline.json`](../experiments/results/ants_expA004_vs_baseline.json); fixed [`ants_expA004_fixed_vs_baseline.json`](../experiments/results/ants_expA004_fixed_vs_baseline.json)); viz `experiments/visualizations/ants_expA004/`; summary [`ants_expA004_summary.md`](../experiments/results/ants_expA004_summary.md) / [`ants_expA004_fixed_summary.md`](../experiments/results/ants_expA004_fixed_summary.md).
+
+### Quantitative comparison (post–merge-fix run, `git_rev` in [`ants_expA004_fixed_metrics.json`](../experiments/results/ants_expA004_fixed_metrics.json))
+
+Source: [`ants_expA004_fixed_vs_baseline.json`](../experiments/results/ants_expA004_fixed_vs_baseline.json) (`EXP-A004-ANTS-v1-fixed`, RTX 4070, `git_rev` **8e3356a**). The earlier pre-fix ANTS row (~**0.535** mAP@[.5:.95]) differed by only **~0.001** — the large gap vs **768** is **not** explained by the merge bugs alone.
+
+**ANTS v1 vs vanilla imgsz=768** (**Δ = ANTS − 768**).
+
+| Metric | Vanilla 768 | ANTS v1 (fixed) | Δ (ANTS − 768) |
+|--------|------------:|----------------:|---------------:|
+| mAP@[.50:.95] | 0.645 | 0.536 | **−0.109** |
+| mAP@.50 | 0.922 | 0.767 | **−0.155** |
+| mAP_medium | 0.645 | 0.539 | **−0.106** |
+| Precision (matched, IoU≥0.5, score≥0.25) | 0.914 | 0.773 | **−0.141** |
+| Recall (matched) | 0.946 | 0.794 | **−0.153** |
+| TP / FP / FN (matched) | 24 183 / 2 277 / 1 367 | 20 286 / 5 957 / 5 264 | fewer TP, **+3 680 FP**, **+3 897 FN** |
+| FPS (`bench_ants_v1` vs vanilla `predict`) | ~60.6 | ~28.9 | **−31.7** |
+| Latency mean (ms) | ~16.5 | ~34.6 | **+18.1** |
+
+**ANTS v1 vs SAHI** (same compare JSON; **Δ = ANTS − SAHI**).
+
+| Metric | SAHI (EXP-A003) | ANTS v1 (fixed) | Δ (ANTS − SAHI) |
+|--------|----------------:|----------------:|----------------:|
+| mAP@[.50:.95] | 0.601 | 0.536 | **−0.064** |
+| mAP_medium | 0.602 | 0.539 | **−0.063** |
+| Precision (matched) | 0.836 | 0.773 | −0.063 |
+| Recall (matched) | 0.930 | 0.794 | **−0.136** |
+| TP / FP / FN | 23 749 / 4 651 / 1 801 | 20 286 / 5 957 / 5 264 | fewer TP, more FP/FN vs SAHI |
+| FPS | ~41.7 | ~28.9 | **−12.8** |
+| Latency mean (ms) | ~24.0 | ~34.6 | **+10.6** |
+
+**ROI usage (`rois.json` stats):** mean **~0.41** ROIs per image, mean ROI area **~3.1%** of image area — dense-grid triggers are **sparse** on this val set with the default config.
+
+**Provenance:** `evaluation_note` in **`ants_expA004_fixed_vs_baseline.json`** — throughput paths differ (full ANTS vs single `predict@768` vs SAHI slices).
+
+**Infer artifact (this run):** stage-1 **`predictions_stage1_val.json`** ≈ **26 460** boxes → merged val preds **26 243** detections — net **small** suppression vs stage-1, while matched **FP** vs 768 stays **~+3.7k**, so the dominant issue is **refine / merge behavior on real ROIs** (and possibly **duplicate or shifted boxes**), not a trivial “double NMS wiped everything” artifact.
+
+### Interpretation (this run)
+
+- **Correctness:** **`debug_ants_merge_roundtrip.py`** (1073 imgs) and **`debug_ants_baseline_parity.py`** (50 imgs, dense ROIs off) both reported **0** mismatches — stage-1–only / merge paths align with the intended baselines. **`make reproduce-ants-expA004-fixed`** still yields **~0.536** mAP@[.5:.95] vs **~0.645** for vanilla **768**, i.e. **merge fixes did not materially change** the headline accuracy gap (pre-fix **~0.535** was already close).
+- **Accuracy:** ANTS v1 remains **well below** vanilla **768** on **mAP**, **mAP_medium**, and **matched P/R**. The matched breakdown (**TP −3.9k**, **FP +3.7k**, **FN +3.9k** vs 768) still points to **many extra unmatched predictions** and **many missed GT matches**. Versus **SAHI**, ANTS is **lower on mAP** and **much lower on recall**, and **slower** on this bench.
+- **Speed:** Full-pipeline FPS **~29** vs **~61** (768) and **~42** (SAHI) — extra forwards without a COCO AP benefit on this config.
+- **Dense ROIs:** With **~0.41** ROIs/image on average (default config), refinement is **sparse**; the global metric hit implies **when refinement runs**, it often **hurts** localization or **adds** errors — inspect **`ants_comparisons/`** and ROI viz for concrete failure modes.
+- **Working conclusion:** **Keep vanilla 768** for this ants setup unless a **strong config / method** change reverses the gap. ANTS v1 stays a useful **harness** for experiments (tune `count_threshold`, `merge_strategy`, conf thresholds, `refine_imgsz`, ROI policy).
+
+### Parity and merge fixes (implementation)
+
+The regression above was traced to **post-merge NMS on the full stage-1 set** (Ultralytics already NMS’d) and to **`nms_replace_in_roi` dropping in-ROI stage-1 boxes when the refine stage returned no boxes**. Fixes in [`merge.py`](../scripts/inference/ants_v1/merge.py) / [`pipeline.py`](../scripts/inference/ants_v1/pipeline.py): empty `refined` → return stage-1 unchanged; optional `enable_post_merge_nms`; `batched_nms` with `nms_class_agnostic`; explicit `conf` on `model.predict`.
+
+**Post-fix validation (recorded):**
+
+* **Merge round-trip** — [`debug_ants_merge_roundtrip.py`](../scripts/inference/debug_ants_merge_roundtrip.py) on [`ants_expA002b_imgsz768/predictions_val.json`](../experiments/yolo/ants_expA002b_imgsz768/predictions_val.json) + val GT: **1073** images, **mismatches = 0**.
+* **ANTS vs baseline parity** — [`debug_ants_baseline_parity.py`](../scripts/inference/debug_ants_baseline_parity.py): **50** images (`--max-images 50`), dense ROIs off, **mismatches = 0** (optional: rerun without `--max-images` for full val).
+* **Fixed metrics bundle** — [`ants_expA004_fixed_metrics.json`](../experiments/results/ants_expA004_fixed_metrics.json) + [`ants_expA004_fixed_vs_baseline.json`](../experiments/results/ants_expA004_fixed_vs_baseline.json) from `make reproduce-ants-expA004-fixed` — canonical numbers for the **post–merge-fix** pipeline (tables above).
+
+---
+
 ## Changelog
 
 | Date | Experiment(s) | Summary |
@@ -415,5 +476,9 @@ Source: **`ants_expA003_sahi_ablation.json`** / **`ants_expA003_sahi_ablation_su
 | 2026-03-22 | EXP-A003 (numbers) | SAHI vs vanilla 768: mAP@[.5:.95] **−0.044**, mAP_medium **−0.043**, matched P **−0.078**, R **−0.017**; TP 24183→23749, FP 2277→4651, FN 1367→1801; FPS ~60.6→~41.7, latency ~16.5→~24 ms — **prefer vanilla 768** for this setup. |
 | 2026-03-22 | EXP-A003 SAHI ablation (documented) | `run_ants_expA003_sahi_ablation.py`, `evaluate.py --skip-inference-benchmark`, `ants_expA003_sahi_ablation.json` + `_summary.md`, `make reproduce-ants-expA003-ablation`. |
 | 2026-03-22 | EXP-A003 SAHI ablation (numbers) | Full grid 54: **no** SAHI config beats vanilla mAP@[.5:.95] or mAP_medium; best grid ~**0.614 / 0.616** (768 slice, ov 0.15, conf 0.35, std_pred true) vs vanilla **0.645**; **lowest FP 1897** (−380 vs 2277) at 768 / ov 0.25 / conf 0.45 — precision lever only, not mAP. |
+| 2026-03-21 | EXP-A004 (documented) | ANTS v1: `run_ants_expA004.sh`, `infer_ants_v1.py`, `ants_v1/` package, `bench_ants_v1.py`, `evaluate.py --inference-benchmark-json`, `compare_ants_expA004.py`, `write_ants_expA004_summary.py`, viz comparisons + `viz_ants_rois.py`, `make reproduce-ants-expA004`. |
+| 2026-03-21 | EXP-A004 (numbers, RTX 4070, pre-fix compare JSON) | vs 768: mAP@[.5:.95] **0.645→0.535** (Δ **−0.110**); superseded by **fixed** bundle below (~**0.536** mAP, Δ **−0.109**). |
+| 2026-03-21 | EXP-A004 (parity / merge fix) | Empty-refined passthrough; no extra NMS on stage-1-only; `predict(conf)`; `enable_dense_rois` / `pipeline_mode` / debug scripts; `make reproduce-ants-expA004-fixed`; `run_ants_expA004_staged_eval.sh`. |
+| 2026-03-21 | EXP-A004 (post-fix checks + fixed metrics) | Round-trip **1073**/0; parity **50**/0; `ants_expA004_fixed_*`, `git_rev` **8e3356a**. vs 768: mAP@[.5:.95] **0.645→0.536** (Δ **−0.109**), mAP_medium **−0.106**, matched P **−0.141**, R **−0.153**; TP 24183→20286, FP 2277→5957, FN 1367→5264; FPS ~60.6→~28.9, latency ~16.5→~34.6 ms. vs SAHI: mAP **−0.064**, R **−0.136**; FPS ~41.7→~28.9 — **no** accuracy rescue vs 768/SAHI. |
 
 *(Append new rows when you re-run and refresh JSONs.)*

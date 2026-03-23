@@ -1,0 +1,49 @@
+# EXP-A004: ANTS v1 — region-aware refinement (inference-only). Plain YAML; no Hydra.
+
+# Master switches
+enable_dense_rois: true
+# When false, skip second-stage crops (parity with single-pass stage-1 export).
+enable_post_merge_nms: true
+# When false, merge never applies extra NMS (debug / parity). When refined is empty,
+# merge always returns stage-1 unchanged regardless of this flag.
+
+# pipeline_mode: merged | stage1_only | union_refined
+# - merged: full ANTS (default)
+# - stage1_only: no ROI / refine; output = stage-1 only (fast baseline parity)
+# - union_refined: concat stage-1 + refined without NMS (diagnostic)
+pipeline_mode: merged
+
+# Stage-1 full-frame inference (same as EXP-A002b best)
+base_imgsz: 768
+conf_threshold_stage1: 0.25
+
+# Ultralytics predict iou (optional; omit for YOLO default)
+# predict_iou: 0.7
+
+# Stage-2 refinement on crops
+refine_imgsz: 896
+conf_threshold_refine: 0.25
+# Drop refined boxes below this after predict (additional to conf_threshold_refine)
+refine_min_score: 0.0
+
+# Dense region detection: "grid" (default) or "dbscan" (requires scikit-learn)
+roi_mode: grid
+grid_rows: 6
+grid_cols: 6
+grid_count_threshold: 4
+
+# DBSCAN (only if roi_mode: dbscan)
+dbscan_eps_px: 48.0
+dbscan_min_samples: 6
+
+# Expand each ROI before crop (fraction of max(roi_w, roi_h))
+roi_pad_frac: 0.15
+
+# Merge stage-1 + refined: "nms" | "nms_replace_in_roi" | "union"
+merge_strategy: nms_replace_in_roi
+nms_iou: 0.5
+# batched_nms per class; false = separate NMS per category_id
+nms_class_agnostic: true
+
+# Reproducibility (DBSCAN / subsampling if added later)
+seed: 42

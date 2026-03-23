@@ -229,8 +229,6 @@ export ANTS_DATASET_ROOT="/path/to/Ant_dataset"   # if not already prepared
 ./scripts/run_ants_expA002b.sh
 ```
 
-**Next (not scripted in repo):** EXP-A004 ANTS.
-
 ---
 
 ### EXP-A003: Ants SAHI vs vanilla imgsz=768 (no retrain)
@@ -260,6 +258,41 @@ chmod +x scripts/run_ants_expA003_sahi_ablation.sh   # once
 # smoke: python3 scripts/evaluation/run_ants_expA003_sahi_ablation.py --max-runs 2
 # optional early exit: --early-stop-consecutive 12
 ```
+
+---
+
+### EXP-A004: ANTS v1 — dense-region refinement (no retrain)
+
+* **Same** val COCO GT and images as EXP-A002b / A003; **no training** — weights from **`experiments/yolo/ants_expA002b_imgsz768`**.
+* **Pipeline:** stage-1 full-frame YOLO @ `base_imgsz` → dense ROIs (grid default; optional DBSCAN needs commented optional dep in `requirements.txt`) → per-ROI refine @ `refine_imgsz` → merge/NMS → COCO preds JSON.
+* **Config:** [`configs/expA004_ants_v1.yaml`](../configs/expA004_ants_v1.yaml). **Orchestrator:** [`scripts/run_ants_expA004.sh`](../scripts/run_ants_expA004.sh) (`make reproduce-ants-expA004`).
+* **Outputs (under `experiments/yolo/ants_expA004/`):** `predictions_val.json`, `predictions_stage1_val.json`, `rois.json`, `inference_benchmark.json` (from [`bench_ants_v1.py`](../scripts/evaluation/bench_ants_v1.py)), copied `config.yaml`, `system_info.json`.
+* **Metrics:** `experiments/results/ants_expA004_ants_metrics.json` — `evaluate.py` uses **`--inference-benchmark-json`** so FPS/latency reflect the **full ANTS** path, not a single vanilla `predict`.
+* **Compare:** `experiments/results/ants_expA004_vs_baseline.json` ([`compare_ants_expA004.py`](../scripts/evaluation/compare_ants_expA004.py)) — deltas vs **`ants_expA002b_imgsz768_metrics.json`** and vs **`ants_expA003_sahi_metrics.json`** when that file exists.
+* **Viz:** `experiments/visualizations/ants_expA004/` — `baseline_comparisons/` (if `ants_expA002b_imgsz768/predictions_val.json` exists), `ants_comparisons/`, `rois_debug/` ([`viz_ants_expA004_comparisons.py`](../scripts/visualization/viz_ants_expA004_comparisons.py), [`viz_ants_rois.py`](../scripts/visualization/viz_ants_rois.py)).
+* **Report:** `experiments/results/ants_expA004_summary.md` from [`write_ants_expA004_summary.py`](../scripts/evaluation/write_ants_expA004_summary.py).
+
+**Prerequisite:** prepared `datasets/ants_yolo/`; EXP-A002b **768** weights + `ants_expA002b_imgsz768_metrics.json`. Optional: EXP-A003 SAHI metrics for the three-way compare.
+
+```bash
+chmod +x scripts/run_ants_expA004.sh   # once
+./scripts/run_ants_expA002b.sh       # if 768 bundle missing
+# optional: ./scripts/run_ants_expA003.sh  # for SAHI path in compare JSON
+./scripts/run_ants_expA004.sh
+```
+
+**Smoke / subset:** `EXP_A004_MAX_IMAGES=5 ./scripts/run_ants_expA004.sh` (caps infer + bench only; evaluation still runs on the subset preds).
+
+**Config (ANTS v1 YAML):** `enable_dense_rois` (skip ROI/refine when false); `enable_post_merge_nms` (when false, no extra torchvision NMS after merge); `pipeline_mode`: `merged` | `stage1_only` | `union_refined`; optional `predict_iou`; `refine_min_score`; `nms_iou`; `nms_class_agnostic` (`batched_nms` per class when false).
+
+**Orchestrator env:** `EXP_A004_METRICS_OUT` (default `experiments/results/ants_expA004_ants_metrics.json`), `EXP_A004_COMPARE_OUT`, `EXP_A004_EXPERIMENT_ID`. **Fixed run bundle:** `make reproduce-ants-expA004-fixed` → `ants_expA004_fixed_metrics.json` + `ants_expA004_fixed_vs_baseline.json`.
+
+**Debug / parity:**
+
+- [`scripts/inference/debug_ants_baseline_parity.py`](../scripts/inference/debug_ants_baseline_parity.py) — ANTS with dense ROIs off vs `experiments/yolo/ants_expA002b_imgsz768/predictions_val.json` (per-image box lists; `--tol` for float slack). Requires **PyTorch + Ultralytics** (activate the same venv you use for YOLO train/infer).
+- [`scripts/inference/debug_ants_merge_roundtrip.py`](../scripts/inference/debug_ants_merge_roundtrip.py) — COCO preds through merge with empty refined (should match pre-merge list modulo clamping). **Checked:** full val **1073** images on baseline `predictions_val.json` → **0** mismatches (no Ultralytics needed — COCO + merge path only).
+- [`infer_ants_v1.py`](../scripts/inference/infer_ants_v1.py): `--parity-baseline`, `--pipeline-mode`, `--dump-refine-viz DIR`, `--max-refine-viz-rois` (ROI crops + green boxes in **crop** coordinates under e.g. `experiments/visualizations/ants_expA004/debug_refine/`).
+- [`scripts/run_ants_expA004_staged_eval.sh`](../scripts/run_ants_expA004_staged_eval.sh) — four-stage val metrics (4× infer + `evaluate.py --skip-inference-benchmark`); scratch preds under `experiments/yolo/ants_expA004_staged_scratch/`.
 
 ---
 
@@ -293,6 +326,7 @@ Each experiment must report:
 * For **EXP-003**, FPS/latency are measured over **SAHI sliced** inference per full image when evaluation is run with `--sahi-config` (see [`scripts/evaluation/sahi_bench.py`](../scripts/evaluation/sahi_bench.py))
 * For **EXP-A002b** (ants), treat **mAP_medium** as the primary COCO bucket when interpreting the sweep (mAP_small is often −1 on this GT); aggregated JSON uses `latency_ms` (= `evaluate.py` mean latency).
 * For **EXP-A003** (ants SAHI), primary readout is **`ants_expA003_vs_768.json`** (Δ vs vanilla 768); see `evaluation_note` for inference-path differences when comparing FPS/latency.
+* For **EXP-A004** (ANTS v1), primary readout is **`ants_expA004_vs_baseline.json`** (or **`ants_expA004_fixed_vs_baseline.json`** after `make reproduce-ants-expA004-fixed`); throughput in the metrics JSON comes from **`bench_ants_v1.py`** via **`evaluate.py --inference-benchmark-json`** (full two-stage path).
 
 ---
 

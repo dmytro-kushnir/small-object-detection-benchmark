@@ -24,3 +24,6 @@ ultralytics>=8.4.0
 
 # Sliced inference (EXP-003 SAHI + Ultralytics)
 sahi>=0.11.14
+
+# Optional: EXP-A004 ANTS `roi_mode: dbscan` in configs/expA004_ants_v1.yaml
+# scikit-learn>=1.3.0

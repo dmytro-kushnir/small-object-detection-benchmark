@@ -260,6 +260,16 @@ def main() -> None:
         action="store_true",
         help="Skip Ultralytics FPS/latency benchmark (e.g. SAHI ablation grids).",
     )
+    p.add_argument(
+        "--inference-benchmark-json",
+        type=str,
+        default=None,
+        help=(
+            "If set, load this JSON file (object) and use it as inference_benchmark "
+            "instead of timing vanilla Ultralytics predict (e.g. ANTS v1 from bench_ants_v1.py). "
+            "Overrides --skip-inference-benchmark when both are set."
+        ),
+    )
     args = p.parse_args()
 
     try:
@@ -293,6 +303,13 @@ def main() -> None:
         sahi_cfg_path = Path(args.sahi_config).expanduser().resolve()
         if not sahi_cfg_path.is_file():
             print(f"SAHI config not found: {sahi_cfg_path}", file=sys.stderr)
+            sys.exit(1)
+
+    bench_json_path: Path | None = None
+    if args.inference_benchmark_json:
+        bench_json_path = Path(args.inference_benchmark_json).expanduser().resolve()
+        if not bench_json_path.is_file():
+            print(f"Inference benchmark JSON not found: {bench_json_path}", file=sys.stderr)
             sys.exit(1)
 
     coco_gt = COCO(str(gt_path))
@@ -360,8 +377,17 @@ def main() -> None:
         if cand.is_file():
             paths.append(cand)
 
-    if args.skip_inference_benchmark:
-        perf: dict[str, Any] = {"skipped": True, "note": "--skip-inference-benchmark"}
+    if bench_json_path is not None:
+        raw_bench = json.loads(bench_json_path.read_text(encoding="utf-8"))
+        if not isinstance(raw_bench, dict):
+            print(
+                f"--inference-benchmark-json must contain a JSON object, got {type(raw_bench)}",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+        perf = {**raw_bench, "loaded_from": str(bench_json_path)}
+    elif args.skip_inference_benchmark:
+        perf = {"skipped": True, "note": "--skip-inference-benchmark"}
         if args.imgsz is not None:
             perf["imgsz"] = int(args.imgsz)
     else:
@@ -393,6 +419,8 @@ def main() -> None:
         payload["paths"]["prepare_manifest"] = str(Path(args.prepare_manifest).resolve())
     if sahi_cfg_path is not None:
         payload["paths"]["sahi_config"] = str(sahi_cfg_path)
+    if bench_json_path is not None:
+        payload["paths"]["inference_benchmark_json"] = str(bench_json_path)
     if not dets:
         payload["coco_eval_note"] = "Skipped COCOeval (empty predictions); metrics zeroed."
 

@@ -105,6 +105,12 @@ export ANTS_DATASET_ROOT="/path/to/Ant_dataset"
 # ./scripts/run_ants_expA002b.sh
 # SAHI val vs vanilla imgsz=768 (needs ants_expA002b_imgsz768 artifacts):
 # ./scripts/run_ants_expA003.sh
+# ANTS v1 two-stage refine (needs same 768 bundle; optional A003 metrics for compare):
+# Activate venv with torch + ultralytics before infer/bench/eval.
+# ./scripts/run_ants_expA004.sh
+# smoke: EXP_A004_MAX_IMAGES=5 ./scripts/run_ants_expA004.sh
+# merge sanity (COCO + merge only): debug_ants_merge_roundtrip.py --pred .../predictions_val.json --coco-gt .../instances_val.json
+# parity vs baseline preds: debug_ants_baseline_parity.py --weights .../best.pt --source .../val ...
 ```
 
 ## Make wrappers (optional)
@@ -121,4 +127,6 @@ make reproduce-ants-full      # ./scripts/run_ants_expA000_full.sh (after prepar
 make reproduce-ants-expA002b  # ./scripts/run_ants_expA002b.sh (after prepare + optional full for 640 reuse)
 make reproduce-ants-expA003   # ./scripts/run_ants_expA003.sh (after prepare + EXP-A002b 768 weights/metrics)
 make reproduce-ants-expA003-ablation  # SAHI grid vs vanilla 768 baseline (long run; see docs/experiments.md)
+make reproduce-ants-expA004   # ANTS v1 infer+bench+eval+compare+viz (after prepare + EXP-A002b 768)
+make reproduce-ants-expA004-fixed  # same, but metrics/compare filenames *fixed* (see docs/experiments.md)
 ```
