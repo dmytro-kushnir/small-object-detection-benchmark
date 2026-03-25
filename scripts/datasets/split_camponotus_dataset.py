@@ -5,23 +5,64 @@ from __future__ import annotations
 
 import argparse
 from pathlib import Path
-from typing import Any
+from typing import Any, Optional
 
 from camponotus_common import seeded_shuffle, write_json
+
+
+def _resolve_repo_root(explicit: Optional[str]) -> Path:
+    """Repository root for portable paths in the split manifest (AGENTS.md: no machine-specific paths)."""
+    if explicit:
+        r = Path(explicit).expanduser().resolve()
+        if not r.is_dir():
+            raise FileNotFoundError(f"--repo-root is not a directory: {r}")
+        return r
+    markers = (".git", "AGENTS.md")
+    candidates = (Path.cwd().resolve(), Path(__file__).resolve().parents[2])
+    for start in candidates:
+        for p in [start, *start.parents]:
+            if (p / ".git").is_dir() or (p / "AGENTS.md").is_file():
+                return p
+    raise FileNotFoundError(
+        "Could not find repository root (looked for .git or AGENTS.md from cwd and script location). "
+        "Run from the repo root or pass --repo-root."
+    )
+
+
+def _path_relative_to_repo(path: Path, repo_root: Path) -> str:
+    resolved = path.resolve()
+    root = repo_root.resolve()
+    try:
+        return resolved.relative_to(root).as_posix()
+    except ValueError as e:
+        raise ValueError(
+            f"Path {resolved} is not under repository root {root}. "
+            "Use --repo-root to point at the repo that contains the dataset."
+        ) from e
 
 
 def _list_sequence_dirs(in_situ_root: Path) -> list[Path]:
     return sorted(p for p in in_situ_root.iterdir() if p.is_dir() and p.name.startswith("seq_"))
 
 
-def _list_external_images(external_images_dir: Path) -> list[str]:
+def _list_external_images(external_images_dir: Path, repo_root: Path) -> list[str]:
     exts = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
-    return sorted(str(p.resolve()) for p in external_images_dir.iterdir() if p.is_file() and p.suffix.lower() in exts)
+    paths = (
+        p
+        for p in external_images_dir.iterdir()
+        if p.is_file() and p.suffix.lower() in exts
+    )
+    return sorted(_path_relative_to_repo(p, repo_root) for p in paths)
 
 
-def _seq_images(seq_dir: Path) -> list[str]:
+def _seq_images(seq_dir: Path, repo_root: Path) -> list[str]:
     exts = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
-    return sorted(str(p.resolve()) for p in seq_dir.iterdir() if p.is_file() and p.suffix.lower() in exts)
+    paths = (
+        p
+        for p in seq_dir.iterdir()
+        if p.is_file() and p.suffix.lower() in exts
+    )
+    return sorted(_path_relative_to_repo(p, repo_root) for p in paths)
 
 
 def _is_trophallaxis_sequence(name: str) -> bool:
@@ -91,6 +132,15 @@ def main() -> None:
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--out", type=str, default="datasets/camponotus_processed/splits.json")
     p.add_argument(
+        "--repo-root",
+        type=str,
+        default=None,
+        help=(
+            "Repository root: image paths in the manifest are stored relative to this directory "
+            "(posix). Default: auto-detect via .git or AGENTS.md from cwd or script location."
+        ),
+    )
+    p.add_argument(
         "--stratify-trophallaxis",
         action=argparse.BooleanOptionalAction,
         default=True,
@@ -104,8 +154,17 @@ def main() -> None:
     if abs((args.train_ratio + args.val_ratio + args.test_ratio) - 1.0) > 1e-6:
         raise ValueError("train_ratio + val_ratio + test_ratio must sum to 1.0")
 
-    in_situ_root = Path(args.in_situ_root).expanduser().resolve()
-    external_dir = Path(args.external_images_dir).expanduser().resolve()
+    repo_root = _resolve_repo_root(args.repo_root)
+    in_situ_root = Path(args.in_situ_root).expanduser()
+    if not in_situ_root.is_absolute():
+        in_situ_root = (repo_root / in_situ_root).resolve()
+    else:
+        in_situ_root = in_situ_root.resolve()
+    external_dir = Path(args.external_images_dir).expanduser()
+    if not external_dir.is_absolute():
+        external_dir = (repo_root / external_dir).resolve()
+    else:
+        external_dir = external_dir.resolve()
     if not in_situ_root.is_dir():
         raise FileNotFoundError(f"in-situ root not found: {in_situ_root}")
     if not external_dir.is_dir():
@@ -129,14 +188,15 @@ def main() -> None:
         )
 
     seq_map = {p.name: p for p in seq_dirs}
-    train_images = [img for s in train_seq for img in _seq_images(seq_map[s])]
-    val_images = [img for s in val_seq for img in _seq_images(seq_map[s])]
-    test_images = [img for s in test_seq for img in _seq_images(seq_map[s])]
-    ext_images = _list_external_images(external_dir)
+    train_images = [img for s in train_seq for img in _seq_images(seq_map[s], repo_root)]
+    val_images = [img for s in val_seq for img in _seq_images(seq_map[s], repo_root)]
+    test_images = [img for s in test_seq for img in _seq_images(seq_map[s], repo_root)]
+    ext_images = _list_external_images(external_dir, repo_root)
     train_images.extend(ext_images)  # external defaults to train only
 
     payload: dict[str, Any] = {
-        "schema_version": 1,
+        "schema_version": 2,
+        "path_style": "relative_to_repo_root",
         "policy": {
             "split_by_sequence": True,
             "val_test_only_in_situ": True,
@@ -170,7 +230,11 @@ def main() -> None:
             "images_external_train": len(ext_images),
         },
     }
-    out_path = Path(args.out).expanduser().resolve()
+    out_path = Path(args.out).expanduser()
+    if not out_path.is_absolute():
+        out_path = (repo_root / out_path).resolve()
+    else:
+        out_path = out_path.resolve()
     write_json(out_path, payload)
     print(f"Wrote split manifest: {out_path}")
     print(
