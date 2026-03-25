@@ -1,14 +1,43 @@
 {
-  "splits": {},
-  "class_totals": {
-    "0": 0,
-    "1": 0
+  "images_by_split": {
+    "train": 88,
+    "val": 19,
+    "test": 19
   },
-  "objects_total": 0,
-  "images_total": 0,
+  "objects_by_split": {
+    "train": 1140,
+    "val": 249,
+    "test": 248
+  },
+  "class_counts_by_split": {
+    "train": {
+      "0": 900,
+      "1": 240
+    },
+    "val": {
+      "0": 205,
+      "1": 44
+    },
+    "test": {
+      "0": 198,
+      "1": 50
+    }
+  },
+  "source_distribution": {
+    "in_situ": 126,
+    "external": 0
+  },
   "class_balance": {
-    "ant_fraction": 0.0,
-    "trophallaxis_fraction": 0.0
+    "ant_fraction": 0.7959682345754429,
+    "trophallaxis_fraction": 0.20403176542455712
   },
-  "source_distribution": {}
+  "split_source": "auto",
+  "auto_split": {
+    "seed": 42,
+    "train_ratio": 0.7,
+    "val_ratio": 0.15,
+    "test_ratio": 0.15000000000000005,
+    "coco_images_total": 126,
+    "resolved_under_raw_root": 126
+  }
 }

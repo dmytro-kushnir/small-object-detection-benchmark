@@ -1,5 +1,9 @@
 #!/usr/bin/env python3
-"""COCO detection evaluation: pycocotools COCOeval + P/R @ IoU=0.5 + FPS/latency (Ultralytics)."""
+"""COCO detection evaluation: pycocotools COCOeval + P/R @ IoU=0.5 + FPS/latency (Ultralytics).
+
+Extra GT annotation fields (e.g. ``track_id`` on Camponotus exports) are ignored; only bbox
+detection metrics are computed.
+"""
 
 from __future__ import annotations
 

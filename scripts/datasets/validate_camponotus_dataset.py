@@ -4,9 +4,56 @@
 from __future__ import annotations
 
 import argparse
+from collections import defaultdict
 from pathlib import Path
+from typing import Any
 
 from camponotus_common import read_json
+
+
+def _bbox_tuple(bbox: list[float]) -> tuple[float, ...]:
+    return tuple(round(float(x), 6) for x in bbox)
+
+
+def _track_id_consistency_issues(
+    coco: dict[str, Any], split: str, strict: bool
+) -> tuple[list[str], list[str]]:
+    """Return (warnings, errors). Same (image_id, track_id) with multiple boxes: warn if bboxes differ; strict => error if count > 1."""
+    warnings: list[str] = []
+    errors: list[str] = []
+    by_pair: dict[tuple[int, int], list[tuple[float, ...]]] = defaultdict(list)
+    for a in coco.get("annotations", []):
+        if "track_id" not in a:
+            continue
+        try:
+            tid = int(a["track_id"])
+            iid = int(a["image_id"])
+        except (TypeError, ValueError):
+            continue
+        bbox = a.get("bbox")
+        if not isinstance(bbox, list) or len(bbox) != 4:
+            continue
+        try:
+            bt = _bbox_tuple([float(x) for x in bbox])
+        except (TypeError, ValueError):
+            continue
+        by_pair[(iid, tid)].append(bt)
+
+    for (iid, tid), boxes in by_pair.items():
+        if len(boxes) < 2:
+            continue
+        uniq = set(boxes)
+        if strict:
+            errors.append(
+                f"{split}: image_id={iid} track_id={tid} appears {len(boxes)} times "
+                f"({len(uniq)} distinct bboxes)"
+            )
+        elif len(uniq) > 1:
+            warnings.append(
+                f"{split}: image_id={iid} track_id={tid} has {len(boxes)} annotations "
+                f"with differing bboxes (possible labeling mistake)"
+            )
+    return warnings, errors
 
 
 def _validate_yolo_labels(labels_dir: Path) -> list[str]:
@@ -38,6 +85,17 @@ def main() -> None:
     p.add_argument("--yolo-root", type=str, default="datasets/camponotus_yolo")
     p.add_argument("--coco-root", type=str, default="datasets/camponotus_coco/annotations")
     p.add_argument("--analysis-json", type=str, default="datasets/camponotus_processed/analysis.json")
+    p.add_argument(
+        "--warn-track-id-duplicates",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Warn when the same (image_id, track_id) has multiple annotations with different bboxes.",
+    )
+    p.add_argument(
+        "--strict-track-id",
+        action="store_true",
+        help="Fail if any (image_id, track_id) appears more than once (regardless of bbox).",
+    )
     args = p.parse_args()
 
     yolo_root = Path(args.yolo_root).expanduser().resolve()
@@ -68,6 +126,10 @@ def main() -> None:
         coco = read_json(coco_path)
         if len(coco.get("images", [])) == 0:
             errors.append(f"COCO split has no images: {coco_path}")
+        if args.warn_track_id_duplicates or args.strict_track_id:
+            tw, te = _track_id_consistency_issues(coco, split, strict=bool(args.strict_track_id))
+            warnings.extend(tw)
+            errors.extend(te)
 
     if analysis_json.is_file():
         analysis = read_json(analysis_json)

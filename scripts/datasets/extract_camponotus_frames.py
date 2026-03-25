@@ -124,6 +124,47 @@ def _probe_rotation_deg(video_path: Path) -> int:
     return 0
 
 
+def _max_frame_index_from_existing(
+    existing: list[Path],
+    *,
+    seq_dir_name: str,
+    unique_frame_basenames: bool,
+) -> int:
+    """Largest numeric frame index already on disk (0 if none / unparsable)."""
+    if not existing:
+        return 0
+    paths = sorted(existing)
+    if not unique_frame_basenames:
+        try:
+            return int(paths[-1].stem)
+        except ValueError:
+            return len(paths)
+    prefix = f"{seq_dir_name}_"
+    max_i = 0
+    for p in paths:
+        stem = p.stem
+        if not stem.startswith(prefix):
+            continue
+        tail = stem[len(prefix) :]
+        try:
+            max_i = max(max_i, int(tail, 10))
+        except ValueError:
+            continue
+    return max_i
+
+
+def _frame_output_name(
+    seq_dir_name: str,
+    frame_idx: int,
+    image_ext: str,
+    *,
+    unique_frame_basenames: bool,
+) -> str:
+    if unique_frame_basenames:
+        return f"{seq_dir_name}_{frame_idx:06d}{image_ext}"
+    return f"{frame_idx:06d}{image_ext}"
+
+
 def _apply_rotation(frame: Any, rotation_deg: int) -> Any:
     """Rotate frame clockwise in 90-degree steps."""
     rot = rotation_deg % 360
@@ -145,6 +186,8 @@ def _extract_one(
     image_ext: str,
     apply_rotation: bool,
     clean_seq_dir: bool,
+    *,
+    unique_frame_basenames: bool,
 ) -> VideoSummary:
     cap = cv2.VideoCapture(str(video_path))
     if not cap.isOpened():
@@ -165,6 +208,7 @@ def _extract_one(
     rotation_deg = _probe_rotation_deg(video_path) if apply_rotation else 0
 
     out_seq_dir.mkdir(parents=True, exist_ok=True)
+    seq_dir_name = out_seq_dir.name
     frame_idx = 0
     next_src_idx = start_frame
     written = 0
@@ -178,10 +222,11 @@ def _extract_one(
 
     # Optional append mode for incremental extraction.
     if existing and not clean_seq_dir:
-        try:
-            frame_idx = int(existing[-1].stem)
-        except ValueError:
-            frame_idx = len(existing)
+        frame_idx = _max_frame_index_from_existing(
+            existing,
+            seq_dir_name=seq_dir_name,
+            unique_frame_basenames=unique_frame_basenames,
+        )
 
     cap.set(cv2.CAP_PROP_POS_FRAMES, start_frame)
     cur_src = start_frame
@@ -191,7 +236,12 @@ def _extract_one(
             break
         if cur_src >= next_src_idx:
             frame_idx += 1
-            out_name = f"{frame_idx:06d}{image_ext}"
+            out_name = _frame_output_name(
+                seq_dir_name,
+                frame_idx,
+                image_ext,
+                unique_frame_basenames=unique_frame_basenames,
+            )
             out_path = out_seq_dir / out_name
             frame = _apply_rotation(frame, rotation_deg)
             if not cv2.imwrite(str(out_path), frame):
@@ -286,6 +336,16 @@ def main() -> None:
         default=True,
         help="Remove existing extracted frames in each sequence before writing (default: true).",
     )
+    p.add_argument(
+        "--unique-frame-basenames",
+        action=argparse.BooleanOptionalAction,
+        default=False,
+        help=(
+            "Name frames seq_<slug>_NNNNNN.jpg inside each seq_* folder so basenames are unique "
+            "repo-wide. Use when CVAT exports flat file_name (required for "
+            "align_coco_filenames_to_camponotus_raw.py with manifest splits)."
+        ),
+    )
     args = p.parse_args()
 
     videos_root = Path(args.videos_root).expanduser().resolve()
@@ -341,6 +401,7 @@ def main() -> None:
             image_ext=image_ext,
             apply_rotation=bool(args.apply_rotation),
             clean_seq_dir=bool(args.clean_on_rerun),
+            unique_frame_basenames=bool(args.unique_frame_basenames),
         )
         summaries.append(sm)
         print(
@@ -364,6 +425,7 @@ def main() -> None:
         "apply_rotation": bool(args.apply_rotation),
         "seq_naming": str(args.seq_naming),
         "seq_prefix": str(args.seq_prefix),
+        "unique_frame_basenames": bool(args.unique_frame_basenames),
         "videos_processed": len(summaries),
         "total_frames_written": int(sum(s.frames_written for s in summaries)),
         "sequences": [s.__dict__ for s in summaries],

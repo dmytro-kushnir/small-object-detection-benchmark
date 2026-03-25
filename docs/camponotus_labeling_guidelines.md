@@ -2,25 +2,47 @@
 
 This document defines the annotation policy for the Camponotus fellah detection dataset.
 
-## Class Schema
+## Class Schema (exported training / evaluation)
+
+After dataset preparation, every object is one of:
 
 - `0`: `ant`
 - `1`: `trophallaxis`
 
-The same mapping must be used in all exports (CVAT COCO, YOLO, final COCO).
+The same mapping is used in YOLO labels and in split COCO files under `datasets/camponotus_coco/annotations/`.
+
+## CVAT authoring (recommended): one box label + `state` attribute
+
+In CVAT you may use **a single rectangle label** (e.g. `ant`) for every ant instance and record behavior with an attribute:
+
+- **`state`** (mutable): `normal` (or any value other than `trophallaxis`) vs `trophallaxis`
+- When preparing the dataset, `scripts/datasets/prepare_camponotus_detection_dataset.py` maps:
+  - `state == trophallaxis` → exported class `1`
+  - any other `state` value → exported class `0`
+
+Optional identity for future sequence / MOT-style work:
+
+- **`track_id`** (number, typically **not** mutable): stable integer per ant within a clip (see `docs/camponotus_cvat_workflow.md`). Detection metrics do not use it; it is stored on exported COCO annotations when present.
+
+## Legacy CVAT authoring: two box labels
+
+You may instead draw boxes with two CVAT labels (`ant` and `trophallaxis`). If an annotation has **no** `state` attribute (or you disable state mapping with `--state-attr ""`), preparation uses the CVAT category only.
 
 ## Core Rule For Trophallaxis
 
-If two ants are clearly engaged in trophallaxis in a frame, annotate **both ants** as class `trophallaxis` (`1`).
+If two ants are clearly engaged in trophallaxis in a frame, annotate **both ants** as trophallaxis for training:
+
+- **Attribute workflow:** set **`state` = `trophallaxis`** on both boxes (boxes stay label `ant`).
+- **Two-label workflow:** set both boxes to label `trophallaxis`.
 
 Do not draw one box around the pair. Keep one box per ant.
 
 ## Labeling Rules
 
-1. **Default class**
-   - All visible ants not clearly in trophallaxis: class `ant` (`0`).
+1. **Default (non-trophallaxis)**
+   - All visible ants not clearly in trophallaxis: exported class `ant` (`0`) — e.g. `state = normal` or CVAT label `ant`.
 2. **Trophallaxis**
-   - If interaction is clearly visible and biologically consistent, label both participating ants as class `trophallaxis` (`1`).
+   - If interaction is clearly visible and biologically consistent, both participating ants → exported class `trophallaxis` (`1`).
 3. **Ambiguous frames**
    - If uncertain, use `ant` (`0`), not `trophallaxis`.
 4. **Occlusion**
@@ -40,9 +62,9 @@ Do not draw one box around the pair. Keep one box per ant.
 
 Before export, check:
 
-- Class IDs exactly match `0/1`.
-- Trophallaxis pairs are both labeled as class `1`.
-- Ambiguous interactions are not over-labeled as class `1`.
+- Exported class logic: every box should become `0` or `1` as intended (via `state` or CVAT label).
+- Trophallaxis pairs are both exported as class `1`.
+- Ambiguous interactions are not over-labeled as `1`.
 - Box tightness is consistent across sequences and sources.
 - No duplicate boxes for the same ant instance in one frame.
 

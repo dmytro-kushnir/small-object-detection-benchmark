@@ -4,7 +4,6 @@
 from __future__ import annotations
 
 import argparse
-import json
 import sys
 from pathlib import Path
 from typing import Any
@@ -22,10 +21,7 @@ def _collect_images(images_root: Path, max_images: int | None) -> list[Path]:
     return imgs
 
 
-def _infer_with_yolo(weights: Path, image: Any, conf: float) -> list[dict[str, Any]]:
-    from ultralytics import YOLO
-
-    model = YOLO(str(weights))
+def _infer_with_yolo(model: Any, image: Any, conf: float) -> list[dict[str, Any]]:
     results = model.predict(image, conf=conf, verbose=False)
     out: list[dict[str, Any]] = []
     if not results:
@@ -49,14 +45,7 @@ def _infer_with_yolo(weights: Path, image: Any, conf: float) -> list[dict[str, A
     return out
 
 
-def _infer_with_rfdetr(weights: Path, image: Any, conf: float, model_class: str) -> list[dict[str, Any]]:
-    import importlib
-
-    rfdetr = importlib.import_module("rfdetr")
-    if not hasattr(rfdetr, model_class):
-        raise ValueError(f"Unknown RF-DETR model class: {model_class}")
-    Model = getattr(rfdetr, model_class)
-    model = Model(pretrain_weights=str(weights))
+def _infer_with_rfdetr(model: Any, image: Any, conf: float) -> list[dict[str, Any]]:
     raw = model.predict(image, threshold=float(conf))
     det = raw[0] if isinstance(raw, (list, tuple)) and raw else raw
     if det is None:
@@ -130,6 +119,21 @@ def main() -> None:
         print("No images found for prelabel generation", file=sys.stderr)
         sys.exit(1)
 
+    infer_model: Any
+    if backend == "yolo":
+        from ultralytics import YOLO
+
+        infer_model = YOLO(str(yolo_w))
+    else:
+        import importlib
+
+        mc = str(args.rfdetr_model_class)
+        rfdetr = importlib.import_module("rfdetr")
+        if not hasattr(rfdetr, mc):
+            raise ValueError(f"Unknown RF-DETR model class: {mc}")
+        Model = getattr(rfdetr, mc)
+        infer_model = Model(pretrain_weights=str(rfd_w))
+
     coco_images: list[dict[str, Any]] = []
     coco_anns: list[dict[str, Any]] = []
     ann_id = 1
@@ -140,14 +144,9 @@ def main() -> None:
         h, w = bgr.shape[:2]
         rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
         if backend == "yolo":
-            preds = _infer_with_yolo(yolo_w, rgb, conf=float(args.conf))  # type: ignore[arg-type]
+            preds = _infer_with_yolo(infer_model, rgb, conf=float(args.conf))
         else:
-            preds = _infer_with_rfdetr(
-                rfd_w,  # type: ignore[arg-type]
-                rgb,
-                conf=float(args.conf),
-                model_class=str(args.rfdetr_model_class),
-            )
+            preds = _infer_with_rfdetr(infer_model, rgb, conf=float(args.conf))
         coco_images.append(
             {
                 "id": i,

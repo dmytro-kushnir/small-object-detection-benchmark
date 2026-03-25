@@ -1,11 +1,8 @@
 # Camponotus CVAT Workflow
 
-This workflow describes practical annotation for Camponotus fellah detection with two classes:
+This workflow describes annotation for Camponotus fellah **detection** (two exported classes: `ant` / `trophallaxis`) with optional **instance identity** for future sequence or MOT-style analysis.
 
-- `ant` (class id `0`)
-- `trophallaxis` (class id `1`)
-
-Canonical intermediate export for this project is **CVAT COCO**.
+Canonical intermediate export for this project is **CVAT COCO 1.0** (bounding boxes), not keypoints.
 
 ## 1) Prepare Input Data
 
@@ -26,9 +23,19 @@ Recommended setup:
 
 1. Create one task per logical batch (for example by source or sequence groups).
 2. Upload images as image lists (preserving sequence ordering for `in_situ`).
-3. Define labels:
-   - `ant`
-   - `trophallaxis`
+3. Define labels (choose **one** pattern):
+
+**A — Recommended (single box label + attributes)**
+
+- Rectangle label: **`ant`** only
+- Attributes on that label:
+  - **`state`** (mutable): e.g. `normal` vs `trophallaxis`
+  - **`track_id`** (number, optional; keep **not** mutable if you want stable identity across frames)
+
+**B — Legacy (two box labels)**
+
+- `ant`
+- `trophallaxis`
 
 Tip: Keep `in_situ` and `external` in separate tasks or projects for easier auditing.
 
@@ -40,7 +47,7 @@ Follow:
 
 Critical rule:
 
-- if two ants are in trophallaxis, both ants are labeled `trophallaxis`.
+- if two ants are in trophallaxis, both ants must end up as exported class `trophallaxis` (`1`) — via **`state`** or via the `trophallaxis` label.
 
 ## 4) Interpolation / Tracking Usage
 
@@ -48,7 +55,8 @@ For sequential in-situ frames:
 
 - Use CVAT tracking/interpolation tools to speed up repeated boxes.
 - Always manually review keyframes and transitions.
-- Re-check class assignments near behavioral transitions (ant <-> trophallaxis).
+- Re-check **`state`** near behavioral transitions (normal ↔ trophallaxis).
+- If you use **`track_id`**, keep it consistent for the same physical ant within a sequence.
 
 For external still images:
 
@@ -56,7 +64,7 @@ For external still images:
 
 ## 5) Export
 
-Export annotations as **COCO 1.0** from CVAT and store under:
+Export annotations as **COCO 1.0** (detection / bounding boxes) from CVAT and store under:
 
 - `datasets/camponotus_processed/annotations/cvat_coco/`
 
@@ -67,6 +75,22 @@ Recommended naming:
 - or merged `cvat_camponotus_all.json`
 
 Keep original exports immutable. Any corrections should produce a new versioned file.
+
+### CVAT `file_name` vs `splits.json`
+
+The split manifest lists repo-relative paths such as `datasets/camponotus_raw/in_situ/seq_camponotus_002/000001.jpg`. Preparation matches each COCO `file_name` using the same key logic (`seq_*/basename`, else basename). **Flat CVAT exports** (e.g. only `000001.jpg`) usually **do not** match those keys, so every image is skipped and splits stay empty.
+
+Use **`--split-source auto`** on `prepare_camponotus_detection_dataset.py`: only images that resolve under `--raw-root` are shuffled and split by ratio (defaults: `ratios` from `splits.json` if present, else 0.7 / 0.15 / remainder test; override with `--train-ratio` / `--val-ratio` / `--auto-split-seed`). Sequence-safe splitting still requires either aligned `file_name` values with **`--split-source manifest`** or running `split_camponotus_dataset.py` on the same directory layout the export uses.
+
+**Sequence-safe workflow (manifest mode):** (1) Put frames under `datasets/camponotus_raw/in_situ/` in **multiple** `seq_*` directories (at least **three** logical sequences so val/test are non-empty — one folder ⇒ the splitter cannot spread frames across splits). Default extraction uses `000001.jpg`-style names **inside each** `seq_*` folder, so the **same basename repeats across sequences**; `align_coco_filenames_to_camponotus_raw.py` will then fail. Prefer `extract_camponotus_frames.py --unique-frame-basenames` (writes `seq_camponotus_001_000001.jpg`, …) so every basename is unique under `raw-root`, then re-run `split_camponotus_dataset.py`. (2) `mkdir -p datasets/camponotus_raw/external/images` (may stay empty). (3) Run `scripts/datasets/split_camponotus_dataset.py` → `datasets/camponotus_processed/splits.json`. (4) If CVAT exports **flat** `file_name` values, run `scripts/datasets/align_coco_filenames_to_camponotus_raw.py --coco … --raw-root datasets/camponotus_raw` so each basename matches **exactly one** file. (5) `prepare_camponotus_detection_dataset.py --split-source manifest --raw-root datasets/camponotus_raw …`.
+
+### Optional `track_id` and `state` in processed exports
+
+- `scripts/datasets/prepare_camponotus_detection_dataset.py`:
+  - Maps **`attributes.state == trophallaxis`** (configurable via `--state-attr` / `--trophallaxis-state-value`) to exported **`category_id` 1**; any other `state` value → **`category_id` 0**. If `state` is absent on an annotation, it falls back to normalized CVAT category ids (legacy two-label tasks).
+  - Writes canonical integer **`track_id`** on each exported COCO annotation when it can be read from the CVAT file: top-level `track_id`, **`attributes[track_id]`** (default attribute name `track_id`), or integer-like `group_id`. Use `--track-id-attr` if your CVAT attribute name differs; use `--strip-track-id` to omit ids.
+- `scripts/evaluation/evaluate.py` **ignores** `track_id` for mAP / P@R; it is reserved for future MOT or sequence tooling.
+- After export, run `scripts/datasets/validate_camponotus_dataset.py`; use `--strict-track-id` if you require at most one box per `(image_id, track_id)`.
 
 ## 6) Prelabels (Semi-Automatic Workflow)
 
@@ -101,3 +125,5 @@ Before final export:
 - verify trophallaxis pair labeling policy is followed,
 - ensure no unexpected classes are present,
 - verify files are loadable and image paths resolve in downstream scripts.
+
+After `prepare_camponotus_detection_dataset.py`, run `validate_camponotus_dataset.py` on the YOLO/COCO outputs.

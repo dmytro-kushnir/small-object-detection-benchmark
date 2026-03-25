@@ -496,10 +496,45 @@ The regression above was traced to **post-merge NMS on the full stage-1 set** (U
 
 ---
 
+## Camponotus (EXP-CAMPO-001) — YOLO26n, ant / trophallaxis (CVAT)
+
+**Goal:** First **end-to-end** benchmark on the **Camponotus fellah** detection dataset: CVAT COCO export → `prepare_camponotus_detection_dataset.py` → YOLO26n train → `infer_yolo.py` → unified `evaluate.py` (COCOeval + matched P/R + FPS).
+
+**Procedure:** Data prep with **`--split-source auto`** (flat `file_name` in CVAT vs `seq_*/` keys in `splits.json`); optional `state` → class 1 (`trophallaxis`). Train: `experiments/yolo/camponotus_yolo26n/` (`config.yaml` in run dir). Val/test predictions: [`camponotus_yolo26n_val_predictions.json`](../experiments/results/camponotus_yolo26n_val_predictions.json), [`camponotus_yolo26n_test_predictions.json`](../experiments/results/camponotus_yolo26n_test_predictions.json). Metrics: [`camponotus_yolo26n_val_metrics.json`](../experiments/results/camponotus_yolo26n_val_metrics.json), [`camponotus_yolo26n_test_metrics.json`](../experiments/results/camponotus_yolo26n_test_metrics.json).
+
+**Dataset summary (this run, from `datasets/camponotus_processed/analysis.json`):** 126 images resolved; **88 train / 19 val / 19 test**; ~**1.6k** boxes; class balance ~**80% ant (0) / 20% trophallaxis (1)**; `split_source: auto` (seed 42, 0.7 / 0.15 / ~0.15).
+
+### Quantitative results (recorded run, `git_rev` in metrics JSON)
+
+| Split | mAP@[.50:.95] | mAP@.50 | mAP@.75 | mAP_small / mAP_medium | mAP_large | P (matched IoU≥0.5, score≥0.25) | R (matched) | TP | FP | FN | FPS (`evaluate.py`) | Latency mean (ms) |
+|-------|---------------:|--------:|--------:|:----------------------:|----------:|--------------------------------:|------------:|---:|---:|---:|--------------------:|------------------:|
+| **Val** | **0.885** | **0.935** | **0.928** | −1 / −1 (no GT in bin) | **0.885** | **0.895** | **0.960** | 239 | 28 | 10 | **33.8** | **29.6** |
+| **Test** | **0.902** | **0.949** | **0.941** | −1 / −1 | **0.902** | **0.908** | **0.956** | 237 | 24 | 11 | **33.1** | **30.2** |
+
+**Hardware / stack (from metrics):** NVIDIA GeForce **RTX 4070**, PyTorch **2.11.0+cu130**, `imgsz` **640** for inference benchmark. **`inference_benchmark.n_images`** is **17** (val and test rows): two fewer than the 19 images per split in `analysis.json` — likely images with **no predictions** or timing subset; treat FPS/latency as **indicative** for this folder.
+
+**COCO area buckets:** `mAP_small` and `mAP_medium` are **−1** because, at **1920×1080**, essentially all GT boxes fall in COCO’s **large** area bin — the reported **mAP_large** equals overall mAP for this dataset. Do not interpret −1 as “failure”; it means **no objects in those bins**.
+
+### Interpretation (draft)
+
+On this **small** dataset, **YOLO26n** reaches **high COCO mAP and matched recall** on both val and test, with **test slightly above val** on mAP (e.g. mAP@[.5:.95] **0.902 vs 0.885**). **Matched precision** is in the **0.89–0.91** range with **FP counts modest** (24–28) versus **FN** (10–11) — consistent with a model that is **confident and fairly complete** on these frames.
+
+**Working conclusion:** The **pipeline is validated** (prep → train → infer → `evaluate.py`). Numbers are **encouraging** for continued annotation and scaling, but **not** yet a claim about **sequence-level generalization**.
+
+### Caveats (carry forward)
+
+- **`--split-source auto`** assigns frames **without** grouping by clip; **train/val/test leakage** across adjacent frames is likely → metrics can be **optimistic** vs a **sequence-held-out** or **`--split-source manifest`** split once `file_name` aligns with `splits.json`.
+- **19 val / 19 test images** → high **variance**; one or two sequences dominate the estimate.
+- **Ultralytics val** during training reported similar headline mAP; unified **`evaluate.py`** numbers above are the ones to cite for **cross-model** comparison with RF-DETR / other detectors.
+- Re-run after **`git_rev`** changes and refresh this table from the JSON paths above.
+
+---
+
 ## Changelog
 
 | Date | Experiment(s) | Summary |
 |------|----------------|---------|
+| 2026-03-25 | EXP-CAMPO-001 (Camponotus YOLO26n) | CVAT→prepare (`--split-source auto`)→train `camponotus_yolo26n`→infer/eval: **val** mAP@[.5:.95] **0.885**, mAP@.50 **0.935**, matched P/R **0.895 / 0.960**; **test** mAP@[.5:.95] **0.902**, mAP@.50 **0.949**, P/R **0.908 / 0.956**; FPS ~**33–34** @640 on RTX 4070. COCO small/medium AP **−1** (all boxes “large”). Caveats: auto split, small n, possible frame leakage. |
 | 2026-03-21 | EXP-000 vs EXP-001 | Initial write-up; train-only small-box filter; no mAP_small gain, overall metrics slightly worse on recorded run. |
 | 2026-03-21 | EXP-002 (documented) | Pipeline: same `test_run` data, `imgsz` 320→1280; compare JSON includes FPS/latency deltas. |
 | 2026-03-21 | EXP-002 (numbers) | Recorded `exp002_vs_baseline.json`: large **mAP_small** / mAP_medium gain; mAP@[.5:.95] and mAP_large down; FPS −5, latency +11 ms. |
