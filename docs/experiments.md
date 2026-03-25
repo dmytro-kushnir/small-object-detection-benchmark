@@ -365,6 +365,8 @@ Core assets:
   * analysis: [`analyze_camponotus_dataset.py`](../scripts/datasets/analyze_camponotus_dataset.py)
   * validation: [`validate_camponotus_dataset.py`](../scripts/datasets/validate_camponotus_dataset.py)
   * sample viz: [`viz_camponotus_dataset_samples.py`](../scripts/visualization/viz_camponotus_dataset_samples.py)
+  * RF-DETR Roboflow export: [`prepare_camponotus_coco_rfdetr.py`](../scripts/datasets/prepare_camponotus_coco_rfdetr.py) (optional: `CAMPO_PREP_RFDETR_COCO=1` with the orchestrator above)
+  * Idea 2 ant-only derivative: [`export_camponotus_ant_only_for_idea2.py`](../scripts/datasets/export_camponotus_ant_only_for_idea2.py)
 
 Outputs:
 
@@ -372,7 +374,10 @@ Outputs:
 * `datasets/camponotus_processed/analysis.json`
 * `datasets/camponotus_yolo/`
 * `datasets/camponotus_coco/annotations/instances_{train,val,test}.json`
+* `datasets/camponotus_rfdetr_coco/` (when RF-DETR export is run)
 * `experiments/visualizations/camponotus_dataset/`
+
+Research phases (Ideas 1–3): [`camponotus_research_roadmap.md`](camponotus_research_roadmap.md). **YOLO vs RF-DETR (Idea 1):** [`run_camponotus_rfdetr_exp.sh`](../scripts/run_camponotus_rfdetr_exp.sh) + [`configs/expCAMPO_rfdetr.yaml`](../configs/expCAMPO_rfdetr.yaml).
 
 ```bash
 chmod +x scripts/run_camponotus_dataset_workflow.sh   # once

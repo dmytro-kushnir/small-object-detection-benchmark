@@ -129,7 +129,9 @@ def main() -> None:
     if not train_json.is_file() or not valid_json.is_file():
         print(
             f"Missing RF-DETR COCO files under {dataset_dir}. "
-            "Run: python3 scripts/datasets/prepare_ants_coco_rfdetr.py",
+            "Expected train/_annotations.coco.json and valid/_annotations.coco.json. "
+            "Ants: scripts/datasets/prepare_ants_coco_rfdetr.py. "
+            "Camponotus: scripts/datasets/prepare_camponotus_coco_rfdetr.py.",
             file=sys.stderr,
         )
         sys.exit(1)

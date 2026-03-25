@@ -1,0 +1,43 @@
+# EXP-CAMPO-RFDETR: RF-DETR on Camponotus (two-class ant / trophallaxis), same split as YOLO.
+
+# Roboflow layout from prepare_camponotus_coco_rfdetr.py
+dataset_dir: datasets/camponotus_rfdetr_coco
+
+output_dir: experiments/rfdetr/camponotus_rfdetr
+
+model_class: RFDETRSmall
+
+resume_checkpoint: null
+
+epochs: 30
+batch_size: 4
+grad_accum_steps: 4
+lr: 1.0e-4
+seed: 42
+tensorboard: false
+
+conf_threshold: 0.25
+
+# Val (RF-DETR train layout)
+coco_gt_val: datasets/camponotus_rfdetr_coco/valid/_annotations.coco.json
+images_val_dir: datasets/camponotus_rfdetr_coco/valid
+predictions_val_out: experiments/rfdetr/camponotus_rfdetr/predictions_val.json
+inference_benchmark_val_out: experiments/rfdetr/camponotus_rfdetr/inference_benchmark_val.json
+
+# Test uses flat camponotus_coco + yolo images (not in rfdetr train tree)
+coco_gt_test: datasets/camponotus_coco/annotations/instances_test.json
+images_test_dir: datasets/camponotus_yolo/images/test
+predictions_test_out: experiments/rfdetr/camponotus_rfdetr/predictions_test.json
+inference_benchmark_test_out: experiments/rfdetr/camponotus_rfdetr/inference_benchmark_test.json
+
+metrics_val_out: experiments/results/camponotus_rfdetr_val_metrics.json
+metrics_test_out: experiments/results/camponotus_rfdetr_test_metrics.json
+
+compare_val_out: experiments/results/camponotus_rfdetr_val_vs_yolo.json
+compare_test_out: experiments/results/camponotus_rfdetr_test_vs_yolo.json
+
+baseline_yolo_val_metrics: experiments/results/camponotus_yolo26n_val_metrics.json
+baseline_yolo_test_metrics: experiments/results/camponotus_yolo26n_test_metrics.json
+
+experiment_id_val: EXP-CAMPO-RFDETR-VAL
+experiment_id_test: EXP-CAMPO-RFDETR-TEST

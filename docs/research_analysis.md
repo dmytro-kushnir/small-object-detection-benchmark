@@ -528,12 +528,26 @@ On this **small** dataset, **YOLO26n** reaches **high COCO mAP and matched recal
 - **Ultralytics val** during training reported similar headline mAP; unified **`evaluate.py`** numbers above are the ones to cite for **cross-model** comparison with RF-DETR / other detectors.
 - Re-run after **`git_rev`** changes and refresh this table from the JSON paths above.
 
+### RF-DETR comparison (EXP-CAMPO-RFDETR)
+
+**Goal:** Same **splits** and **two-class COCO** as YOLO Camponotus; compare RF-DETR vs YOLO26 using unified **`evaluate.py`**.
+
+**Procedure:**
+
+1. Canonical prep: `prepare_camponotus_detection_dataset.py` (and validate) as for EXP-CAMPO-001.
+2. Roboflow layout: `python3 scripts/datasets/prepare_camponotus_coco_rfdetr.py` (config [`configs/datasets/camponotus_coco_rfdetr.yaml`](../configs/datasets/camponotus_coco_rfdetr.yaml)).
+3. Orchestrated run: [`scripts/run_camponotus_rfdetr_exp.sh`](../scripts/run_camponotus_rfdetr_exp.sh) (uses [`configs/expCAMPO_rfdetr.yaml`](../configs/expCAMPO_rfdetr.yaml); **`infer_rfdetr.py --class-id-mode multiclass`**). Set **`EXP_CAMPO_SKIP_TRAIN=1`** to reuse existing weights under `experiments/rfdetr/camponotus_rfdetr/weights/best.pth`.
+4. Metrics: `experiments/results/camponotus_rfdetr_val_metrics.json`, `camponotus_rfdetr_test_metrics.json`. Compare JSONs: `camponotus_rfdetr_val_vs_yolo.json`, `camponotus_rfdetr_test_vs_yolo.json` (vs [`camponotus_yolo26n_*_metrics.json`](../experiments/results/camponotus_yolo26n_val_metrics.json)).
+
+**Quantitative results:** *Pending first recorded run* — after `./scripts/run_camponotus_rfdetr_exp.sh`, paste val/test tables here from the metrics JSONs and add a Changelog row.
+
 ---
 
 ## Changelog
 
 | Date | Experiment(s) | Summary |
 |------|----------------|---------|
+| 2026-03-25 | EXP-CAMPO-RFDETR (tooling) | Added `prepare_camponotus_coco_rfdetr.py`, `configs/expCAMPO_rfdetr.yaml`, `run_camponotus_rfdetr_exp.sh`, `infer_rfdetr.py --class-id-mode multiclass`, `compare_camponotus_rfdetr_vs_yolo.py`, `export_camponotus_ant_only_for_idea2.py`, `docs/camponotus_research_roadmap.md`. **Metrics:** run the orchestrator and fill the EXP-CAMPO-RFDETR table above. |
 | 2026-03-25 | EXP-CAMPO-001 (Camponotus YOLO26n) | CVAT→prepare (`--split-source auto`)→train `camponotus_yolo26n`→infer/eval: **val** mAP@[.5:.95] **0.885**, mAP@.50 **0.935**, matched P/R **0.895 / 0.960**; **test** mAP@[.5:.95] **0.902**, mAP@.50 **0.949**, P/R **0.908 / 0.956**; FPS ~**33–34** @640 on RTX 4070. COCO small/medium AP **−1** (all boxes “large”). Caveats: auto split, small n, possible frame leakage. |
 | 2026-03-21 | EXP-000 vs EXP-001 | Initial write-up; train-only small-box filter; no mAP_small gain, overall metrics slightly worse on recorded run. |
 | 2026-03-21 | EXP-002 (documented) | Pipeline: same `test_run` data, `imgsz` 320→1280; compare JSON includes FPS/latency deltas. |

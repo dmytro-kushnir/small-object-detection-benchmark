@@ -36,6 +36,7 @@ def _detections_to_records(
     det_out: Any,
     image_id: int,
     category_id_fallback: int = 0,
+    class_id_mode: str = "single",
 ) -> list[dict[str, Any]]:
     """Convert rfdetr/supervision Detections (or similar) to COCO detection dicts."""
     if det_out is None:
@@ -71,8 +72,9 @@ def _detections_to_records(
         if w <= 0 or h <= 0:
             continue
         cid = int(cls[i]) if i < len(cls) else category_id_fallback
-        # Single-class ants: map any class index to COCO category 0
-        cid = category_id_fallback
+        if class_id_mode == "single":
+            # Single-class (e.g. ants): map any class index to one COCO category
+            cid = category_id_fallback
         sc = float(conf[i]) if i < len(conf) else 1.0
         records.append(
             {
@@ -98,6 +100,22 @@ def main() -> None:
         help="rfdetr model class (must match training)",
     )
     p.add_argument("--conf", type=float, default=0.25, help="Confidence threshold")
+    p.add_argument(
+        "--class-id-mode",
+        type=str,
+        choices=("single", "multiclass"),
+        default="single",
+        help=(
+            "single: map all detections to --category-id (default 0, ants). "
+            "multiclass: use RF-DETR class indices as COCO category_id (e.g. Camponotus 0/1)."
+        ),
+    )
+    p.add_argument(
+        "--category-id",
+        type=int,
+        default=0,
+        help="COCO category_id when --class-id-mode=single",
+    )
     p.add_argument("--device", type=str, default=None, help="Optional torch device string")
     p.add_argument("--max-images", type=int, default=None)
     args = p.parse_args()
@@ -181,7 +199,14 @@ def main() -> None:
             continue
         rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
         raw = model.predict(rgb, **predict_kw)
-        detections.extend(_detections_to_records(raw, im_id, category_id_fallback=0))
+        detections.extend(
+            _detections_to_records(
+                raw,
+                im_id,
+                category_id_fallback=int(args.category_id),
+                class_id_mode=str(args.class_id_mode),
+            )
+        )
 
     write_coco_predictions_json(out_path, detections)
     print(f"Wrote {out_path} ({len(detections)} detections)")

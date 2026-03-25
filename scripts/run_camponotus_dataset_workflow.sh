@@ -32,6 +32,7 @@ SPLITS="$ROOT/$(read_cfg paths.split_manifest)"
 CVAT_COCO="$ROOT/$(read_cfg paths.cvat_coco_annotations)"
 YOLO_ROOT="$ROOT/$(read_cfg paths.yolo_root)"
 COCO_ROOT="$ROOT/$(read_cfg paths.coco_root)"
+RFDETR_COCO_ROOT="$ROOT/$(read_cfg paths.rfdetr_coco_root)"
 ANALYSIS="$ROOT/$(read_cfg paths.analysis_json)"
 TR="$(read_cfg split.train_ratio)"
 VR="$(read_cfg split.val_ratio)"
@@ -75,6 +76,12 @@ python3 "$ROOT/scripts/datasets/validate_camponotus_dataset.py" \
   --yolo-root "$YOLO_ROOT" \
   --coco-root "$COCO_ROOT/annotations" \
   --analysis-json "$ANALYSIS"
+
+if [[ "${CAMPO_PREP_RFDETR_COCO:-0}" == "1" ]]; then
+  echo "== RF-DETR Roboflow layout → $RFDETR_COCO_ROOT =="
+  python3 "$ROOT/scripts/datasets/prepare_camponotus_coco_rfdetr.py" \
+    --config "$ROOT/configs/datasets/camponotus_coco_rfdetr.yaml"
+fi
 
 echo "== Visualize samples =="
 python3 "$ROOT/scripts/visualization/viz_camponotus_dataset_samples.py" \

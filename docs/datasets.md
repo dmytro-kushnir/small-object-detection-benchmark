@@ -40,6 +40,8 @@ For the two-class Camponotus dataset (`ant`, `trophallaxis`), use:
 - Raw layout: `datasets/camponotus_raw/`
 - Processed manifests: `datasets/camponotus_processed/`
 - Exports: `datasets/camponotus_yolo/` and `datasets/camponotus_coco/`
+- RF-DETR train layout (train/valid + `_annotations.coco.json`): `datasets/camponotus_rfdetr_coco/` via `scripts/datasets/prepare_camponotus_coco_rfdetr.py` (optional: `CAMPO_PREP_RFDETR_COCO=1` with `run_camponotus_dataset_workflow.sh`)
+- Idea 2 ant-only derivative: `scripts/datasets/export_camponotus_ant_only_for_idea2.py` → `datasets/camponotus_yolo_ant_only/`, `datasets/camponotus_coco_ant_only/` (includes `trophallaxis_gt` on each annotation)
 
 Main entrypoint:
 
@@ -51,3 +53,4 @@ Supporting docs:
 
 - `docs/camponotus_labeling_guidelines.md`
 - `docs/camponotus_cvat_workflow.md`
+- `docs/camponotus_research_roadmap.md`

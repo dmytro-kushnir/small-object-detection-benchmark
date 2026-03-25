@@ -10,6 +10,8 @@ paths:
   analysis_json: datasets/camponotus_processed/analysis.json
   yolo_root: datasets/camponotus_yolo
   coco_root: datasets/camponotus_coco
+  # Roboflow-style train/valid for RF-DETR (from prepare_camponotus_coco_rfdetr.py)
+  rfdetr_coco_root: datasets/camponotus_rfdetr_coco
 
 classes:
   - ant

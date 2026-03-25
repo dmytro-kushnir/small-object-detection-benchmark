@@ -19,9 +19,11 @@ This document summarizes how the repo stays **simple**, **comparable across mode
 2. **Inference** — [`infer_rfdetr.py`](../scripts/inference/infer_rfdetr.py) emits the same **JSON list** as YOLO:
 
    - `image_id` (int, must match COCO GT)
-   - `category_id` (int; ants use **0**)
+   - `category_id` (int; ants single-class: **`--class-id-mode single`** and **`--category-id 0`**, default)
    - `bbox`: `[x, y, w, h]` absolute pixels (xywh)
    - `score` (float)
+
+   **Camponotus (two classes):** use **`--class-id-mode multiclass`** so RF-DETR class indices map to COCO `category_id` **0/1** (see [`run_camponotus_rfdetr_exp.sh`](../scripts/run_camponotus_rfdetr_exp.sh)).
 
    [`infer_detr.py`](../scripts/inference/infer_detr.py) forwards to `infer_rfdetr.py`.
 

@@ -10,7 +10,7 @@ from typing import Any
 
 import cv2
 
-from camponotus_common import CAMPO_CLASSES, write_json
+from camponotus_common import CAMPO_CLASSES, build_categories, write_json
 
 
 def _collect_images(images_root: Path, max_images: int | None) -> list[Path]:
@@ -84,6 +84,14 @@ def main() -> None:
     p.add_argument("--rfdetr-model-class", type=str, default="RFDETRSmall")
     p.add_argument("--conf", type=float, default=0.25)
     p.add_argument("--max-images", type=int, default=None)
+    p.add_argument(
+        "--cvat-coco-categories",
+        action="store_true",
+        help=(
+            "Use COCO category ids 1..N (not 0..N-1). Required for CVAT COCO import; "
+            "see scripts/datasets/coco_shift_category_ids_for_cvat.py for existing JSON."
+        ),
+    )
     args = p.parse_args()
 
     images_root = Path(args.images_root).expanduser().resolve()
@@ -137,6 +145,7 @@ def main() -> None:
     coco_images: list[dict[str, Any]] = []
     coco_anns: list[dict[str, Any]] = []
     ann_id = 1
+    cat_offset = 1 if args.cvat_coco_categories else 0
     for i, img_path in enumerate(images, start=1):
         bgr = cv2.imread(str(img_path))
         if bgr is None:
@@ -160,7 +169,7 @@ def main() -> None:
                 {
                     "id": ann_id,
                     "image_id": i,
-                    "category_id": int(pdet["category_id"]),
+                    "category_id": int(pdet["category_id"]) + cat_offset,
                     "bbox": [float(x) for x in pdet["bbox"]],
                     "score": float(pdet["score"]),
                     "area": float(pdet["bbox"][2] * pdet["bbox"][3]),
@@ -169,15 +178,26 @@ def main() -> None:
             )
             ann_id += 1
 
+    if args.cvat_coco_categories:
+        coco_categories = []
+        for c in build_categories():
+            cid = int(c["id"])
+            coco_categories.append(
+                {"id": cid + 1, "name": c["name"], "supercategory": c.get("supercategory", "object")}
+            )
+    else:
+        coco_categories = [{"id": 0, "name": "ant"}, {"id": 1, "name": "trophallaxis"}]
+
     payload = {
         "info": {
             "description": "Camponotus prelabels for CVAT correction",
             "backend": backend,
             "classes": CAMPO_CLASSES,
+            "cvat_coco_categories": bool(args.cvat_coco_categories),
         },
         "images": coco_images,
         "annotations": coco_anns,
-        "categories": [{"id": 0, "name": "ant"}, {"id": 1, "name": "trophallaxis"}],
+        "categories": coco_categories,
     }
     write_json(out_path, payload)
 

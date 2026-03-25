@@ -1,6 +1,14 @@
 # Hydra default multirun/sweep output (ephemeral; do not commit)
 outputs/
 
+# Ultralytics / detection runs — exported visualization videos (e.g. runs/detect/.../results/video_try_*/)
+runs/**/*.avi
+runs/**/*.mp4
+runs/**/*.mov
+runs/**/*.mkv
+runs/**/*.webm
+runs/**/*.gif
+
 # Dataset tree lives in-repo; ignore bulk (downloads + processed outputs)
 datasets/raw/*
 !datasets/raw/.gitkeep
@@ -10,12 +18,20 @@ datasets/camponotus_raw/in_situ/*
 !datasets/camponotus_raw/in_situ/.gitkeep
 datasets/camponotus_raw/external/images/*
 !datasets/camponotus_raw/external/images/.gitkeep
+# Packaged raw dumps (e.g. in_situ.zip before unzip into in_situ/)
+datasets/camponotus_raw/**/*.zip
 datasets/camponotus_processed/*
 !datasets/camponotus_processed/.gitkeep
 datasets/camponotus_yolo/*
 !datasets/camponotus_yolo/.gitkeep
 datasets/camponotus_coco/*
 !datasets/camponotus_coco/.gitkeep
+datasets/camponotus_rfdetr_coco/*
+!datasets/camponotus_rfdetr_coco/.gitkeep
+datasets/camponotus_coco_ant_only/*
+!datasets/camponotus_coco_ant_only/.gitkeep
+datasets/camponotus_yolo_ant_only/*
+!datasets/camponotus_yolo_ant_only/.gitkeep
 datasets/ants_yolo/
 datasets/ants_coco/*
 !datasets/ants_coco/README.md

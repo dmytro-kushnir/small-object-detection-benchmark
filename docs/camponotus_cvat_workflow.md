@@ -94,13 +94,29 @@ Use **`--split-source auto`** on `prepare_camponotus_detection_dataset.py`: only
 
 ## 6) Prelabels (Semi-Automatic Workflow)
 
+**Pattern A (only `ant` + `state`) vs two-class prelabels:** Bootstrap JSON has classes **ant** and **trophallaxis**. If your CVAT task has **only** rectangle label **`ant`** with attribute **`state`** (`normal` / `trophallaxis`), build a single-label COCO file and **carry behavior into `attributes.state`** (Datumaro/CVAT read per-bbox **`attributes`** on import):
+
+```bash
+python3 scripts/datasets/coco_shift_category_ids_for_cvat.py \
+  --in datasets/camponotus_processed/prelabels/camponotus_prelabels_coco.json \
+  --out datasets/camponotus_processed/prelabels/camponotus_prelabels_coco_cvat_ant_only.json \
+  --collapse-to-single-label ant \
+  --carry-state-attributes
+```
+
+Define **`state`** on label **`ant`** in CVAT with allowed values matching **`--state-normal`** / **`--state-troph`** (defaults: `normal`, `trophallaxis`). If import ignores attributes, fall back to omitting **`--carry-state-attributes`** and set **`state`** manually.
+
+Without **`--carry-state-attributes`**, every box is **`ant`** with no metadata; you set **`state`** while reviewing. **`prepare_camponotus_detection_dataset.py`** maps **`state`** → exported class **1** on export.
+
+**Pattern B (two rectangle labels):** Convert ids only (no collapse): `coco_shift_category_ids_for_cvat.py --in … --out …` (adds **`trophallaxis`** label in CVAT matching the JSON).
+
 If using model-assisted prelabeling:
 
-1. Generate prelabels with:
-   - `scripts/datasets/bootstrap_camponotus_autolabel.py`
-2. Import prelabels into CVAT.
-3. Correct manually.
-4. Export corrected COCO and keep both files:
+1. Generate prelabels with `scripts/datasets/bootstrap_camponotus_autolabel.py` (optional **`--cvat-coco-categories`** if you skip the shift script and want 1-based ids in the raw file).
+2. For CVAT import, run **`coco_shift_category_ids_for_cvat.py`** (**`--collapse-to-single-label ant --carry-state-attributes`** for pattern A with `state`, or plain shift for pattern B).
+3. Import the resulting JSON into CVAT.
+4. Correct manually.
+5. Export corrected COCO and keep both files:
    - machine prelabels (raw)
    - corrected human-reviewed labels
 
@@ -127,3 +143,13 @@ Before final export:
 - verify files are loadable and image paths resolve in downstream scripts.
 
 After `prepare_camponotus_detection_dataset.py`, run `validate_camponotus_dataset.py` on the YOLO/COCO outputs.
+
+## 9) Annotation hygiene (Ideas 1–3)
+
+- **`state` → class 1** on export is handled by `prepare_camponotus_detection_dataset.py` (see `--state-attr` / `--trophallaxis-state-value`). Keep values consistent with CVAT label definitions.
+- **`track_id`:** Optional in CVAT; exported on COCO annotations when present. [`evaluate.py`](../scripts/evaluation/evaluate.py) ignores `track_id` for mAP. For **sequence / Idea 2** work, keep the same physical ant on the same `track_id` within a clip when feasible. Use `validate_camponotus_dataset.py --strict-track-id` if you need hard guarantees.
+- **RF-DETR layout:** After canonical prep, run `scripts/datasets/prepare_camponotus_coco_rfdetr.py` (or set `CAMPO_PREP_RFDETR_COCO=1` on `scripts/run_camponotus_dataset_workflow.sh`) to populate `datasets/camponotus_rfdetr_coco/`.
+
+## 10) Research roadmap (Ideas 1–3)
+
+Single-frame two-class detection (YOLO vs RF-DETR), then optional interaction and segmentation phases, without relabeling from scratch — see [`docs/camponotus_research_roadmap.md`](camponotus_research_roadmap.md).
