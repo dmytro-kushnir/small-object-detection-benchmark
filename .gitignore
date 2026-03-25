@@ -6,6 +6,16 @@ datasets/raw/*
 !datasets/raw/.gitkeep
 datasets/processed/*
 !datasets/processed/.gitkeep
+datasets/camponotus_raw/in_situ/*
+!datasets/camponotus_raw/in_situ/.gitkeep
+datasets/camponotus_raw/external/images/*
+!datasets/camponotus_raw/external/images/.gitkeep
+datasets/camponotus_processed/*
+!datasets/camponotus_processed/.gitkeep
+datasets/camponotus_yolo/*
+!datasets/camponotus_yolo/.gitkeep
+datasets/camponotus_coco/*
+!datasets/camponotus_coco/.gitkeep
 datasets/ants_yolo/
 datasets/ants_coco/*
 !datasets/ants_coco/README.md

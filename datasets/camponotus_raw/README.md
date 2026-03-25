@@ -5,7 +5,8 @@ Raw assets for Camponotus dataset creation.
 ## Structure
 
 - `in_situ/`
-  - `seq_001/`, `seq_002/`, ...
+  - `seq_<video_stem>/` (e.g. `seq_camponotus_003/`) — one folder per source video
+  - legacy: `seq_001/`, `seq_002/` if extracted with `--seq-naming index`
   - frame sequences extracted from your ant-farm recordings
 - `external/images/`
   - internet images used as additional training data

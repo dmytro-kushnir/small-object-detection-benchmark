@@ -5,7 +5,8 @@ from __future__ import annotations
 
 import argparse
 import json
-import math
+import re
+import subprocess
 import sys
 from dataclasses import dataclass
 from pathlib import Path
@@ -23,12 +24,116 @@ class VideoSummary:
     frames_written: int
     first_index: int
     last_index: int
+    rotation_deg: int
 
 
 def _video_files(root: Path) -> list[Path]:
     exts = {".mp4", ".mov", ".avi", ".mkv", ".webm", ".m4v"}
     out = [p for p in sorted(root.rglob("*")) if p.is_file() and p.suffix.lower() in exts]
     return out
+
+
+def _sanitize_video_stem(video_path: Path, max_stem_len: int = 200) -> str:
+    """Lowercase slug from filename stem for use in seq_* directory names."""
+    stem = video_path.stem.lower()
+    stem = re.sub(r"[^a-z0-9]+", "_", stem)
+    stem = re.sub(r"_+", "_", stem).strip("_")
+    if not stem:
+        stem = "unknown"
+    if len(stem) > max_stem_len:
+        stem = stem[:max_stem_len].rstrip("_")
+    return stem
+
+
+def _effective_output_fps(
+    video_path: Path,
+    default_fps: float,
+    troph_fps: float | None,
+    troph_substring: str,
+) -> float:
+    """Use troph_fps when filename stem matches substring (case-insensitive)."""
+    if troph_fps is None or troph_fps <= 0:
+        return default_fps
+    sub = troph_substring.lower().strip()
+    if not sub:
+        return default_fps
+    if sub in video_path.stem.lower():
+        return troph_fps
+    return default_fps
+
+
+def _allocate_seq_dir_name(
+    out_root: Path,
+    video_path: Path,
+    used_names: set[str],
+    *,
+    naming: str,
+    seq_prefix: str,
+    index_one_based: int,
+) -> str:
+    """
+    Return directory name (not full path) under out_root.
+    naming: 'video' -> seq_<slug> with collision suffix; 'index' -> seq_prefix + zero-padded index.
+    """
+    if naming == "index":
+        name = f"{seq_prefix}{index_one_based:03d}"
+        used_names.add(name)
+        return name
+
+    base = _sanitize_video_stem(video_path)
+    candidate = f"{seq_prefix}{base}"
+    if candidate not in used_names:
+        used_names.add(candidate)
+        return candidate
+    n = 2
+    while True:
+        cand = f"{seq_prefix}{base}_{n}"
+        if cand not in used_names:
+            used_names.add(cand)
+            return cand
+        n += 1
+
+
+def _probe_rotation_deg(video_path: Path) -> int:
+    """Read clockwise rotation from ffprobe metadata if present."""
+    cmd = [
+        "ffprobe",
+        "-v",
+        "error",
+        "-show_entries",
+        "stream_tags=rotate",
+        "-of",
+        "default=noprint_wrappers=1",
+        str(video_path),
+    ]
+    try:
+        proc = subprocess.run(cmd, capture_output=True, text=True, check=False)
+    except OSError:
+        return 0
+    if proc.returncode != 0:
+        return 0
+    for line in proc.stdout.splitlines():
+        line = line.strip()
+        if not line.startswith("TAG:rotate="):
+            continue
+        try:
+            deg = int(round(float(line.split("=", 1)[1])))
+            return deg % 360
+        except (TypeError, ValueError):
+            continue
+    return 0
+
+
+def _apply_rotation(frame: Any, rotation_deg: int) -> Any:
+    """Rotate frame clockwise in 90-degree steps."""
+    rot = rotation_deg % 360
+    if rot == 90:
+        return cv2.rotate(frame, cv2.ROTATE_90_CLOCKWISE)
+    if rot == 180:
+        return cv2.rotate(frame, cv2.ROTATE_180)
+    if rot == 270:
+        return cv2.rotate(frame, cv2.ROTATE_90_COUNTERCLOCKWISE)
+    return frame
 
 
 def _extract_one(
@@ -38,6 +143,8 @@ def _extract_one(
     start_s: float,
     end_s: float | None,
     image_ext: str,
+    apply_rotation: bool,
+    clean_seq_dir: bool,
 ) -> VideoSummary:
     cap = cv2.VideoCapture(str(video_path))
     if not cap.isOpened():
@@ -55,15 +162,22 @@ def _extract_one(
         end_frame = max(start_frame, int(round(end_s * in_fps)))
 
     frame_step = max(1, int(round(in_fps / out_fps)))
+    rotation_deg = _probe_rotation_deg(video_path) if apply_rotation else 0
 
     out_seq_dir.mkdir(parents=True, exist_ok=True)
     frame_idx = 0
     next_src_idx = start_frame
     written = 0
 
-    # Continue index if directory already has frames.
+    # On reruns, default to replacing previous extraction in this sequence.
     existing = sorted(p for p in out_seq_dir.glob("*") if p.suffix.lower() == image_ext)
-    if existing:
+    if existing and clean_seq_dir:
+        for p in existing:
+            p.unlink()
+        existing = []
+
+    # Optional append mode for incremental extraction.
+    if existing and not clean_seq_dir:
         try:
             frame_idx = int(existing[-1].stem)
         except ValueError:
@@ -79,6 +193,7 @@ def _extract_one(
             frame_idx += 1
             out_name = f"{frame_idx:06d}{image_ext}"
             out_path = out_seq_dir / out_name
+            frame = _apply_rotation(frame, rotation_deg)
             if not cv2.imwrite(str(out_path), frame):
                 raise RuntimeError(f"Failed to write frame: {out_path}")
             written += 1
@@ -95,6 +210,7 @@ def _extract_one(
         frames_written=written,
         first_index=first_index,
         last_index=frame_idx,
+        rotation_deg=int(rotation_deg),
     )
 
 
@@ -112,14 +228,40 @@ def main() -> None:
         default="datasets/camponotus_raw/in_situ",
         help="Output root for extracted sequences.",
     )
-    p.add_argument("--fps", type=float, default=2.0, help="Target extraction FPS.")
+    p.add_argument(
+        "--fps",
+        type=float,
+        default=2.0,
+        help="Target extraction FPS for most videos (default: 2).",
+    )
+    p.add_argument(
+        "--fps-trophallaxis",
+        type=float,
+        default=None,
+        help=(
+            "If set, videos whose filename contains --trophallaxis-substring "
+            "(default: trophallaxis) use this FPS instead of --fps."
+        ),
+    )
+    p.add_argument(
+        "--trophallaxis-substring",
+        type=str,
+        default="trophallaxis",
+        help="Case-insensitive match against video filename stem (default: trophallaxis).",
+    )
     p.add_argument("--start-sec", type=float, default=0.0, help="Start time in seconds.")
     p.add_argument("--end-sec", type=float, default=None, help="Optional end time in seconds.")
     p.add_argument(
         "--seq-prefix",
         type=str,
         default="seq_",
-        help="Output sequence prefix (example: seq_001).",
+        help="Sequence folder prefix. With --seq-naming video: seq_<slug> (e.g. seq_camponotus_003).",
+    )
+    p.add_argument(
+        "--seq-naming",
+        choices=("video", "index"),
+        default="video",
+        help="video: folder from sanitized filename (default). index: seq_prefix + 001, 002, ...",
     )
     p.add_argument(
         "--image-ext",
@@ -132,6 +274,18 @@ def main() -> None:
         action="store_true",
         help="Print planned operations without writing files.",
     )
+    p.add_argument(
+        "--apply-rotation",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Apply video rotation metadata (default: true).",
+    )
+    p.add_argument(
+        "--clean-on-rerun",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help="Remove existing extracted frames in each sequence before writing (default: true).",
+    )
     args = p.parse_args()
 
     videos_root = Path(args.videos_root).expanduser().resolve()
@@ -141,6 +295,12 @@ def main() -> None:
     if fps <= 0:
         print("--fps must be > 0", file=sys.stderr)
         sys.exit(1)
+    troph_fps: float | None = None
+    if args.fps_trophallaxis is not None:
+        troph_fps = float(args.fps_trophallaxis)
+        if troph_fps <= 0:
+            print("--fps-trophallaxis must be > 0 when set", file=sys.stderr)
+            sys.exit(1)
     if not videos_root.is_dir():
         print(f"videos root not found: {videos_root}", file=sys.stderr)
         sys.exit(1)
@@ -152,22 +312,41 @@ def main() -> None:
 
     out_root.mkdir(parents=True, exist_ok=True)
     summaries: list[VideoSummary] = []
+    used_seq_names: set[str] = set()
     for i, vp in enumerate(vids, start=1):
-        seq_name = f"{args.seq_prefix}{i:03d}"
+        seq_name = _allocate_seq_dir_name(
+            out_root,
+            vp,
+            used_seq_names,
+            naming=str(args.seq_naming),
+            seq_prefix=str(args.seq_prefix),
+            index_one_based=i,
+        )
         out_seq = out_root / seq_name
+        out_fps = _effective_output_fps(
+            vp,
+            fps,
+            troph_fps,
+            str(args.trophallaxis_substring),
+        )
         if args.dry_run:
-            print(f"[dry-run] {vp} -> {out_seq}")
+            print(f"[dry-run] {vp} -> {out_seq} (fps={out_fps})")
             continue
         sm = _extract_one(
             video_path=vp,
             out_seq_dir=out_seq,
-            out_fps=fps,
+            out_fps=out_fps,
             start_s=float(args.start_sec),
             end_s=None if args.end_sec is None else float(args.end_sec),
             image_ext=image_ext,
+            apply_rotation=bool(args.apply_rotation),
+            clean_seq_dir=bool(args.clean_on_rerun),
         )
         summaries.append(sm)
-        print(f"{sm.video} -> {out_seq} ({sm.frames_written} frames)")
+        print(
+            f"{sm.video} -> {out_seq} ({sm.frames_written} frames, "
+            f"fps_out={sm.fps_output}, rotation={sm.rotation_deg}deg)"
+        )
 
     if args.dry_run:
         print(f"[dry-run] {len(vids)} videos discovered")
@@ -177,9 +356,14 @@ def main() -> None:
         "videos_root": str(videos_root),
         "out_root": str(out_root),
         "fps": fps,
+        "fps_trophallaxis": troph_fps,
+        "trophallaxis_substring": str(args.trophallaxis_substring),
         "start_sec": float(args.start_sec),
         "end_sec": None if args.end_sec is None else float(args.end_sec),
         "image_ext": image_ext,
+        "apply_rotation": bool(args.apply_rotation),
+        "seq_naming": str(args.seq_naming),
+        "seq_prefix": str(args.seq_prefix),
         "videos_processed": len(summaries),
         "total_frames_written": int(sum(s.frames_written for s in summaries)),
         "sequences": [s.__dict__ for s in summaries],

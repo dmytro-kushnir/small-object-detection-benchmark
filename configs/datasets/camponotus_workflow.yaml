@@ -22,9 +22,14 @@ split:
   seed: 42
 
 frame_extraction:
-  fps: 2.0
+  fps: 5.0
+  # Optional: higher FPS for clips whose filename contains "trophallaxis"
+  # (CLI: --fps 5 --fps-trophallaxis 8)
+  fps_trophallaxis:
   image_ext: .jpg
   seq_prefix: seq_
+  # Folder names: seq_<sanitized_video_stem> (default CLI --seq-naming video)
+  seq_naming: video
 
 bootstrap:
   backend: auto

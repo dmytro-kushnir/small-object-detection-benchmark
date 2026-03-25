@@ -24,6 +24,10 @@ def _seq_images(seq_dir: Path) -> list[str]:
     return sorted(str(p.resolve()) for p in seq_dir.iterdir() if p.is_file() and p.suffix.lower() in exts)
 
 
+def _is_trophallaxis_sequence(name: str) -> bool:
+    return "trophallaxis" in name.lower()
+
+
 def _split_sequence_names(
     names: list[str],
     train_ratio: float,
@@ -51,6 +55,32 @@ def _split_sequence_names(
     return train, val, test
 
 
+def _split_sequence_names_stratified(
+    names: list[str],
+    train_ratio: float,
+    val_ratio: float,
+    seed: int,
+) -> tuple[list[str], list[str], list[str]]:
+    """
+    Split general and trophallaxis-named sequences separately with the same ratios,
+    then merge. Ensures val/test usually contain trophallaxis footage when enough
+    sequences exist (unlike one global shuffle).
+    """
+    general = sorted(n for n in names if not _is_trophallaxis_sequence(n))
+    troph = sorted(n for n in names if _is_trophallaxis_sequence(n))
+    # Independent shuffles so assignment is not coupled between groups.
+    g_train, g_val, g_test = _split_sequence_names(
+        general, train_ratio, val_ratio, seed
+    )
+    t_train, t_val, t_test = _split_sequence_names(
+        troph, train_ratio, val_ratio, seed + 1_000_003
+    )
+    train = sorted(g_train + t_train)
+    val = sorted(g_val + t_val)
+    test = sorted(g_test + t_test)
+    return train, val, test
+
+
 def main() -> None:
     p = argparse.ArgumentParser(description=__doc__)
     p.add_argument("--in-situ-root", type=str, default="datasets/camponotus_raw/in_situ")
@@ -60,6 +90,15 @@ def main() -> None:
     p.add_argument("--test-ratio", type=float, default=0.15)
     p.add_argument("--seed", type=int, default=42)
     p.add_argument("--out", type=str, default="datasets/camponotus_processed/splits.json")
+    p.add_argument(
+        "--stratify-trophallaxis",
+        action=argparse.BooleanOptionalAction,
+        default=True,
+        help=(
+            "Split trophallaxis-named seq_* folders separately from general ones "
+            "(default: true) so val/test get trophallaxis sequences when possible."
+        ),
+    )
     args = p.parse_args()
 
     if abs((args.train_ratio + args.val_ratio + args.test_ratio) - 1.0) > 1e-6:
@@ -74,12 +113,20 @@ def main() -> None:
 
     seq_dirs = _list_sequence_dirs(in_situ_root)
     seq_names = [p.name for p in seq_dirs]
-    train_seq, val_seq, test_seq = _split_sequence_names(
-        names=seq_names,
-        train_ratio=float(args.train_ratio),
-        val_ratio=float(args.val_ratio),
-        seed=int(args.seed),
-    )
+    if args.stratify_trophallaxis:
+        train_seq, val_seq, test_seq = _split_sequence_names_stratified(
+            names=seq_names,
+            train_ratio=float(args.train_ratio),
+            val_ratio=float(args.val_ratio),
+            seed=int(args.seed),
+        )
+    else:
+        train_seq, val_seq, test_seq = _split_sequence_names(
+            names=seq_names,
+            train_ratio=float(args.train_ratio),
+            val_ratio=float(args.val_ratio),
+            seed=int(args.seed),
+        )
 
     seq_map = {p.name: p for p in seq_dirs}
     train_images = [img for s in train_seq for img in _seq_images(seq_map[s])]
@@ -94,6 +141,7 @@ def main() -> None:
             "split_by_sequence": True,
             "val_test_only_in_situ": True,
             "external_to_train_only": True,
+            "stratify_trophallaxis": bool(args.stratify_trophallaxis),
         },
         "ratios": {
             "train": float(args.train_ratio),
@@ -129,6 +177,14 @@ def main() -> None:
         f"Sequences train/val/test: {len(train_seq)}/{len(val_seq)}/{len(test_seq)}; "
         f"images train/val/test: {len(train_images)}/{len(val_images)}/{len(test_images)}"
     )
+    if args.stratify_trophallaxis:
+        def _troph(seqs: list[str]) -> int:
+            return sum(1 for s in seqs if _is_trophallaxis_sequence(s))
+
+        print(
+            f"Trophallaxis sequences in train/val/test: "
+            f"{_troph(train_seq)}/{_troph(val_seq)}/{_troph(test_seq)}"
+        )
 
 
 if __name__ == "__main__":

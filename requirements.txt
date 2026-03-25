@@ -26,12 +26,12 @@ ultralytics>=8.4.0
 sahi>=0.11.14
 
 # Optional: EXP-A004 ANTS `roi_mode: dbscan` in configs/expA004_ants_v1.yaml
-# scikit-learn>=1.3.0
+ scikit-learn>=1.3.0
 
 # Optional: EXP-A005 RF-DETR on ants (`pip install -e .[rfdetr]` recommended)
-# rfdetr==1.6.0
-# albumentations>=1.4.24,<2.0.0
-# pytorch-lightning>=2.6.1
-# jsonargparse[signatures]>=4.27.7
-# faster-coco-eval>=1.6.5
-# supervision>=0.27.0
+ rfdetr==1.6.0
+ albumentations>=1.4.24,<2.0.0
+ pytorch-lightning>=2.6.1
+ jsonargparse[signatures]>=4.27.7
+ faster-coco-eval>=1.6.5
+ supervision>=0.27.0

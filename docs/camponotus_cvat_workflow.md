@@ -11,12 +11,14 @@ Canonical intermediate export for this project is **CVAT COCO**.
 
 Expected raw layout:
 
-- `datasets/camponotus_raw/in_situ/seq_*/`
+- `datasets/camponotus_raw/in_situ/seq_*/` (default: `seq_<sanitized_video_filename>` per clip)
 - `datasets/camponotus_raw/external/images/`
 
 For video-derived data, extract frames first using:
 
 - `scripts/datasets/extract_camponotus_frames.py`
+
+Then create `datasets/camponotus_processed/splits.json` with `scripts/datasets/split_camponotus_dataset.py` (default: **stratified** split so trophallaxis-named sequences appear in val/test when possible; use `--no-stratify-trophallaxis` for legacy behavior).
 
 ## 2) Create CVAT Task(s)
 
