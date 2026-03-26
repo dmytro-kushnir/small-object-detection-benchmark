@@ -21,8 +21,13 @@ def _collect_images(images_root: Path, max_images: int | None) -> list[Path]:
     return imgs
 
 
-def _infer_with_yolo(model: Any, image: Any, conf: float) -> list[dict[str, Any]]:
-    results = model.predict(image, conf=conf, verbose=False)
+def _infer_with_yolo(
+    model: Any, image: Any, conf: float, imgsz: int | None = None
+) -> list[dict[str, Any]]:
+    kw: dict[str, Any] = {"conf": conf, "verbose": False}
+    if imgsz is not None:
+        kw["imgsz"] = int(imgsz)
+    results = model.predict(image, **kw)
     out: list[dict[str, Any]] = []
     if not results:
         return out
@@ -83,6 +88,12 @@ def main() -> None:
     p.add_argument("--rfdetr-weights", type=str, default="")
     p.add_argument("--rfdetr-model-class", type=str, default="RFDETRSmall")
     p.add_argument("--conf", type=float, default=0.25)
+    p.add_argument(
+        "--yolo-imgsz",
+        type=int,
+        default=None,
+        help="Optional Ultralytics predict imgsz (e.g. 768 to match ants_expA002b_imgsz768 training).",
+    )
     p.add_argument("--max-images", type=int, default=None)
     p.add_argument(
         "--cvat-coco-categories",
@@ -153,7 +164,8 @@ def main() -> None:
         h, w = bgr.shape[:2]
         rgb = cv2.cvtColor(bgr, cv2.COLOR_BGR2RGB)
         if backend == "yolo":
-            preds = _infer_with_yolo(infer_model, rgb, conf=float(args.conf))
+            imgsz = int(args.yolo_imgsz) if args.yolo_imgsz is not None else None
+            preds = _infer_with_yolo(infer_model, rgb, conf=float(args.conf), imgsz=imgsz)
         else:
             preds = _infer_with_rfdetr(infer_model, rgb, conf=float(args.conf))
         coco_images.append(
@@ -208,6 +220,7 @@ def main() -> None:
         "images_processed": len(coco_images),
         "annotations_generated": len(coco_anns),
         "conf": float(args.conf),
+        "yolo_imgsz": int(args.yolo_imgsz) if args.yolo_imgsz is not None else None,
         "weights": {
             "yolo": str(yolo_w) if yolo_w else None,
             "rfdetr": str(rfd_w) if rfd_w else None,

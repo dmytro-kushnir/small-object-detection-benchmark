@@ -528,6 +528,29 @@ On this **small** dataset, **YOLO26n** reaches **high COCO mAP and matched recal
 - **Ultralytics val** during training reported similar headline mAP; unified **`evaluate.py`** numbers above are the ones to cite for **cross-model** comparison with RF-DETR / other detectors.
 - Re-run after **`git_rev`** changes and refresh this table from the JSON paths above.
 
+### EXP-CAMPO-001-V2 — YOLO26n retrain on expanded in-situ set
+
+**What changed:** Added two additional in-situ videos to the Camponotus base dataset and retrained YOLO26n with the same core train settings (`epochs=100`, `imgsz=640`, batch 16) to refresh the baseline.
+
+**Dataset summary (this run, from `datasets/camponotus_processed/analysis.json`):** 280 images resolved; **196 train / 42 val / 42 test**; **3628** boxes; class balance ~**85.1% ant (0) / 14.9% trophallaxis (1)**; `split_source: auto` (seed 42, 0.7 / 0.15 / 0.15).
+
+**Artifacts:**
+
+- run dir: `experiments/yolo/camponotus_yolo26n_v2/`
+- predictions: `experiments/results/camponotus_yolo26n_v2_{val,test}_predictions.json`
+- metrics: `experiments/results/camponotus_yolo26n_v2_{val,test}_metrics.json`
+
+**Quantitative results (recorded run):**
+
+| Split | mAP@[.50:.95] | mAP@.50 | mAP@.75 | mAP_small / mAP_medium | mAP_large | P (matched IoU≥0.5, score≥0.25) | R (matched) | TP | FP | FN | FPS (`evaluate.py`) | Latency mean (ms) |
+|-------|---------------:|--------:|--------:|:----------------------:|----------:|--------------------------------:|------------:|---:|---:|---:|--------------------:|------------------:|
+| **Val (V2)** | **0.843** | **0.962** | **0.875** | −1 / 0.233 | **0.844** | **0.908** | **0.961** | 599 | 61 | 24 | **47.7** | **21.0** |
+| **Test (V2)** | **0.902** | **0.983** | **0.931** | −1 / 0.000 | **0.902** | **0.920** | **0.981** | 520 | 45 | 10 | **47.3** | **21.2** |
+
+**Interpretation:** Test mAP@[.5:.95] remains essentially unchanged vs the first Camponotus run (~0.902), while mAP@0.5 and matched precision/recall improve. Val mAP@[.5:.95] is lower than the earlier run, but this is on a larger and different split (42 images vs 19), so direct one-number comparison should be treated as a distribution shift rather than regression by itself.
+
+**Important caveat (observed during inference):** `infer_yolo.py` reported skipped files (e.g., 16 extra in val, 13 extra in test) that were present in `datasets/camponotus_yolo/images/{val,test}` but not in the current COCO GT lists. Metrics remain valid because skipped files are ignored, but this indicates stale files in split folders from prior exports. Before future reruns, clear split image/label folders (or regenerate into a clean output root) to avoid noisy warnings and benchmark ambiguity.
+
 ### RF-DETR comparison (EXP-CAMPO-RFDETR)
 
 **Goal:** Same **splits** and **two-class COCO** as YOLO Camponotus; compare RF-DETR vs YOLO26 using unified **`evaluate.py`**.
@@ -547,6 +570,7 @@ On this **small** dataset, **YOLO26n** reaches **high COCO mAP and matched recal
 
 | Date | Experiment(s) | Summary |
 |------|----------------|---------|
+| 2026-03-26 | EXP-CAMPO-001-V2 (Camponotus YOLO26n retrain) | Updated dataset to **280 images** (196/42/42) with two additional in-situ videos; retrained `camponotus_yolo26n_v2`. Results: **val** mAP@[.5:.95] **0.843**, mAP@.50 **0.962**, matched P/R **0.908 / 0.961**; **test** mAP@[.5:.95] **0.902**, mAP@.50 **0.983**, matched P/R **0.920 / 0.981**; FPS ~**47.3–47.7** @640, latency ~**21 ms**. Note: inference logs reported extra stale files in val/test image dirs not present in COCO GT; skipped by `infer_yolo.py`. |
 | 2026-03-25 | EXP-CAMPO-RFDETR (tooling) | Added `prepare_camponotus_coco_rfdetr.py`, `configs/expCAMPO_rfdetr.yaml`, `run_camponotus_rfdetr_exp.sh`, `infer_rfdetr.py --class-id-mode multiclass`, `compare_camponotus_rfdetr_vs_yolo.py`, `export_camponotus_ant_only_for_idea2.py`, `docs/camponotus_research_roadmap.md`. **Metrics:** run the orchestrator and fill the EXP-CAMPO-RFDETR table above. |
 | 2026-03-25 | EXP-CAMPO-001 (Camponotus YOLO26n) | CVAT→prepare (`--split-source auto`)→train `camponotus_yolo26n`→infer/eval: **val** mAP@[.5:.95] **0.885**, mAP@.50 **0.935**, matched P/R **0.895 / 0.960**; **test** mAP@[.5:.95] **0.902**, mAP@.50 **0.949**, P/R **0.908 / 0.956**; FPS ~**33–34** @640 on RTX 4070. COCO small/medium AP **−1** (all boxes “large”). Caveats: auto split, small n, possible frame leakage. |
 | 2026-03-21 | EXP-000 vs EXP-001 | Initial write-up; train-only small-box filter; no mAP_small gain, overall metrics slightly worse on recorded run. |

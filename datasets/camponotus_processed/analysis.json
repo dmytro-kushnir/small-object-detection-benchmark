@@ -1,35 +1,35 @@
 {
   "images_by_split": {
-    "train": 88,
-    "val": 19,
-    "test": 19
+    "train": 196,
+    "val": 42,
+    "test": 42
   },
   "objects_by_split": {
-    "train": 1140,
-    "val": 249,
-    "test": 248
+    "train": 2475,
+    "val": 623,
+    "test": 530
   },
   "class_counts_by_split": {
     "train": {
-      "0": 900,
-      "1": 240
+      "0": 2107,
+      "1": 368
     },
     "val": {
-      "0": 205,
-      "1": 44
+      "0": 547,
+      "1": 76
     },
     "test": {
-      "0": 198,
-      "1": 50
+      "0": 434,
+      "1": 96
     }
   },
   "source_distribution": {
-    "in_situ": 126,
+    "in_situ": 280,
     "external": 0
   },
   "class_balance": {
-    "ant_fraction": 0.7959682345754429,
-    "trophallaxis_fraction": 0.20403176542455712
+    "ant_fraction": 0.8511576626240352,
+    "trophallaxis_fraction": 0.14884233737596472
   },
   "split_source": "auto",
   "auto_split": {
@@ -37,7 +37,7 @@
     "train_ratio": 0.7,
     "val_ratio": 0.15,
     "test_ratio": 0.15000000000000005,
-    "coco_images_total": 126,
-    "resolved_under_raw_root": 126
+    "coco_images_total": 280,
+    "resolved_under_raw_root": 280
   }
 }
