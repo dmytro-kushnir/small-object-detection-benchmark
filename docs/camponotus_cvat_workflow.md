@@ -113,12 +113,165 @@ Without **`--carry-state-attributes`**, every box is **`ant`** with no metadata;
 If using model-assisted prelabeling:
 
 1. Generate prelabels with `scripts/datasets/bootstrap_camponotus_autolabel.py` (optional **`--cvat-coco-categories`** if you skip the shift script and want 1-based ids in the raw file).
+   - For sequential in-situ clips, you can reduce ID flicker and emit stable per-box `track_id` directly in the prelabel COCO via ByteTrack:
+
+```bash
+python3 scripts/datasets/bootstrap_camponotus_autolabel.py \
+  --images-root datasets/camponotus_raw/in_situ \
+  --backend yolo \
+  --yolo-weights experiments/yolo/camponotus_yolo26n_v2/weights/best.pt \
+  --conf 0.45 \
+  --with-tracking \
+  --track-thresh 0.25 \
+  --match-thresh 0.8 \
+  --track-buffer 30 \
+  --min-track-len 2 \
+  --out datasets/camponotus_processed/prelabels/camponotus_prelabels_yolo26n_v2_tracked.json
+```
+
+   - This is useful for Idea 1 annotation stability and serves as a starter for Idea 2 sequence tooling.
+   - Optional stronger identity continuity path (YOLO backend only): BoT-SORT with appearance ReID.
+
+```bash
+python3 scripts/datasets/bootstrap_camponotus_autolabel.py \
+  --images-root datasets/camponotus_raw/in_situ \
+  --backend yolo \
+  --yolo-weights experiments/yolo/camponotus_yolo26n_v2/weights/best.pt \
+  --conf 0.45 \
+  --with-tracking \
+  --tracker botsort \
+  --botsort-with-reid \
+  --track-thresh 0.25 \
+  --match-thresh 0.8 \
+  --track-buffer 30 \
+  --min-track-len 2 \
+  --out datasets/camponotus_processed/prelabels/camponotus_prelabels_yolo26n_v2_tracked_botsort_reid.json
+```
+
+   - Compare this output against the ByteTrack output with `scripts/evaluation/compare_camponotus_prelabels_tracking.py` and keep whichever gives fewer short fragmented tracks at acceptable box retention.
+   - Optional soft state-priority relabel (no deletion): if a `normal` box strongly overlaps a `trophallaxis` box and score gap is small, relabel `normal -> trophallaxis`.
+
+```bash
+python3 scripts/datasets/bootstrap_camponotus_autolabel.py \
+  --images-root datasets/camponotus_raw/in_situ \
+  --backend yolo \
+  --yolo-weights experiments/yolo/camponotus_yolo26n_v2/weights/best.pt \
+  --conf 0.45 \
+  --with-tracking \
+  --tracker botsort \
+  --botsort-with-reid \
+  --state-priority-soft \
+  --state-priority-iou-thresh 0.70 \
+  --state-priority-score-gap-max 0.12 \
+  --out datasets/camponotus_processed/prelabels/camponotus_prelabels_yolo26n_v2_tracked_botsort_reid_soft.json
+```
 2. For CVAT import, run **`coco_shift_category_ids_for_cvat.py`** (**`--collapse-to-single-label ant --carry-state-attributes`** for pattern A with `state`, or plain shift for pattern B).
 3. Import the resulting JSON into CVAT.
 4. Correct manually.
 5. Export corrected COCO and keep both files:
    - machine prelabels (raw)
    - corrected human-reviewed labels
+
+### Optional: emit MOT-style JSON together with COCO
+
+If you want tracking-native sidecar data from the same run, add `--mot-out-json`.
+
+```bash
+python3 scripts/datasets/bootstrap_camponotus_autolabel.py \
+  --images-root datasets/camponotus_raw/in_situ \
+  --backend yolo \
+  --yolo-weights experiments/yolo/camponotus_yolo26n_v2/weights/best.pt \
+  --conf 0.45 \
+  --with-tracking \
+  --tracker botsort \
+  --botsort-with-reid \
+  --state-priority-soft \
+  --state-priority-iou-thresh 0.70 \
+  --state-priority-score-gap-max 0.12 \
+  --out datasets/camponotus_processed/prelabels/camponotus_prelabels_yolo26n_v2_tracked_botsort_reid_soft.json \
+  --mot-out-json datasets/camponotus_processed/prelabels/camponotus_prelabels_yolo26n_v2_tracked_botsort_reid_soft_mot.json
+```
+
+This writes:
+- COCO detections (`--out`) with per-annotation `track_id` metadata.
+- MOT-style JSON (`--mot-out-json`) with per-sequence frame index and MOTChallenge-like rows.
+
+### Optional: emit CVAT Video 1.1 XML together with COCO
+
+For native CVAT track editing with `state` attribute, add `--cvat-video-xml-out`:
+
+```bash
+python3 scripts/datasets/bootstrap_camponotus_autolabel.py \
+  --images-root datasets/camponotus_raw/in_situ \
+  --backend yolo \
+  --yolo-weights experiments/yolo/camponotus_yolo26n_v2/weights/best.pt \
+  --conf 0.45 \
+  --with-tracking \
+  --tracker botsort \
+  --botsort-with-reid \
+  --state-priority-soft \
+  --state-priority-iou-thresh 0.70 \
+  --state-priority-score-gap-max 0.12 \
+  --out datasets/camponotus_processed/prelabels/camponotus_prelabels_yolo26n_v2_tracked_botsort_reid_soft.json \
+  --cvat-video-xml-out datasets/camponotus_processed/prelabels/camponotus_prelabels_yolo26n_v2_tracked_botsort_reid_soft_cvat_video.xml
+```
+
+This writes CVAT Video 1.1 XML with:
+- tracked objects as `<track>` items,
+- per-frame `<box>` entries,
+- `state` attribute (`normal` / `trophallaxis`) on each box.
+
+### Optional: compare tracked vs ordinary prelabels
+
+Generate an ordinary (non-tracked) JSON first (same weights/conf, just without `--with-tracking`), then compare:
+
+```bash
+python3 scripts/evaluation/compare_camponotus_prelabels_tracking.py \
+  --ordinary datasets/camponotus_processed/prelabels/camponotus_prelabels_yolo26n_v2_plain.json \
+  --tracked datasets/camponotus_processed/prelabels/camponotus_prelabels_yolo26n_v2_tracked.json \
+  --out-json experiments/results/camponotus_prelabels_tracking_compare.json \
+  --out-txt experiments/results/camponotus_prelabels_tracking_compare.txt
+```
+
+This writes a reproducible log with:
+- annotation count deltas,
+- per-image density changes,
+- `track_id` coverage,
+- track length distribution and short-track ratio,
+- gap events (flicker proxy).
+
+### One-class CVAT command (ant + state attribute)
+
+For Pattern A tasks (single rectangle label `ant` with `state` attribute), convert tracked prelabels to one class:
+
+```bash
+python3 scripts/datasets/coco_shift_category_ids_for_cvat.py \
+  --in datasets/camponotus_processed/prelabels/camponotus_prelabels_yolo26n_v2_tracked_botsort_reid_soft.json \
+  --out datasets/camponotus_processed/prelabels/camponotus_prelabels_yolo26n_v2_tracked_botsort_reid_soft_cvat_ant_only.json \
+  --collapse-to-single-label ant \
+  --carry-state-attributes
+```
+
+This keeps only `ant` as the CVAT label and writes behavior to annotation `attributes.state` (`normal` / `trophallaxis`).
+
+### Optional: video tracking visualization (IDs + trajectory lines)
+
+For qualitative QA on a full clip, render tracked boxes with `id` labels and history trails:
+
+```bash
+python3 scripts/inference/track_yolo_video.py \
+  --weights experiments/yolo/camponotus_yolo26n_v2/weights/best.pt \
+  --source-video /path/to/camponotus_trophallaxis_006.mov \
+  --out-video runs/detect/experiments/results/video_try_troph0033/camponotus_trophallaxis_006_tracked_botsort.mp4 \
+  --tracker botsort \
+  --conf 0.45 \
+  --trail-len 40
+```
+
+Notes:
+- Use repo-relative output paths under `runs/` (or another project output folder).
+- Keep source path configurable per machine (`/path/to/...`) and avoid hardcoding local absolute paths in committed scripts/docs.
+- Switch `--tracker` to `bytetrack` for side-by-side qualitative comparison.
 
 ## 7) Label Studio Fallback
 

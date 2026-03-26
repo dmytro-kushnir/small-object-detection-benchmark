@@ -564,12 +564,105 @@ On this **small** dataset, **YOLO26n** reaches **high COCO mAP and matched recal
 
 **Quantitative results:** *Pending first recorded run* — after `./scripts/run_camponotus_rfdetr_exp.sh`, paste val/test tables here from the metrics JSONs and add a Changelog row.
 
+### EXP-CAMPO-PRELABEL-TRACKING-001 — ByteTrack prelabel ablation for Idea 1 dataset workflow
+
+**Goal:** Improve CVAT prelabel usability for Idea 1 (two-class detection) by adding stable `track_id` while avoiding excessive box loss.
+
+**Inputs and outputs (recorded run):**
+
+- ordinary prelabels: `datasets/camponotus_processed/prelabels/camponotus_prelabels_yolo26n_v2_plain.json`
+- tracked baseline: `datasets/camponotus_processed/prelabels/camponotus_prelabels_yolo26n_v2_tracked.json`
+- tracked tunedA: `datasets/camponotus_processed/prelabels/camponotus_prelabels_yolo26n_v2_tracked_tunedA.json`
+- compare JSONs:
+  - `experiments/results/camponotus_prelabels_tracking_compare_baseline.json`
+  - `experiments/results/camponotus_prelabels_tracking_compare_tunedA.json`
+
+**Tracking settings compared:**
+
+- **Baseline:** `track_thresh=0.25`, `match_thresh=0.8`, `track_buffer=30`, `min_track_len=2`
+- **TunedA:** `track_thresh=0.20`, `match_thresh=0.75`, `track_buffer=45`, `min_track_len=1`
+
+**Quantitative comparison (vs ordinary prelabels):**
+
+| Variant | Annotations | Delta vs ordinary | Images with annotations | Track coverage | Unique tracks | Track len mean / median | Short tracks <=2 | Gap events | Gap frames |
+|---------|------------:|------------------:|------------------------:|---------------:|--------------:|------------------------:|-----------------:|-----------:|----------:|
+| Ordinary (no tracking) | 12791 | 0 | 1505 | 0.0% | 0 | - | - | - | - |
+| Tracked baseline | 11051 | -1740 (-13.6%) | 1463 | 100.0% | 623 | 17.74 / 10.0 | 10.75% | 1465 | 5466 |
+| Tracked tunedA | 10920 | -1871 (-14.6%) | 1462 | 100.0% | 785 | 13.91 / 6.0 | 23.44% | 1427 | 6444 |
+
+**Interpretation:** Both tracking variants successfully assign persistent IDs (`track_id` coverage 100%). For Idea 1 dataset preparation, **baseline** is preferable to tunedA: tunedA slightly reduces gap-event count but increases total missing-gap frames, produces substantially more short fragmented tracks, and drops more boxes vs ordinary prelabels.
+
+**Working recommendation (Idea 1):** Keep ByteTrack enabled for CVAT bootstrap, but use the **baseline** settings above as default. Continue manual correction in CVAT as the quality gate.
+
+**ID stability finding (current):** For dense Camponotus scenes, even with a good detector baseline (YOLO26n_v2) and standard tracking libraries (ByteTrack in this run), it is **not realistic to fully eliminate true-positive ID flicker** (`track_id` switches/fragmentation). Tracking reduces manual work and improves continuity, but some TP ID instability remains and must be handled by annotation QA. This is expected behavior in heavy occlusion/contact scenarios and should be treated as an operational constraint, not as a pipeline failure.
+
+### EXP-CAMPO-PRELABEL-TRACKING-002 — BoT-SORT (+ReID) follow-up for Idea 1 dataset workflow
+
+**Goal:** Test whether BoT-SORT with appearance ReID improves ID continuity vs ByteTrack while preserving usable prelabels for CVAT.
+
+**Inputs and outputs (recorded run):**
+
+- ordinary prelabels: `datasets/camponotus_processed/prelabels/camponotus_prelabels_yolo26n_v2_plain.json`
+- BoT-SORT(+ReID) prelabels: `datasets/camponotus_processed/prelabels/camponotus_prelabels_yolo26n_v2_tracked_botsort_reid.json`
+- compare JSON: `experiments/results/camponotus_prelabels_tracking_compare_botsort_reid.json`
+
+**Tracking settings (BoT-SORT run):** `track_thresh=0.25`, `match_thresh=0.8`, `track_buffer=30`, `min_track_len=2`, `tracker=botsort`, `with_reid=true`.
+
+**Quantitative comparison (vs ordinary prelabels):**
+
+| Variant | Annotations | Delta vs ordinary | Images with annotations | Track coverage | Unique tracks | Track len mean / median | Short tracks <=2 | Gap events | Gap frames |
+|---------|------------:|------------------:|------------------------:|---------------:|--------------:|------------------------:|-----------------:|-----------:|----------:|
+| Ordinary (no tracking) | 12791 | 0 | 1505 | 0.0% | 0 | - | - | - | - |
+| BoT-SORT + ReID | 13517 | +726 (+5.7%) | - | 100.0% | 330 | 40.96 / 37.5 | 4.24% | 907 | 3713 |
+
+**Interpretation:** Compared with the prior ByteTrack baseline (11051 boxes, short<=2 10.75%, gap events 1465), BoT-SORT(+ReID) substantially improves continuity indicators: fewer fragmented short tracks, longer trajectories, and fewer gap events/frames. It also retains more detections than ordinary prelabels in this run.
+
+**Working recommendation (Idea 1):** Prefer **BoT-SORT + ReID** as the default tracking option for CVAT bootstrap on this dataset, then validate prelabel precision on a small hard-clip sample during annotation QA.
+
+### EXP-CAMPO-PRELABEL-TRACKING-003 — Soft state-priority relabel toggle (tooling update)
+
+**Goal:** Reduce confusing class conflicts in dense contact scenes without deleting detections.
+
+**Implemented toggles (both prelabels + video QA):**
+
+- `--state-priority-soft`
+- `--state-priority-iou-thresh` (default `0.70`)
+- `--state-priority-score-gap-max` (default `0.12`)
+
+**Rule:** if a `normal` box strongly overlaps a `trophallaxis` box and confidence scores are close, relabel `normal -> trophallaxis`. The box is kept (no suppression/drop).
+
+**Why this is safer than hard suppression:** the previous drop-based overlap filter removed potentially valid ant detections and did not improve practical annotation quality. The soft rule preserves geometry and only changes class in ambiguous overlap cases.
+
+**Current status:** tooling added; quantitative effect should be measured on the next tracked-vs-soft compare run and then recorded here.
+
+### EXP-CAMPO-PRELABEL-TRACKING-004 — CVAT Video 1.1 XML export + timeline/interpolation fix (tooling update)
+
+**Goal:** Provide a tracking-native CVAT import path that preserves per-box `state` while avoiding overdraw/track explosion artifacts during review.
+
+**Implemented outputs/toggles:**
+
+- `bootstrap_camponotus_autolabel.py --cvat-video-xml-out ...` (CVAT Video 1.1 XML sidecar)
+- exporter supports `<track>` + per-frame `<box>` and `attribute name="state"` (`normal` / `trophallaxis`)
+
+**Root cause observed during first XML iteration:** CVAT showed many overlapping/long-lived tracks caused by timeline/interpolation mismatch (frame indexing + missing explicit track closure on gaps).
+
+**Fix applied:** XML export now uses a consistent global frame timeline and writes explicit `outside=1` closure keyframes when a track disappears (gap/end), preventing unintended interpolation carry-over.
+
+**Related analytics consistency fix:** `track_yolo_video.py` frame indexing was corrected so `frame_index` increments only for valid rendered frames (prevents gap/length metric skew if `orig_img` is `None`).
+
+**Current status:** validated qualitatively in CVAT; keep this XML path as the default when native track editing is required. COCO+`track_id` remains useful for training/evaluation metadata.
+
 ---
 
 ## Changelog
 
 | Date | Experiment(s) | Summary |
 |------|----------------|---------|
+| 2026-03-26 | EXP-CAMPO-PRELABEL-TRACKING-004 (tooling) | Added CVAT Video 1.1 XML export (`--cvat-video-xml-out`) with `state` attribute support and fixed timeline/interpolation behavior (global frame indexing + explicit `outside=1` closures) to avoid track overdraw/explosion in CVAT. Also fixed `track_yolo_video.py` analytics frame indexing for `None` frames. |
+| 2026-03-26 | EXP-CAMPO-PRELABEL-TRACKING-003 (tooling) | Added optional soft state-priority relabel to prelabel and video tracking scripts: `--state-priority-soft`, `--state-priority-iou-thresh`, `--state-priority-score-gap-max`. Rule relabels overlapping ambiguous `normal` boxes to `trophallaxis` without deleting detections; intended as a safer alternative to prior hard suppression. Quantitative results pending next run. |
+| 2026-03-26 | EXP-CAMPO-PRELABEL-TRACKING-002 | BoT-SORT(+ReID) follow-up on Camponotus prelabels (`tracker=botsort`, `with_reid=true`, `0.25/0.8/30/min_len=2`): vs ordinary, annotations `12791→13517` (+5.7%), track coverage 100%, unique tracks 330, track len mean/median `40.96/37.5`, short tracks <=2 `4.24%`, gap events `907` (gap frames 3713). Compared to prior ByteTrack baseline, continuity/fragmentation metrics improved strongly; recommendation updated to prefer BoT-SORT+ReID for Idea 1 CVAT bootstrap, with QA on hard clips. |
+| 2026-03-26 | EXP-CAMPO-PRELABEL-TRACKING-001 (interpretation update) | Added explicit ID-stability finding: in dense in-situ ant scenes, TP `track_id` flicker cannot be fully removed with detector+tracker alone (current evidence from ByteTrack baseline/tunedA); manual QA remains required. This baseline interpretation is now complemented by the BoT-SORT(+ReID) follow-up row above. |
+| 2026-03-26 | EXP-CAMPO-PRELABEL-TRACKING-001 | Compared ordinary vs ByteTrack prelabels for Camponotus Idea 1 dataset workflow. Baseline tracking (`0.25/0.8/30/min_len=2`) produced `11051` boxes (−13.6% vs ordinary `12791`) with 100% `track_id` coverage, 623 tracks, median track length 10, short tracks <=2 at 10.75%, gap events 1465 (5466 frames). TunedA (`0.20/0.75/45/min_len=1`) underperformed for curation quality: fewer boxes (`10920`), more fragmentation (short <=2 at 23.44%), lower median track length (6), and higher total gap frames (6444). Recommendation: keep baseline tracking defaults for prelabel bootstrap. |
 | 2026-03-26 | EXP-CAMPO-001-V2 (Camponotus YOLO26n retrain) | Updated dataset to **280 images** (196/42/42) with two additional in-situ videos; retrained `camponotus_yolo26n_v2`. Results: **val** mAP@[.5:.95] **0.843**, mAP@.50 **0.962**, matched P/R **0.908 / 0.961**; **test** mAP@[.5:.95] **0.902**, mAP@.50 **0.983**, matched P/R **0.920 / 0.981**; FPS ~**47.3–47.7** @640, latency ~**21 ms**. Note: inference logs reported extra stale files in val/test image dirs not present in COCO GT; skipped by `infer_yolo.py`. |
 | 2026-03-25 | EXP-CAMPO-RFDETR (tooling) | Added `prepare_camponotus_coco_rfdetr.py`, `configs/expCAMPO_rfdetr.yaml`, `run_camponotus_rfdetr_exp.sh`, `infer_rfdetr.py --class-id-mode multiclass`, `compare_camponotus_rfdetr_vs_yolo.py`, `export_camponotus_ant_only_for_idea2.py`, `docs/camponotus_research_roadmap.md`. **Metrics:** run the orchestrator and fill the EXP-CAMPO-RFDETR table above. |
 | 2026-03-25 | EXP-CAMPO-001 (Camponotus YOLO26n) | CVAT→prepare (`--split-source auto`)→train `camponotus_yolo26n`→infer/eval: **val** mAP@[.5:.95] **0.885**, mAP@.50 **0.935**, matched P/R **0.895 / 0.960**; **test** mAP@[.5:.95] **0.902**, mAP@.50 **0.949**, P/R **0.908 / 0.956**; FPS ~**33–34** @640 on RTX 4070. COCO small/medium AP **−1** (all boxes “large”). Caveats: auto split, small n, possible frame leakage. |

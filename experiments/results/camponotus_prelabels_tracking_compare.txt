@@ -1,0 +1,15 @@
+Camponotus prelabel tracking comparison
+ordinary: /home/dmytro/Develop/small-object-detection-benchmark/datasets/camponotus_processed/prelabels/camponotus_prelabels_yolo26n_v2_plain.json
+tracked:  /home/dmytro/Develop/small-object-detection-benchmark/datasets/camponotus_processed/prelabels/camponotus_prelabels_yolo26n_v2_tracked.json
+
+images: 1679 (ordinary) vs 1679 (tracked)
+annotations: 12791 vs 11051 (delta -1740)
+ann/image mean: 7.618 vs 6.582
+
+tracked-only continuity indicators:
+- track_id coverage: 100.000%
+- unique tracks: 623
+- track len mean/median/p90: 17.74 / 10.00 / 42.00
+- short tracks <=2: 67 (10.754%)
+- short tracks <=3: 117 (18.780%)
+- gap events: 1465 (total gap frames 5466)

@@ -1,0 +1,28 @@
+{
+  "source_video": "/media/dmytro/data/datasets/ants_videos/camponotus_trophallaxis_006.mov",
+  "output_video": "/home/dmytro/Develop/small-object-detection-benchmark/runs/detect/experiments/results/video_try_troph0033/camponotus_trophallaxis_006_tracked_botsort_state_soft.mp4",
+  "frames_processed": 359,
+  "states": {
+    "normal": 1431,
+    "trophallaxis": 141
+  },
+  "unique_tracks": 26,
+  "track_len_mean": 60.46153846153846,
+  "track_len_median": 15.0,
+  "short_tracks_len_le_2": 6,
+  "short_tracks_len_le_3": 8,
+  "gap_events": 114,
+  "gap_frames_total": 474,
+  "tracker": "botsort",
+  "with_reid": true,
+  "conf": 0.45,
+  "track_thresh": 0.25,
+  "match_thresh": 0.8,
+  "track_buffer": 30,
+  "state_priority_soft": {
+    "enabled": true,
+    "iou_thresh": 0.7,
+    "score_gap_max": 0.12,
+    "relabel_count": 3
+  }
+}
