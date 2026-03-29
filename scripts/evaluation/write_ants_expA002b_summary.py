@@ -10,6 +10,11 @@ import sys
 from pathlib import Path
 from typing import Any
 
+_SCRIPTS_DIR = Path(__file__).resolve().parents[1]
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+from repo_paths import path_for_artifact
+
 
 def _load_json(p: Path) -> dict[str, Any]:
     return json.loads(p.read_text(encoding="utf-8"))
@@ -17,13 +22,6 @@ def _load_json(p: Path) -> dict[str, Any]:
 
 def _repo_root() -> Path:
     return Path(__file__).resolve().parents[2]
-
-
-def _path_for_md(p: Path, repo_root: Path) -> str:
-    try:
-        return str(p.resolve().relative_to(repo_root.resolve())).replace("\\", "/")
-    except ValueError:
-        return str(p.resolve())
 
 
 def _fmt(x: Any, digits: int = 4) -> str:
@@ -93,9 +91,9 @@ def main() -> None:
     if rel_p.is_file():
         rel = _load_json(rel_p)
 
-    sweep_md = _path_for_md(sweep_p, root)
-    base_md = _path_for_md(baseline_p, root) if baseline else None
-    rel_md = _path_for_md(rel_p, root) if rel else None
+    sweep_md = path_for_artifact(sweep_p, root)
+    base_md = path_for_artifact(baseline_p, root) if baseline else None
+    rel_md = path_for_artifact(rel_p, root) if rel else None
 
     best_mm = max(summary, key=lambda r: (_map_medium_key(r.get("mAP_medium")), -r["imgsz"]))
     best_fps_row: dict[str, Any] | None = None

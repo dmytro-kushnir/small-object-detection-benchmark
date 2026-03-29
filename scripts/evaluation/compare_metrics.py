@@ -9,6 +9,11 @@ import sys
 from pathlib import Path
 from typing import Any
 
+_SCRIPTS_DIR = Path(__file__).resolve().parents[1]
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+from repo_paths import path_for_artifact
+
 DEFAULT_EVAL_NOTE = (
     "Ensure both runs use the same validation GT and comparable training setup when interpreting deltas."
 )
@@ -77,6 +82,7 @@ def main() -> None:
     )
     args = p.parse_args()
 
+    repo_root = Path(__file__).resolve().parents[2]
     base_path = Path(args.baseline).expanduser().resolve()
     cmp_path = Path(args.compare).expanduser().resolve()
     out_path = Path(args.out).expanduser().resolve()
@@ -131,7 +137,10 @@ def main() -> None:
         "compare_inference": ib_c,
         "inference_deltas": infer_deltas,
         "evaluation_note": args.evaluation_note,
-        "paths": {"baseline": str(base_path), "compare": str(cmp_path)},
+        "paths": {
+            "baseline": path_for_artifact(base_path, repo_root),
+            "compare": path_for_artifact(cmp_path, repo_root),
+        },
     }
 
     out_path.parent.mkdir(parents=True, exist_ok=True)

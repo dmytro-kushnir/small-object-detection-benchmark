@@ -4,6 +4,8 @@ The repo includes `datasets/raw/` and `datasets/processed/` (placeholders tracke
 
 Use **normal directories** inside the clone for `datasets/`, `experiments/`, and `models/` (not symlinks to other mounts), so Git can track `.gitkeep` files and paths match the scripts.
 
+Some committed JSON uses **paths relative to the repository root** (for anything inside the clone). Paths that point at video or bulk data **outside** the repo may appear as ``<DATASETS_ROOT>/...``; treat that as “under your local datasets root” (for example the parent folder that contains `ants_videos/`). Scripts that emit new metrics use `scripts/repo_paths.py` for the same convention.
+
 ## Preparation
 
 From the repository root:

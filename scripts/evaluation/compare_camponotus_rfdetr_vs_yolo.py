@@ -9,6 +9,11 @@ import sys
 from pathlib import Path
 from typing import Any
 
+_SCRIPTS_DIR = Path(__file__).resolve().parents[1]
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+from repo_paths import path_for_artifact
+
 EVAL_NOTE = (
     "RF-DETR full-image predict vs Ultralytics YOLO on Camponotus two-class data. "
     "Input resolution, augmentation, and backbone may differ; interpret mAP and throughput accordingly."
@@ -133,7 +138,10 @@ def main() -> None:
 
     payload: dict[str, Any] = {
         "evaluation_note": args.evaluation_note,
-        "paths": {"baseline_metrics": str(pb), "rfdetr_metrics": str(pc)},
+        "paths": {
+            "baseline_metrics": path_for_artifact(pb, root),
+            "rfdetr_metrics": path_for_artifact(pc, root),
+        },
         "deltas_rfdetr_minus_yolo": pair,
     }
 

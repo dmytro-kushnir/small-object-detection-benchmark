@@ -11,6 +11,11 @@ from typing import Any
 
 import yaml
 
+_SCRIPTS_DIR = Path(__file__).resolve().parents[1]
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+from repo_paths import path_for_artifact
+
 
 def _load_json(p: Path) -> dict[str, Any]:
     return json.loads(p.read_text(encoding="utf-8"))
@@ -31,14 +36,6 @@ def _fmt(x: Any, digits: int = 6) -> str:
 
 def _repo_root() -> Path:
     return Path(__file__).resolve().parents[2]
-
-
-def _path_for_md(p: Path, repo_root: Path) -> str:
-    """Repo-relative path when under repo root (portable); else absolute."""
-    try:
-        return str(p.resolve().relative_to(repo_root.resolve())).replace("\\", "/")
-    except ValueError:
-        return str(p.resolve())
 
 
 def main() -> None:
@@ -86,11 +83,11 @@ def main() -> None:
     mopf = an.get("mean_objects_per_frame")
     mopf_s = f"{float(mopf):.4f}" if isinstance(mopf, (int, float)) else "—"
 
-    mf_md = _path_for_md(mf, root)
-    rel_md = _path_for_md(rel_p, root)
-    tc_md = _path_for_md(tc_p, root)
-    an_md = _path_for_md(an_p, root)
-    smoke_md = _path_for_md(smoke_path, root) if smoke_path else None
+    mf_md = path_for_artifact(mf, root)
+    rel_md = path_for_artifact(rel_p, root)
+    tc_md = path_for_artifact(tc_p, root)
+    an_md = path_for_artifact(an_p, root)
+    smoke_md = path_for_artifact(smoke_path, root) if smoke_path else None
 
     lines: list[str] = [
         "# EXP-A000 full baseline: Ant detector (YOLO26n)",
@@ -149,7 +146,7 @@ def main() -> None:
         "",
         f"**GT relative area (percentiles):** p5={_fmt(perc.get('p5'))}, p50={_fmt(perc.get('p50'))}, p95={_fmt(perc.get('p95'))}.",
         "",
-        f"Full relative stats: `{rel_p}`",
+        f"Full relative stats: `{rel_md}`",
         "",
         "## 4. Observations",
         "",

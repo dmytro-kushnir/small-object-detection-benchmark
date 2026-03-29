@@ -13,6 +13,11 @@ import time
 from pathlib import Path
 from typing import Any
 
+_SCRIPTS_DIR = Path(__file__).resolve().parents[1]
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+from repo_paths import path_for_artifact
+
 
 def _filter_kwargs(callable_obj: Any, kwargs: dict[str, Any]) -> dict[str, Any]:
     try:
@@ -179,7 +184,7 @@ def main() -> None:
     if args.config:
         cfg_p = Path(args.config).expanduser().resolve()
         if cfg_p.is_file():
-            payload["config_path"] = str(cfg_p)
+            payload["config_path"] = path_for_artifact(cfg_p, _ROOT)
 
     out_path.parent.mkdir(parents=True, exist_ok=True)
     out_path.write_text(json.dumps(payload, indent=2), encoding="utf-8")

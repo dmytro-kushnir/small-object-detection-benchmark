@@ -15,11 +15,14 @@ import numpy as np
 # Allow direct script execution (python scripts/...).
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
+from repo_paths import path_for_artifact
 from yolo_track_common import (
     build_tracker_config,
     iter_tracked_detections,
     temporary_tracker_yaml,
 )
+
+_REPO_ROOT = Path(__file__).resolve().parents[2]
 
 
 def _color_for_id(track_id: int) -> tuple[int, int, int]:
@@ -316,8 +319,8 @@ def main() -> None:
                     gap_events += 1
                     gap_frames_total += gap
         analytics = {
-            "source_video": str(source_video),
-            "output_video": str(out_video),
+            "source_video": path_for_artifact(source_video, _REPO_ROOT),
+            "output_video": path_for_artifact(out_video, _REPO_ROOT),
             "frames_processed": int(frames),
             "states": dict(state_counts),
             "unique_tracks": int(len(track_frames)),

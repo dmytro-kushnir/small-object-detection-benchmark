@@ -5,8 +5,14 @@ from __future__ import annotations
 
 import argparse
 import json
+import sys
 from pathlib import Path
 from typing import Any
+
+_SCRIPTS_DIR = Path(__file__).resolve().parents[1]
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+from repo_paths import path_for_artifact
 
 
 def _load(path: Path) -> dict[str, Any]:
@@ -21,9 +27,13 @@ def main() -> None:
     p.add_argument("--out", type=str, required=True)
     args = p.parse_args()
 
-    det = _load(Path(args.detector_bench).expanduser().resolve())
-    tr = _load(Path(args.tracking_stats).expanduser().resolve())
-    sm = _load(Path(args.smoothing_stats).expanduser().resolve())
+    repo_root = Path(__file__).resolve().parents[2]
+    p_det = Path(args.detector_bench).expanduser().resolve()
+    p_tr = Path(args.tracking_stats).expanduser().resolve()
+    p_sm = Path(args.smoothing_stats).expanduser().resolve()
+    det = _load(p_det)
+    tr = _load(p_tr)
+    sm = _load(p_sm)
     out_path = Path(args.out).expanduser().resolve()
 
     det_lat = det.get("latency_ms_mean")
@@ -47,9 +57,9 @@ def main() -> None:
 
     payload = {
         "backend": "rfdetr+bytetrack+smoothing",
-        "detector_benchmark_path": str(Path(args.detector_bench).expanduser().resolve()),
-        "tracking_stats_path": str(Path(args.tracking_stats).expanduser().resolve()),
-        "smoothing_stats_path": str(Path(args.smoothing_stats).expanduser().resolve()),
+        "detector_benchmark_path": path_for_artifact(p_det, repo_root),
+        "tracking_stats_path": path_for_artifact(p_tr, repo_root),
+        "smoothing_stats_path": path_for_artifact(p_sm, repo_root),
         "fps": fps_total,
         "latency_ms_mean": lat_total,
         "n_images": n_images,

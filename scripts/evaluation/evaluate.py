@@ -17,6 +17,11 @@ import time
 from pathlib import Path
 from typing import Any
 
+_SCRIPTS_DIR = Path(__file__).resolve().parents[1]
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+from repo_paths import path_for_artifact
+
 
 def _iou_xywh(a: list[float], b: list[float]) -> float:
     ax, ay, aw, ah = a
@@ -381,6 +386,7 @@ def main() -> None:
         if cand.is_file():
             paths.append(cand)
 
+    repo_root = Path(__file__).resolve().parents[2]
     if bench_json_path is not None:
         raw_bench = json.loads(bench_json_path.read_text(encoding="utf-8"))
         if not isinstance(raw_bench, dict):
@@ -389,7 +395,10 @@ def main() -> None:
                 file=sys.stderr,
             )
             sys.exit(1)
-        perf = {**raw_bench, "loaded_from": str(bench_json_path)}
+        perf = {
+            **raw_bench,
+            "loaded_from": path_for_artifact(bench_json_path, repo_root),
+        }
     elif args.skip_inference_benchmark:
         perf = {"skipped": True, "note": "--skip-inference-benchmark"}
         if args.imgsz is not None:
@@ -401,7 +410,6 @@ def main() -> None:
         if args.imgsz is not None:
             perf = {**perf, "imgsz": int(args.imgsz)}
 
-    repo_root = Path(__file__).resolve().parents[2]
     payload: dict[str, Any] = {
         "experiment_id": args.experiment_id,
         "coco_eval": coco_metrics,
@@ -409,22 +417,28 @@ def main() -> None:
         "matched_pr": matched,
         "inference_benchmark": perf,
         "paths": {
-            "gt": str(gt_path),
-            "predictions": str(pred_path),
-            "weights": str(weights_path),
-            "images_dir": str(images_dir),
+            "gt": path_for_artifact(gt_path, repo_root),
+            "predictions": path_for_artifact(pred_path, repo_root),
+            "weights": path_for_artifact(weights_path, repo_root),
+            "images_dir": path_for_artifact(images_dir, repo_root),
         },
         "system_info": _system_info(),
         "git_rev": _git_rev(repo_root),
     }
     if args.train_config:
-        payload["paths"]["train_config"] = str(Path(args.train_config).resolve())
+        payload["paths"]["train_config"] = path_for_artifact(
+            Path(args.train_config), repo_root
+        )
     if args.prepare_manifest:
-        payload["paths"]["prepare_manifest"] = str(Path(args.prepare_manifest).resolve())
+        payload["paths"]["prepare_manifest"] = path_for_artifact(
+            Path(args.prepare_manifest), repo_root
+        )
     if sahi_cfg_path is not None:
-        payload["paths"]["sahi_config"] = str(sahi_cfg_path)
+        payload["paths"]["sahi_config"] = path_for_artifact(sahi_cfg_path, repo_root)
     if bench_json_path is not None:
-        payload["paths"]["inference_benchmark_json"] = str(bench_json_path)
+        payload["paths"]["inference_benchmark_json"] = path_for_artifact(
+            bench_json_path, repo_root
+        )
     if not dets:
         payload["coco_eval_note"] = "Skipped COCOeval (empty predictions); metrics zeroed."
 

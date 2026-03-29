@@ -6,9 +6,15 @@ from __future__ import annotations
 import argparse
 import json
 import re
+import sys
 from pathlib import Path
 from statistics import mean, median
 from typing import Any
+
+_SCRIPTS_DIR = Path(__file__).resolve().parents[1]
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+from repo_paths import path_for_artifact
 
 
 def _infer_sequence_key(file_name: str) -> str:
@@ -131,6 +137,7 @@ def main() -> None:
     p.add_argument("--out-txt", default="", help="Optional human-readable text report")
     args = p.parse_args()
 
+    repo_root = Path(__file__).resolve().parents[2]
     ordinary_path = Path(args.ordinary).expanduser().resolve()
     tracked_path = Path(args.tracked).expanduser().resolve()
     out_json = Path(args.out_json).expanduser().resolve()
@@ -140,8 +147,8 @@ def main() -> None:
     tracked = _dataset_stats(_load_coco(tracked_path))
 
     comparison = {
-        "ordinary_path": str(ordinary_path),
-        "tracked_path": str(tracked_path),
+        "ordinary_path": path_for_artifact(ordinary_path, repo_root),
+        "tracked_path": path_for_artifact(tracked_path, repo_root),
         "ordinary": ordinary,
         "tracked": tracked,
         "delta": {
@@ -160,10 +167,12 @@ def main() -> None:
     out_json.parent.mkdir(parents=True, exist_ok=True)
     out_json.write_text(json.dumps(comparison, indent=2), encoding="utf-8")
 
+    op = path_for_artifact(ordinary_path, repo_root)
+    tp = path_for_artifact(tracked_path, repo_root)
     lines = [
         "Camponotus prelabel tracking comparison",
-        f"ordinary: {ordinary_path}",
-        f"tracked:  {tracked_path}",
+        f"ordinary: {op}",
+        f"tracked:  {tp}",
         "",
         f"images: {ordinary['n_images']} (ordinary) vs {tracked['n_images']} (tracked)",
         f"annotations: {ordinary['n_annotations']} vs {tracked['n_annotations']} (delta {comparison['delta']['n_annotations']:+.0f})",

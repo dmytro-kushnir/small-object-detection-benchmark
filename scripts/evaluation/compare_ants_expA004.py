@@ -9,6 +9,11 @@ import sys
 from pathlib import Path
 from typing import Any
 
+_SCRIPTS_DIR = Path(__file__).resolve().parents[1]
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+from repo_paths import path_for_artifact
+
 EVAL_NOTE = (
     "ANTS v1 times the full pipeline (stage-1 @ base_imgsz + per-ROI refine passes). "
     "Vanilla 768 metrics use a single Ultralytics predict@768. "
@@ -136,9 +141,9 @@ def main() -> None:
     payload: dict[str, Any] = {
         "evaluation_note": args.evaluation_note,
         "paths": {
-            "ants_expA002b_imgsz768_metrics": str(p768),
-            "ants_expA003_sahi_metrics": str(psahi) if sahi_ok else None,
-            "ants_expA004_ants_metrics": str(pants),
+            "ants_expA002b_imgsz768_metrics": path_for_artifact(p768, root),
+            "ants_expA003_sahi_metrics": path_for_artifact(psahi, root) if sahi_ok else None,
+            "ants_expA004_ants_metrics": path_for_artifact(pants, root),
         },
         "deltas_vs_768": deltas_vs_768,
         "deltas_vs_sahi": deltas_vs_sahi,

@@ -9,6 +9,11 @@ import sys
 from pathlib import Path
 from typing import Any
 
+_SCRIPTS_DIR = Path(__file__).resolve().parents[1]
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+from repo_paths import path_for_artifact
+
 EVAL_NOTE = (
     "EXP-A006 compares RF-DETR optimized baseline to RF-DETR+ByteTrack+temporal smoothing "
     "on the same val split and evaluation pipeline."
@@ -98,8 +103,8 @@ def main() -> None:
     payload: dict[str, Any] = {
         "evaluation_note": args.evaluation_note,
         "paths": {
-            "ants_expA005_optinfer_metrics": str(pb),
-            "ants_expA006_tracking_metrics": str(pc),
+            "ants_expA005_optinfer_metrics": path_for_artifact(pb, root),
+            "ants_expA006_tracking_metrics": path_for_artifact(pc, root),
         },
         "deltas_tracking_minus_baseline": {
             "baseline_experiment_id": b.get("experiment_id"),

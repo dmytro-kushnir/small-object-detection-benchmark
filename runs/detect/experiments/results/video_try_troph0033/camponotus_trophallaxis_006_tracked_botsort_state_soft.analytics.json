@@ -1,6 +1,6 @@
 {
-  "source_video": "/media/dmytro/data/datasets/ants_videos/camponotus_trophallaxis_006.mov",
-  "output_video": "/home/dmytro/Develop/small-object-detection-benchmark/runs/detect/experiments/results/video_try_troph0033/camponotus_trophallaxis_006_tracked_botsort_state_soft.mp4",
+  "source_video": "<DATASETS_ROOT>/ants_videos/camponotus_trophallaxis_006.mov",
+  "output_video": "runs/detect/experiments/results/video_try_troph0033/camponotus_trophallaxis_006_tracked_botsort_state_soft.mp4",
   "frames_processed": 359,
   "states": {
     "normal": 1431,

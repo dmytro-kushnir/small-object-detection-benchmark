@@ -9,6 +9,11 @@ import sys
 from pathlib import Path
 from typing import Any
 
+_SCRIPTS_DIR = Path(__file__).resolve().parents[1]
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+from repo_paths import path_for_artifact
+
 
 def _load_json(p: Path) -> dict[str, Any]:
     return json.loads(p.read_text(encoding="utf-8"))
@@ -16,13 +21,6 @@ def _load_json(p: Path) -> dict[str, Any]:
 
 def _repo_root() -> Path:
     return Path(__file__).resolve().parents[2]
-
-
-def _rel(p: Path, root: Path) -> str:
-    try:
-        return str(p.resolve().relative_to(root.resolve())).replace("\\", "/")
-    except ValueError:
-        return str(p.resolve())
 
 
 def _fmt(x: Any, digits: int = 4) -> str:
@@ -81,8 +79,8 @@ def main() -> None:
         "",
         "## 2. Inputs",
         "",
-        f"- Compare JSON: `{_rel(cmp_p, root)}`",
-        f"- EXP config template: `{_rel(Path(args.exp_config), root)}`",
+        f"- Compare JSON: `{path_for_artifact(cmp_p, root)}`",
+        f"- EXP config template: `{path_for_artifact(Path(args.exp_config), root)}`",
     ]
     for k, v in (data.get("paths") or {}).items():
         lines.append(f"- `{k}`: `{v}`")

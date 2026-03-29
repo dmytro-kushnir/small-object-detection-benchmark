@@ -9,6 +9,11 @@ import sys
 from pathlib import Path
 from typing import Any
 
+_SCRIPTS_DIR = Path(__file__).resolve().parents[1]
+if str(_SCRIPTS_DIR) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS_DIR))
+from repo_paths import path_for_artifact
+
 
 def _load_json(p: Path) -> dict[str, Any]:
     return json.loads(p.read_text(encoding="utf-8"))
@@ -16,13 +21,6 @@ def _load_json(p: Path) -> dict[str, Any]:
 
 def _repo_root() -> Path:
     return Path(__file__).resolve().parents[2]
-
-
-def _path_for_md(p: Path, repo_root: Path) -> str:
-    try:
-        return str(p.resolve().relative_to(repo_root.resolve())).replace("\\", "/")
-    except ValueError:
-        return str(p.resolve())
 
 
 def _fmt(x: Any, digits: int = 4) -> str:
@@ -74,7 +72,7 @@ def main() -> None:
     rois_data = _load_json(rois_p) if rois_p and rois_p.is_file() else None
     roi_stats = (rois_data or {}).get("stats") if rois_data else None
 
-    cmp_md = _path_for_md(cmp_p, root)
+    cmp_md = path_for_artifact(cmp_p, root)
     lines: list[str] = [
         "# EXP-A004: ANTS v1 (dense-region refinement)",
         "",
