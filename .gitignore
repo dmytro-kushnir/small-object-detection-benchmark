@@ -28,6 +28,8 @@ datasets/camponotus_coco/*
 !datasets/camponotus_coco/.gitkeep
 datasets/camponotus_rfdetr_coco/*
 !datasets/camponotus_rfdetr_coco/.gitkeep
+# Any split-specific RF-DETR exports (e.g. camponotus_rfdetr_coco_sequence_safe)
+datasets/camponotus_rfdetr_coco*/
 datasets/camponotus_coco_ant_only/*
 !datasets/camponotus_coco_ant_only/.gitkeep
 datasets/camponotus_yolo_ant_only/*

@@ -361,6 +361,8 @@ Core assets:
   * frame extraction: [`extract_camponotus_frames.py`](../scripts/datasets/extract_camponotus_frames.py)
   * prelabels: [`bootstrap_camponotus_autolabel.py`](../scripts/datasets/bootstrap_camponotus_autolabel.py)
   * split manifest: [`split_camponotus_dataset.py`](../scripts/datasets/split_camponotus_dataset.py)
+  * track_id-majority split manifest: [`split_camponotus_dataset_by_track_id_majority.py`](../scripts/datasets/split_camponotus_dataset_by_track_id_majority.py)
+  * leakage QA: [`qa_track_id_overlap_in_splits.py`](../scripts/datasets/qa_track_id_overlap_in_splits.py)
   * conversion/export: [`prepare_camponotus_detection_dataset.py`](../scripts/datasets/prepare_camponotus_detection_dataset.py)
   * analysis: [`analyze_camponotus_dataset.py`](../scripts/datasets/analyze_camponotus_dataset.py)
   * validation: [`validate_camponotus_dataset.py`](../scripts/datasets/validate_camponotus_dataset.py)
@@ -371,7 +373,9 @@ Core assets:
 Outputs:
 
 * `datasets/camponotus_processed/splits.json`
+* `datasets/camponotus_processed/splits_trackid_majority_*.json` (track_id-majority variant manifest)
 * `datasets/camponotus_processed/analysis.json`
+* `datasets/camponotus_processed/trackid_overlap_qa_*.json` (optional leakage QA output)
 * `datasets/camponotus_yolo/`
 * `datasets/camponotus_coco/annotations/instances_{train,val,test}.json`
 * `datasets/camponotus_rfdetr_coco/` (when RF-DETR export is run)

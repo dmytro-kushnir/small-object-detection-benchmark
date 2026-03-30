@@ -1,43 +1,35 @@
 {
   "images_by_split": {
-    "train": 196,
-    "val": 42,
-    "test": 42
+    "train": 1188,
+    "val": 274,
+    "test": 176
   },
   "objects_by_split": {
-    "train": 2475,
-    "val": 623,
-    "test": 530
+    "train": 15365,
+    "val": 2743,
+    "test": 3635
   },
   "class_counts_by_split": {
     "train": {
-      "0": 2107,
-      "1": 368
+      "0": 14183,
+      "1": 1182
     },
     "val": {
-      "0": 547,
-      "1": 76
+      "0": 2477,
+      "1": 266
     },
     "test": {
-      "0": 434,
-      "1": 96
+      "0": 3359,
+      "1": 276
     }
   },
   "source_distribution": {
-    "in_situ": 280,
+    "in_situ": 1638,
     "external": 0
   },
   "class_balance": {
-    "ant_fraction": 0.8511576626240352,
-    "trophallaxis_fraction": 0.14884233737596472
+    "ant_fraction": 0.9207101135997793,
+    "trophallaxis_fraction": 0.07928988640022076
   },
-  "split_source": "auto",
-  "auto_split": {
-    "seed": 42,
-    "train_ratio": 0.7,
-    "val_ratio": 0.15,
-    "test_ratio": 0.15000000000000005,
-    "coco_images_total": 280,
-    "resolved_under_raw_root": 280
-  }
+  "split_source": "manifest"
 }

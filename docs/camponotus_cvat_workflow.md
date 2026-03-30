@@ -17,6 +17,11 @@ For video-derived data, extract frames first using:
 
 Then create `datasets/camponotus_processed/splits.json` with `scripts/datasets/split_camponotus_dataset.py` (default: **stratified** split so trophallaxis-named sequences appear in val/test when possible; use `--no-stratify-trophallaxis` for legacy behavior).
 
+Alternative: `track_id`-majority split manifest (leakage proxy)
+- Use `scripts/datasets/split_camponotus_dataset_by_track_id_majority.py` to create a split manifest from `annotations[].attributes.track_id` (majority track_id per image).
+- Quantify leakage with `scripts/datasets/qa_track_id_overlap_in_splits.py`.
+- Then pass that manifest into `scripts/datasets/prepare_camponotus_detection_dataset.py` via `--split-source manifest --splits <manifest_path>`.
+
 ## 2) Create CVAT Task(s)
 
 Recommended setup:
@@ -85,6 +90,8 @@ Use **`--split-source auto`** on `prepare_camponotus_detection_dataset.py`: only
 **Sequence-safe workflow (manifest mode):** (1) Put frames under `datasets/camponotus_raw/in_situ/` in **multiple** `seq_*` directories (at least **three** logical sequences so val/test are non-empty — one folder ⇒ the splitter cannot spread frames across splits). Default extraction uses `000001.jpg`-style names **inside each** `seq_*` folder, so the **same basename repeats across sequences**; `align_coco_filenames_to_camponotus_raw.py` will then fail. Prefer `extract_camponotus_frames.py --unique-frame-basenames` (writes `seq_camponotus_001_000001.jpg`, …) so every basename is unique under `raw-root`, then re-run `split_camponotus_dataset.py`. (2) `mkdir -p datasets/camponotus_raw/external/images` (may stay empty). (3) Run `scripts/datasets/split_camponotus_dataset.py` → `datasets/camponotus_processed/splits.json`. (4) If CVAT exports **flat** `file_name` values, run `scripts/datasets/align_coco_filenames_to_camponotus_raw.py --coco … --raw-root datasets/camponotus_raw` so each basename matches **exactly one** file. (5) `prepare_camponotus_detection_dataset.py --split-source manifest --raw-root datasets/camponotus_raw …`.
 
 ### Optional `track_id` and `state` in processed exports
+
+Manifest-mode reminder: when you generate a custom split manifest (including the `track_id`-majority one), `prepare_camponotus_detection_dataset.py` should be run with `--split-source manifest --splits <path>` so images are assigned consistently with that manifest.
 
 - `scripts/datasets/prepare_camponotus_detection_dataset.py`:
   - Maps **`attributes.state == trophallaxis`** (configurable via `--state-attr` / `--trophallaxis-state-value`) to exported **`category_id` 1**; any other `state` value → **`category_id` 0**. If `state` is absent on an annotation, it falls back to normalized CVAT category ids (legacy two-label tasks).

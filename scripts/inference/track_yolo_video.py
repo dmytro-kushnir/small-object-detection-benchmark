@@ -5,17 +5,21 @@ from __future__ import annotations
 
 import argparse
 import sys
-import json
 from collections import defaultdict, deque
 from pathlib import Path
 
 import cv2
-import numpy as np
 
 # Allow direct script execution (python scripts/...).
 sys.path.insert(0, str(Path(__file__).resolve().parents[1]))
 
-from repo_paths import path_for_artifact
+from track_video_common import (
+    color_for_id,
+    color_for_state,
+    state_from_class_id,
+    state_priority_soft_relabel_xyxy,
+    write_tracking_analytics,
+)
 from yolo_track_common import (
     build_tracker_config,
     iter_tracked_detections,
@@ -23,75 +27,6 @@ from yolo_track_common import (
 )
 
 _REPO_ROOT = Path(__file__).resolve().parents[2]
-
-
-def _color_for_id(track_id: int) -> tuple[int, int, int]:
-    return (37 * track_id % 255, 97 * track_id % 255, 173 * track_id % 255)
-
-
-def _state_from_class_id(class_id: int) -> str:
-    return "trophallaxis" if int(class_id) == 1 else "normal"
-
-
-def _color_for_state(state: str) -> tuple[int, int, int]:
-    # BGR: green for normal, red for trophallaxis
-    return (0, 220, 0) if state == "normal" else (0, 0, 230)
-
-
-def _bbox_iou_xyxy(a: list[float], b: list[float]) -> float:
-    ax1, ay1, ax2, ay2 = [float(v) for v in a]
-    bx1, by1, bx2, by2 = [float(v) for v in b]
-    ix1 = max(ax1, bx1)
-    iy1 = max(ay1, by1)
-    ix2 = min(ax2, bx2)
-    iy2 = min(ay2, by2)
-    iw = max(0.0, ix2 - ix1)
-    ih = max(0.0, iy2 - iy1)
-    inter = iw * ih
-    if inter <= 0.0:
-        return 0.0
-    area_a = max(0.0, ax2 - ax1) * max(0.0, ay2 - ay1)
-    area_b = max(0.0, bx2 - bx1) * max(0.0, by2 - by1)
-    union = area_a + area_b - inter
-    return inter / union if union > 0.0 else 0.0
-
-
-def _state_priority_soft_relabel_xyxy(
-    dets: list[dict[str, object]],
-    *,
-    iou_thresh: float,
-    score_gap_max: float,
-) -> tuple[list[dict[str, object]], int]:
-    troph = [d for d in dets if int(d.get("class_id", -1)) == 1]
-    if not troph:
-        return dets, 0
-    out: list[dict[str, object]] = []
-    relabeled = 0
-    for d in dets:
-        if int(d.get("class_id", -1)) != 0:
-            out.append(d)
-            continue
-        n_score = float(d.get("score", 0.0))
-        should_flip = False
-        for t in troph:
-            iou = _bbox_iou_xyxy(
-                [float(v) for v in d["xyxy"]],  # type: ignore[index]
-                [float(v) for v in t["xyxy"]],  # type: ignore[index]
-            )
-            if iou < float(iou_thresh):
-                continue
-            score_gap = float(t.get("score", 0.0)) - n_score
-            if score_gap >= 0.0 and score_gap <= float(score_gap_max):
-                should_flip = True
-                break
-        if should_flip:
-            nd = dict(d)
-            nd["class_id"] = 1
-            out.append(nd)
-            relabeled += 1
-        else:
-            out.append(d)
-    return out, relabeled
 
 
 def main() -> None:
@@ -268,8 +203,8 @@ def main() -> None:
                     cy = int((y1 + y2) / 2)
                     trails[tid].append((cx, cy))
                     c = int(d["class_id"])
-                    state = _state_from_class_id(c)
-                    color = _color_for_state(state) if args.color_mode == "state" else _color_for_id(tid)
+                    state = state_from_class_id(c)
+                    color = color_for_state(state) if args.color_mode == "state" else color_for_id(tid)
                     state_counts[state] += 1
                     track_frames[tid].append(frame_index)
 
@@ -306,46 +241,31 @@ def main() -> None:
     print(f"Wrote tracked video: {out_video}")
     print(f"Frames processed: {frames}")
     if args.analytics_out:
-        lens = [len(v) for v in track_frames.values()]
-        short2 = sum(1 for l in lens if l <= 2)
-        short3 = sum(1 for l in lens if l <= 3)
-        gap_events = 0
-        gap_frames_total = 0
-        for fs in track_frames.values():
-            s = sorted(fs)
-            for i in range(1, len(s)):
-                gap = s[i] - s[i - 1] - 1
-                if gap > 0:
-                    gap_events += 1
-                    gap_frames_total += gap
-        analytics = {
-            "source_video": path_for_artifact(source_video, _REPO_ROOT),
-            "output_video": path_for_artifact(out_video, _REPO_ROOT),
-            "frames_processed": int(frames),
-            "states": dict(state_counts),
-            "unique_tracks": int(len(track_frames)),
-            "track_len_mean": float(np.mean(lens)) if lens else 0.0,
-            "track_len_median": float(np.median(lens)) if lens else 0.0,
-            "short_tracks_len_le_2": int(short2),
-            "short_tracks_len_le_3": int(short3),
-            "gap_events": int(gap_events),
-            "gap_frames_total": int(gap_frames_total),
-            "tracker": str(args.tracker),
-            "with_reid": bool(args.botsort_with_reid),
-            "conf": float(args.conf),
-            "track_thresh": float(args.track_thresh),
-            "match_thresh": float(args.match_thresh),
-            "track_buffer": int(args.track_buffer),
-            "state_priority_soft": {
+        ap = Path(args.analytics_out).expanduser().resolve()
+        write_tracking_analytics(
+            analytics_out=ap,
+            source_video=source_video,
+            output_video=out_video,
+            repo_root=_REPO_ROOT,
+            frames=frames,
+            state_counts=dict(state_counts),
+            track_frames={k: list(v) for k, v in track_frames.items()},
+            soft_relabels=soft_relabels,
+            tracker_info={
+                "tracker": str(args.tracker),
+                "with_reid": bool(args.botsort_with_reid),
+                "conf": float(args.conf),
+                "track_thresh": float(args.track_thresh),
+                "match_thresh": float(args.match_thresh),
+                "track_buffer": int(args.track_buffer),
+            },
+            state_priority_info={
                 "enabled": bool(args.state_priority_soft),
                 "iou_thresh": float(args.state_priority_iou_thresh),
                 "score_gap_max": float(args.state_priority_score_gap_max),
-                "relabel_count": int(soft_relabels),
             },
-        }
-        ap = Path(args.analytics_out).expanduser().resolve()
-        ap.parent.mkdir(parents=True, exist_ok=True)
-        ap.write_text(json.dumps(analytics, indent=2), encoding="utf-8")
+            extra=None,
+        )
         print(f"Wrote analytics: {ap}")
 
 

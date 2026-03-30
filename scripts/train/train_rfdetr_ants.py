@@ -74,17 +74,92 @@ def main() -> None:
     p.add_argument(
         "--config",
         type=str,
-        default=str(root / "configs/expA005_ants_rfdetr.yaml"),
-        help="YAML with model_class, dataset_dir, output_dir, train hyperparameters",
+        default=None,
+        help=(
+            "Optional YAML with model_class, dataset_dir, output_dir, and train hyperparameters. "
+            "CLI args override values from this file."
+        ),
     )
+    p.add_argument("--dataset-dir", type=str, default=None, help="RF-DETR dataset dir with train/valid.")
+    p.add_argument("--output-dir", type=str, default=None, help="Output dir for checkpoints/artifacts.")
+    p.add_argument("--model-class", type=str, default=None, help="RFDETR class name, e.g. RFDETRSmall.")
+    p.add_argument("--resume-checkpoint", type=str, default=None, help="Optional checkpoint path for init.")
+    p.add_argument("--epochs", type=int, default=None)
+    p.add_argument("--batch-size", type=int, default=None)
+    p.add_argument("--grad-accum-steps", type=int, default=None)
+    p.add_argument("--lr", type=float, default=None)
+    p.add_argument(
+        "--resolution",
+        type=int,
+        default=None,
+        help="Optional RF-DETR square resolution (e.g. 512, 640, 896).",
+    )
+    p.add_argument("--seed", type=int, default=None)
+    p.add_argument("--tensorboard", action=argparse.BooleanOptionalAction, default=None)
+    p.add_argument("--device", type=str, default=None)
+    p.add_argument("--num-workers", type=int, default=None)
+    p.add_argument("--checkpoint-interval", type=int, default=None)
+    p.add_argument("--early-stopping", action=argparse.BooleanOptionalAction, default=None)
+    p.add_argument("--early-stopping-patience", type=int, default=None)
+    p.add_argument("--wandb", action=argparse.BooleanOptionalAction, default=None)
     args = p.parse_args()
-    cfg_path = Path(args.config).expanduser().resolve()
-    if not cfg_path.is_file():
-        print(f"Config not found: {cfg_path}", file=sys.stderr)
-        sys.exit(1)
 
-    raw = yaml.safe_load(cfg_path.read_text(encoding="utf-8"))
-    cfg: dict[str, Any] = dict(raw) if isinstance(raw, dict) else {}
+    cfg: dict[str, Any] = {}
+    if args.config:
+        cfg_path = Path(args.config).expanduser().resolve()
+        if not cfg_path.is_file():
+            print(f"Config not found: {cfg_path}", file=sys.stderr)
+            sys.exit(1)
+        raw = yaml.safe_load(cfg_path.read_text(encoding="utf-8"))
+        cfg = dict(raw) if isinstance(raw, dict) else {}
+
+    overrides: dict[str, Any] = {}
+    if args.dataset_dir is not None:
+        overrides["dataset_dir"] = args.dataset_dir
+    if args.output_dir is not None:
+        overrides["output_dir"] = args.output_dir
+    if args.model_class is not None:
+        overrides["model_class"] = args.model_class
+    if args.resume_checkpoint is not None:
+        overrides["resume_checkpoint"] = args.resume_checkpoint
+    if args.epochs is not None:
+        overrides["epochs"] = args.epochs
+    if args.batch_size is not None:
+        overrides["batch_size"] = args.batch_size
+    if args.grad_accum_steps is not None:
+        overrides["grad_accum_steps"] = args.grad_accum_steps
+    if args.lr is not None:
+        overrides["lr"] = args.lr
+    if args.resolution is not None:
+        overrides["resolution"] = args.resolution
+    if args.seed is not None:
+        overrides["seed"] = args.seed
+    if args.tensorboard is not None:
+        overrides["tensorboard"] = args.tensorboard
+    if args.device is not None:
+        overrides["device"] = args.device
+    if args.num_workers is not None:
+        overrides["num_workers"] = args.num_workers
+    if args.checkpoint_interval is not None:
+        overrides["checkpoint_interval"] = args.checkpoint_interval
+    if args.early_stopping is not None:
+        overrides["early_stopping"] = args.early_stopping
+    if args.early_stopping_patience is not None:
+        overrides["early_stopping_patience"] = args.early_stopping_patience
+    if args.wandb is not None:
+        overrides["wandb"] = args.wandb
+
+    cfg.update(overrides)
+
+    required = ("dataset_dir", "output_dir")
+    missing = [k for k in required if not cfg.get(k)]
+    if missing:
+        print(
+            f"Missing required settings: {', '.join(missing)}. "
+            "Provide them via --config or CLI args.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
 
     try:
         rfdetr = importlib.import_module("rfdetr")
@@ -139,6 +214,8 @@ def main() -> None:
     init_kw: dict[str, Any] = {}
     if resume_path is not None and resume_path.is_file():
         init_kw["pretrain_weights"] = str(resume_path)
+    if cfg.get("resolution") is not None:
+        init_kw["resolution"] = int(cfg["resolution"])
     model = ModelCls(**_filter_kwargs(ModelCls.__init__, init_kw))
 
     train_params = {
@@ -153,6 +230,7 @@ def main() -> None:
         train_params["seed"] = int(cfg["seed"])
     # Pass through optional keys supported by this rfdetr version
     for extra in (
+        "resolution",
         "device",
         "num_workers",
         "checkpoint_interval",
@@ -167,7 +245,11 @@ def main() -> None:
     train_call = _filter_kwargs(model.train, train_params)
     output_dir.mkdir(parents=True, exist_ok=True)
 
-    print(f"Training {model_name} dataset_dir={dataset_dir} output_dir={output_dir}")
+    effective_resolution = getattr(getattr(model, "model", None), "resolution", None)
+    print(
+        f"Training {model_name} dataset_dir={dataset_dir} output_dir={output_dir} "
+        f"resolution={effective_resolution}"
+    )
     model.train(**train_call)
 
     ckpt_total = output_dir / "checkpoint_best_total.pth"

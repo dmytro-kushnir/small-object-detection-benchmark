@@ -74,6 +74,36 @@ def _ensure_images_for_split(
     return n_exp, n_ok
 
 
+def _resolve_coco_annotation_files(
+    *,
+    yolo_root: Path,
+    cfg: dict[str, Any],
+    root: Path,
+) -> tuple[Path, Path]:
+    """
+    Resolve train/val COCO annotation JSONs with a standardized fallback order:
+
+    1) Explicit `camponotus_coco_annotations_root` from config.
+    2) Legacy `yolo_root/annotations/instances_{train,val}.json`.
+    3) Paired root convention:
+       datasets/camponotus_yolo/<dataset_name>  ->
+       datasets/camponotus_coco/<dataset_name>/annotations
+    """
+    explicit_ann_root = cfg.get("camponotus_coco_annotations_root")
+    if explicit_ann_root:
+        ann_root = _resolve(Path(str(explicit_ann_root)), root)
+        return ann_root / "instances_train.json", ann_root / "instances_val.json"
+
+    legacy_train = yolo_root / "annotations" / "instances_train.json"
+    legacy_val = yolo_root / "annotations" / "instances_val.json"
+    if legacy_train.is_file() and legacy_val.is_file():
+        return legacy_train, legacy_val
+
+    dataset_name = yolo_root.name
+    paired_ann_root = root / "datasets" / "camponotus_coco" / dataset_name / "annotations"
+    return paired_ann_root / "instances_train.json", paired_ann_root / "instances_val.json"
+
+
 def main() -> None:
     root = _repo_root()
     p = argparse.ArgumentParser(description=__doc__)
@@ -81,7 +111,38 @@ def main() -> None:
         "--config",
         type=str,
         default=str(root / "configs/datasets/camponotus_coco_rfdetr.yaml"),
-        help="YAML with camponotus_yolo_root, out_root, copy_mode",
+        help=(
+            "YAML with camponotus_yolo_root, out_root, copy_mode, and optional "
+            "camponotus_coco_annotations_root"
+        ),
+    )
+    p.add_argument(
+        "--camponotus-yolo-root",
+        type=str,
+        default=None,
+        help="Optional CLI override for camponotus_yolo_root.",
+    )
+    p.add_argument(
+        "--camponotus-coco-annotations-root",
+        type=str,
+        default=None,
+        help=(
+            "Optional CLI override for camponotus_coco_annotations_root "
+            "(directory containing instances_train.json + instances_val.json)."
+        ),
+    )
+    p.add_argument(
+        "--out-root",
+        type=str,
+        default=None,
+        help="Optional CLI override for out_root.",
+    )
+    p.add_argument(
+        "--copy-mode",
+        type=str,
+        choices=("copy", "hardlink"),
+        default=None,
+        help="Optional CLI override for copy_mode.",
     )
     args = p.parse_args()
     cfg_path = Path(args.config).expanduser().resolve()
@@ -91,6 +152,15 @@ def main() -> None:
     raw = yaml.safe_load(cfg_path.read_text(encoding="utf-8"))
     cfg = dict(raw) if isinstance(raw, dict) else {}
 
+    if args.camponotus_yolo_root is not None:
+        cfg["camponotus_yolo_root"] = str(args.camponotus_yolo_root)
+    if args.camponotus_coco_annotations_root is not None:
+        cfg["camponotus_coco_annotations_root"] = str(args.camponotus_coco_annotations_root)
+    if args.out_root is not None:
+        cfg["out_root"] = str(args.out_root)
+    if args.copy_mode is not None:
+        cfg["copy_mode"] = str(args.copy_mode)
+
     yolo_root = _resolve(Path(str(cfg.get("camponotus_yolo_root", "datasets/camponotus_yolo"))), root)
     out_root = _resolve(Path(str(cfg.get("out_root", "datasets/camponotus_rfdetr_coco"))), root)
     copy_mode = str(cfg.get("copy_mode", "copy")).lower()
@@ -98,8 +168,11 @@ def main() -> None:
         print("copy_mode must be 'copy' or 'hardlink'", file=sys.stderr)
         sys.exit(1)
 
-    inst_train = yolo_root / "annotations" / "instances_train.json"
-    inst_val = yolo_root / "annotations" / "instances_val.json"
+    inst_train, inst_val = _resolve_coco_annotation_files(
+        yolo_root=yolo_root,
+        cfg=cfg,
+        root=root,
+    )
     img_train = yolo_root / "images" / "train"
     img_val = yolo_root / "images" / "val"
     src_manifest = yolo_root / "prepare_manifest.json"
@@ -107,7 +180,11 @@ def main() -> None:
     for f in (inst_train, inst_val, img_train, img_val):
         if not f.exists():
             print(
-                f"Missing camponotus_yolo path: {f}\n"
+                f"Missing required path: {f}\n"
+                "Expected either:\n"
+                "  - legacy yolo_root/annotations/instances_{train,val}.json, or\n"
+                "  - paired root datasets/camponotus_coco/<dataset_name>/annotations, or\n"
+                "  - explicit camponotus_coco_annotations_root in config.\n"
                 "Run: python3 scripts/datasets/prepare_camponotus_detection_dataset.py ...",
                 file=sys.stderr,
             )
@@ -144,6 +221,8 @@ def main() -> None:
 
     man_payload: dict[str, Any] = {
         "camponotus_yolo_root": str(yolo_root),
+        "camponotus_coco_annotations_train": str(inst_train),
+        "camponotus_coco_annotations_val": str(inst_val),
         "out_root": str(out_root),
         "copy_mode": copy_mode,
         "train_images_expected": te,
