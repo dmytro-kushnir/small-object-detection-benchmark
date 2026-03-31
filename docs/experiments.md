@@ -381,7 +381,7 @@ Outputs:
 * `datasets/camponotus_rfdetr_coco/` (when RF-DETR export is run)
 * `experiments/visualizations/camponotus_dataset/`
 
-Research phases (Ideas 1–3): [`camponotus_research_roadmap.md`](camponotus_research_roadmap.md). **YOLO vs RF-DETR (Idea 1):** [`run_camponotus_rfdetr_exp.sh`](../scripts/run_camponotus_rfdetr_exp.sh) + [`configs/expCAMPO_rfdetr.yaml`](../configs/expCAMPO_rfdetr.yaml).
+Research phases (Ideas 1–3): [`camponotus_research_roadmap.md`](camponotus_research_roadmap.md). **YOLO vs RF-DETR (Idea 1):** [`run_camponotus_rfdetr_exp.sh`](../scripts/run_camponotus_rfdetr_exp.sh) + [`configs/expCAMPO_rfdetr.yaml`](../configs/expCAMPO_rfdetr.yaml). **Common CLI** (prepare, train, infer, `evaluate.py`, compares): [`cli_commands.md`](cli_commands.md).
 
 ```bash
 chmod +x scripts/run_camponotus_dataset_workflow.sh   # once

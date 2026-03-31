@@ -498,6 +498,26 @@ The regression above was traced to **post-merge NMS on the full stage-1 set** (U
 
 ## Camponotus (EXP-CAMPO-001) — YOLO26n, ant / trophallaxis (CVAT)
 
+### Prior work — quantitative trophallaxis in *Camponotus* (paper citation)
+
+For **related work / discussion**: Greenwald *et al.* combine **dorsal 2D barcodes** (identity + trajectory) with a **second camera** imaging **fluorescently labeled crop contents** through a transparent floor, enabling per-ant liquid estimates and **per-event** transfer in lab nests. They study ***Camponotus sanctus*** and ***Camponotus fellah*** and show that **trophallaxis duration does not scale linearly with transferred volume**, and that **flow direction can reverse within a single bout**—arguments for **direct or multimodal** interaction characterization when biological *amounts* matter. This repository’s benchmark uses **conventional video** and **bbox / track** labels on ***C. fellah*** (detection mAP and planned event metrics), **without** fluorescence or mass ground truth—**complementary** to that physiology-forward setup, not a replication.
+
+**Reference (manuscript bibliography):** Greenwald, E., Segre, E. & Feinerman, O. Ant trophallactic networks: simultaneous measurement of interaction patterns and food dissemination. *Scientific Reports* **5**, 12496 (2015). <https://doi.org/10.1038/srep12496>
+
+**BibTeX:**
+
+```bibtex
+@article{greenwald2015trophallaxis,
+  author  = {Greenwald, Efrat and Segre, Enrico and Feinerman, Ofer},
+  title   = {Ant trophallactic networks: simultaneous measurement of interaction patterns and food dissemination},
+  journal = {Scientific Reports},
+  year    = {2015},
+  volume  = {5},
+  pages   = {12496},
+  doi     = {10.1038/srep12496}
+}
+```
+
 **Goal:** First **end-to-end** benchmark on the **Camponotus fellah** detection dataset: CVAT COCO export → `prepare_camponotus_detection_dataset.py` → YOLO26n train → `infer_yolo.py` → unified `evaluate.py` (COCOeval + matched P/R + FPS).
 
 **Procedure:** Data prep with **`--split-source auto`** (flat `file_name` in CVAT vs `seq_*/` keys in `splits.json`); optional `state` → class 1 (`trophallaxis`). Train: `experiments/yolo/camponotus_yolo26n/` (`config.yaml` in run dir). Val/test predictions: [`camponotus_yolo26n_val_predictions.json`](../experiments/results/camponotus_yolo26n_val_predictions.json), [`camponotus_yolo26n_test_predictions.json`](../experiments/results/camponotus_yolo26n_test_predictions.json). Metrics: [`camponotus_yolo26n_val_metrics.json`](../experiments/results/camponotus_yolo26n_val_metrics.json), [`camponotus_yolo26n_test_metrics.json`](../experiments/results/camponotus_yolo26n_test_metrics.json).
@@ -632,6 +652,85 @@ On this **small** dataset, **YOLO26n** reaches **high COCO mAP and matched recal
 
 ---
 
+### EXP-CAMPO-IDEA1-SEQUENCE-SAFE-FULL-896 — YOLO26n (Idea 1, resolution ablation @896)
+
+**Goal:** Compare **training + inference at `imgsz=896`** to the recorded **`imgsz=640`, 100-epoch** sequence-safe run on the **same** Idea 1 sequence-safe split (same GT and image roots).
+
+**Training:** `yolo26n` with `epochs=40`, `imgsz=896`, `batch=8`, `workers=4`, `patience=15`, `seed=42` ([`experiments/yolo/camponotus_idea1_sequence_safe_full_896/config.yaml`](../experiments/yolo/camponotus_idea1_sequence_safe_full_896/config.yaml)). Run dir: `experiments/yolo/camponotus_idea1_sequence_safe_full_896/` (Ultralytics early stopping applied; best weights used for eval).
+
+**Inference / eval:** `infer_yolo.py` and `evaluate.py` with **`--imgsz 896`** matching the run; GT under `datasets/camponotus_coco/camponotus_full_export_unique_sequence_safe/annotations/instances_{val,test}.json`; images under `datasets/camponotus_yolo/camponotus_full_export_unique_sequence_safe/images/{val,test}`.
+
+**Artifacts (unified `evaluate.py`):**
+
+- Val: [`experiments/results/camponotus_idea1_sequence_safe_full_896_metrics_val.json`](../experiments/results/camponotus_idea1_sequence_safe_full_896_metrics_val.json)
+- Test: [`experiments/results/camponotus_idea1_sequence_safe_full_896_metrics_test.json`](../experiments/results/camponotus_idea1_sequence_safe_full_896_metrics_test.json)
+- Predictions: `experiments/results/camponotus_idea1_sequence_safe_full_896_predictions_{val,test}.json`
+
+**896-only quantitative results (matched P/R @ IoU≥0.5, score≥0.25):**
+
+| Split | mAP@[.50:.95] | mAP@.50 | mAP@.75 | Precision | Recall | TP/FP/FN | FPS | Latency mean (ms) |
+|-------|---------------:|--------:|--------:|----------:|-------:|----------:|----:|------------------:|
+| Val | 0.188 | 0.380 | 0.161 | 0.623 | 0.538 | 2523/1525/2165 | 33.2 | 30.1 |
+| Test | 0.167 | 0.353 | 0.161 | 0.645 | 0.705 | 771/424/322 | 41.5 | 24.1 |
+
+**640 (`100ep`) vs 896 — same split, Δ = 896 − 640:**
+
+Reference 640 metrics: [`camponotus_idea1_sequence_safe_full_100ep_metrics_{val,test}.json`](../experiments/results/camponotus_idea1_sequence_safe_full_100ep_metrics_val.json) (train/infer **`imgsz=640`**; 100 epochs, batch 4, workers 0 — see subsection above).
+
+| Split | mAP@[.50:.95] | mAP@.50 | Precision | Recall | FPS | Latency mean (ms) |
+|-------|---------------:|--------:|----------:|-------:|----:|------------------:|
+| **Val** 640 | 0.146 | 0.299 | 0.600 | 0.469 | 21.3 | 46.9 |
+| **Val** 896 | 0.188 | 0.380 | 0.623 | 0.538 | 33.2 | 30.1 |
+| **Δ val** | **+0.042** | **+0.081** | +0.023 | +0.069 | +11.9 | −16.8 |
+| **Test** 640 | 0.240 | 0.518 | 0.743 | 0.790 | 30.3 | 33.0 |
+| **Test** 896 | 0.167 | 0.353 | 0.645 | 0.705 | 41.5 | 24.1 |
+| **Δ test** | **−0.073** | **−0.165** | −0.098 | −0.085 | +11.2 | −8.9 |
+
+**Bundled deltas (`compare_metrics.py`, compare − baseline = 896 − 640):** Full numeric payloads (including exact `mAP_*` diffs and inference deltas) are in:
+
+- Val: [`experiments/results/camponotus_sequence_safe_896_vs_640_100ep_val.json`](../experiments/results/camponotus_sequence_safe_896_vs_640_100ep_val.json)
+- Test: [`experiments/results/camponotus_sequence_safe_896_vs_640_100ep_test.json`](../experiments/results/camponotus_sequence_safe_896_vs_640_100ep_test.json)
+
+**Recorded val summary (matches terminal / JSON):** mAP@[.5:.95] **+0.0425**, mAP@0.5 **+0.0806**, mAP_large **+0.0425**, P/R (IoU≥0.5, matched) **+0.023 / +0.069**, FPS **+11.9**, latency mean **−16.7 ms**. **Recorded test summary:** mAP@[.5:.95] **−0.0726**, mAP@0.5 **−0.1654**, P/R **−0.098 / −0.084**, FPS **+11.3**, latency mean **−9.0 ms**.
+
+**Reading `compare_metrics` area buckets on this split:** Both runs report **`mAP_small = −1`** and **`mAP_medium = 0.0`** (COCO small/medium strata effectively unused). The script’s printed **`mAP_small` / `mAP_medium` deltas of 0.000000** are **not** meaningful “no change in small-object AP”; they come from subtracting identical sentinel / zero bucket values. Use **overall mAP** and **`mAP_large`** (≈ overall here) plus matched P/R for interpretation.
+
+**Regenerate compare JSONs:**
+
+```bash
+python3 scripts/evaluation/compare_metrics.py \
+  --baseline experiments/results/camponotus_idea1_sequence_safe_full_100ep_metrics_val.json \
+  --compare experiments/results/camponotus_idea1_sequence_safe_full_896_metrics_val.json \
+  --out experiments/results/camponotus_sequence_safe_896_vs_640_100ep_val.json \
+  --evaluation-note "Sequence-safe Idea 1; baseline YOLO 640/100ep (b4w0) vs compare 896/40ep early-stop (b8w4). Not single-variable resolution — schedules differ."
+
+python3 scripts/evaluation/compare_metrics.py \
+  --baseline experiments/results/camponotus_idea1_sequence_safe_full_100ep_metrics_test.json \
+  --compare experiments/results/camponotus_idea1_sequence_safe_full_896_metrics_test.json \
+  --out experiments/results/camponotus_sequence_safe_896_vs_640_100ep_test.json \
+  --evaluation-note "Sequence-safe Idea 1; baseline YOLO 640/100ep (b4w0) vs compare 896/40ep early-stop (b8w4). Not single-variable resolution — schedules differ."
+```
+
+**Interpretation (draft):** On **val**, **896** improves **COCO mAP** (both @.50 and @[.50:.95]) and **matched recall** versus **640/100ep**, with **higher FPS** and **lower latency** in this `evaluate.py` benchmark (RTX 4070). On **test**, the same **896** checkpoint is **worse** on mAP and matched P/R than **640/100ep** — a **train/val vs test gap** (same GT for both models on each split). Causes may include **different training schedules** (100ep @640 b4w0 vs 40ep @896 b8w4 + early stop), **early stopping keyed to val**, or **test split difficulty** relative to val. Treat **test** as the stricter generalization readout; **do not** assume val gains transfer without confirming on test.
+
+**RF-DETR compare note:** Existing Camponotus RF-DETR vs YOLO tables use **`camponotus_idea1_sequence_safe_full_100ep`** as the YOLO reference (**640**). A fair RF-DETR vs **896** comparison would require re-running `compare_camponotus_rfdetr_vs_yolo.py` (or equivalent) against the **896** metrics JSONs.
+
+**Optional quick peek (`jq`, same numbers as rows above):**
+
+```bash
+jq -s '
+  {
+    "640_val": .[0] | {mAP50: .coco_eval.mAP_50, mAP50_95: .coco_eval.mAP_50_95, P: .matched_pr.precision_iou50_score025, R: .matched_pr.recall_iou50_score025, fps: .inference_benchmark.fps},
+    "896_val": .[1] | {mAP50: .coco_eval.mAP_50, mAP50_95: .coco_eval.mAP_50_95, P: .matched_pr.precision_iou50_score025, R: .matched_pr.recall_iou50_score025, fps: .inference_benchmark.fps}
+  }
+' experiments/results/camponotus_idea1_sequence_safe_full_100ep_metrics_val.json \
+  experiments/results/camponotus_idea1_sequence_safe_full_896_metrics_val.json
+```
+
+(Swap `_val` → `_test` for test.)
+
+---
+
 ### EXP-CAMPO-IDEA1-TRACKIDMAJORITY-FULL-40EP-B8W4 — YOLO26n (Idea 1, 2-class state)
 
 **Goal:** Re-run Idea 1 on the harder `track_id`-majority split with a stronger/faster schedule than smoke (`batch=8`, `workers=4`, early stopping) to test if the identity-oriented split remains tractable with longer training.
@@ -668,6 +767,94 @@ On this **small** dataset, **YOLO26n** reaches **high COCO mAP and matched recal
 - On **val**, this track_id-majority run is much stronger (`mAP@[.5:.95] 0.365 vs 0.146`, `mAP@.50 0.638 vs 0.299`) and faster benchmark throughput.
 - On **test**, `mAP@[.5:.95]` is also higher (`0.293 vs 0.240`), but matched recall is lower (`0.394 vs 0.790`).
 - Because split policies differ (sequence-held-out vs majority-by-identity heuristic with residual overlap), these runs are **not apples-to-apples** for final ranking; treat them as complementary stress tests of different generalization assumptions.
+
+---
+
+### EXP-CAMPO-IDEA1-TRACKIDMAJORITY-FULL-896 — YOLO26n (Idea 1, resolution ablation @896)
+
+**Goal:** Same **`track_id`-majority** Idea 1 split as **`EXP-CAMPO-IDEA1-TRACKIDMAJORITY-FULL-40EP-B8W4`**, but **train + infer at `imgsz=896`** (mirrors the sequence-safe 896 recipe) to measure **640 vs 896** under a **matched schedule** (`epochs=40`, `batch=8`, `workers=4`, `patience=15`).
+
+**Training:** [`experiments/yolo/camponotus_idea1_trackidmajor_full_896/config.yaml`](../experiments/yolo/camponotus_idea1_trackidmajor_full_896/config.yaml). **Observed behavior:** early stopping after **35** epochs; **best checkpoint at epoch 20** (same pattern as the 640 `b8w4` run). Post-train Ultralytics val line on **274** images (trainer-native, not pycocotools): all-class **P/R/mAP50/mAP50-95 ≈ 0.743 / 0.741 / 0.769 / 0.396** — **paper-facing** numbers remain **`evaluate.py`** below.
+
+**Artifacts (unified `evaluate.py`):**
+
+- Val: [`experiments/results/camponotus_idea1_trackidmajor_full_896_metrics_val.json`](../experiments/results/camponotus_idea1_trackidmajor_full_896_metrics_val.json)
+- Test: [`experiments/results/camponotus_idea1_trackidmajor_full_896_metrics_test.json`](../experiments/results/camponotus_idea1_trackidmajor_full_896_metrics_test.json)
+- Predictions: `experiments/results/camponotus_idea1_trackidmajor_full_896_predictions_{val,test}.json`
+
+**896-only quantitative results (matched P/R @ IoU≥0.5, score≥0.25):**
+
+| Split | mAP@[.50:.95] | mAP@.50 | mAP@.75 | Precision | Recall | TP/FP/FN | FPS | Latency mean (ms) |
+|-------|---------------:|--------:|--------:|----------:|-------:|----------:|----:|------------------:|
+| Val | 0.319 | 0.637 | 0.276 | 0.768 | 0.805 | 2208/668/535 | 53.4 | 18.7 |
+| Test | 0.293 | 0.536 | 0.306 | 0.691 | 0.491 | 1785/799/1850 | 41.5 | 24.1 |
+
+**640 (`40ep` b8w4) vs 896 — same split, Δ = 896 − 640:**
+
+| Split | mAP@[.50:.95] | mAP@.50 | Precision | Recall | FPS | Latency mean (ms) |
+|-------|---------------:|--------:|----------:|-------:|----:|------------------:|
+| **Val** 640 | 0.365 | 0.638 | 0.815 | 0.767 | 37.2 | 26.8 |
+| **Val** 896 | 0.319 | 0.637 | 0.768 | 0.805 | 53.4 | 18.7 |
+| **Δ val** | **−0.047** | **~0** | −0.048 | **+0.038** | **+16.2** | **−8.1** |
+| **Test** 640 | 0.293 | 0.525 | 0.664 | 0.394 | 31.0 | 32.3 |
+| **Test** 896 | 0.293 | 0.536 | 0.691 | 0.491 | 41.5 | 24.1 |
+| **Δ test** | **−0.0008** | **+0.012** | +0.027 | **+0.097** | **+10.5** | **−8.2** |
+
+**Bundled deltas (`compare_metrics.py`, compare − baseline = 896 − 640):**
+
+- Val: [`experiments/results/camponotus_trackidmajor_896_vs_640_val.json`](../experiments/results/camponotus_trackidmajor_896_vs_640_val.json)
+- Test: [`experiments/results/camponotus_trackidmajor_896_vs_640_test.json`](../experiments/results/camponotus_trackidmajor_896_vs_640_test.json)
+
+**Regenerate compare JSONs:**
+
+```bash
+python3 scripts/evaluation/compare_metrics.py \
+  --baseline experiments/results/camponotus_idea1_trackidmajor_full_40ep_b8w4_metrics_val.json \
+  --compare experiments/results/camponotus_idea1_trackidmajor_full_896_metrics_val.json \
+  --out experiments/results/camponotus_trackidmajor_896_vs_640_val.json \
+  --evaluation-note "Same track_id-majority split; baseline 640/40ep b8w4 vs compare 896. Fair if same GT and comparable schedule."
+
+python3 scripts/evaluation/compare_metrics.py \
+  --baseline experiments/results/camponotus_idea1_trackidmajor_full_40ep_b8w4_metrics_test.json \
+  --compare experiments/results/camponotus_idea1_trackidmajor_full_896_metrics_test.json \
+  --out experiments/results/camponotus_trackidmajor_896_vs_640_test.json \
+  --evaluation-note "Same track_id-majority split; baseline 640/40ep b8w4 vs compare 896. Fair if same GT and comparable schedule."
+```
+
+**Interpretation (draft):** With **matched early-stop schedule** to the 640 run, **896 does not improve strict COCO mAP@[.5:.95] on val** (it drops ~**0.047**); **mAP@.50** is effectively **tied** on val. **Matched recall rises** on val (**+0.038**) at the cost of **precision** (**−0.048**) — more greedy matches, not a clean strict-AP win. On **test**, **mAP@[.5:.95]** is **unchanged** within rounding (~**−0.0008**), while **mAP@.50**, **matched P/R**, and **throughput** favor **896** (higher recall, faster `evaluate.py` bench). So **896 is not a universal upgrade** for this split: **val localization (IoU-strict AP)** prefers **640** here; **test** looks more favorable for **896** on **recall / speed** at similar overall AP. **Area buckets:** val retains a small **mAP_medium** signal (~**0.084**); test **mAP_medium = 0** in both runs — interpret medium/large deltas cautiously.
+
+**Qualitative / video:** Example BoT-SORT overlays (`--conf 0.35`): `experiments/visualizations/camponotus_idea1_trackidmajor_full_896_tracked_camponotus_006.mp4`, `…_015.mp4` (not scored; for inspection only).
+
+---
+
+#### Cross-split diagnostic — YOLO896 sequence-safe vs YOLO896 track_id–majority
+
+**Not comparable for ranking:** **val** and **test** here are **different image sets** (sequence-held-out vs `track_id`-majority). Deltas are **diagnostic only** (relative difficulty / distribution shift), not “trackid training beats sequence-safe” on a shared benchmark.
+
+**Procedure:** `compare_metrics.py` with **baseline** = sequence-safe 896 metrics, **compare** = track_id–majority 896 metrics → **Δ = compare − baseline** on the **same split label** (val or test) only.
+
+**Bundles:**
+
+- Val: [`experiments/results/camponotus_crosssplit_seqsafe896_vs_trackid896_val.json`](../experiments/results/camponotus_crosssplit_seqsafe896_vs_trackid896_val.json)
+- Test: [`experiments/results/camponotus_crosssplit_seqsafe896_vs_trackid896_test.json`](../experiments/results/camponotus_crosssplit_seqsafe896_vs_trackid896_test.json)
+
+**Recorded Δ (track_id–majority 896 − sequence-safe 896):** **Val:** mAP@[.5:.95] **+0.130**, mAP@0.5 **+0.257**, **mAP_medium** term **+0.084** (sequence-safe val has **mAP_medium = 0**; trackid-majority val does not — not “small-object Δ = 0” semantics), matched P/R **+0.144 / +0.267**, FPS **+20.2**, latency **−11.4 ms**. **Test:** mAP@[.5:.95] **+0.126**, mAP@0.5 **+0.184**, matched P **+0.046**, R **−0.214** (sequence-safe **test** has higher greedy matched recall on **its** GT despite lower mAP — incomparable sets), FPS/latency **~flat** (Δ under **0.03** FPS / **0.02 ms**).
+
+**Regenerate:**
+
+```bash
+python3 scripts/evaluation/compare_metrics.py \
+  --baseline experiments/results/camponotus_idea1_sequence_safe_full_896_metrics_val.json \
+  --compare experiments/results/camponotus_idea1_trackidmajor_full_896_metrics_val.json \
+  --out experiments/results/camponotus_crosssplit_seqsafe896_vs_trackid896_val.json \
+  --evaluation-note "Different splits — val sets are not the same images. Diagnostic only."
+
+python3 scripts/evaluation/compare_metrics.py \
+  --baseline experiments/results/camponotus_idea1_sequence_safe_full_896_metrics_test.json \
+  --compare experiments/results/camponotus_idea1_trackidmajor_full_896_metrics_test.json \
+  --out experiments/results/camponotus_crosssplit_seqsafe896_vs_trackid896_test.json \
+  --evaluation-note "Different splits — test sets are not the same images. Diagnostic only."
+```
 
 ---
 
@@ -723,6 +910,8 @@ On this **small** dataset, **YOLO26n** reaches **high COCO mAP and matched recal
   - `experiments/results/camponotus_rfdetr_trackidmajor_val_vs_yolo.json`
   - `experiments/results/camponotus_rfdetr_trackidmajor_test_vs_yolo.json`
 
+**YOLO baseline for recorded RF-DETR deltas:** the bundled compare JSONs above use **`camponotus_idea1_trackidmajor_full_40ep_b8w4`** (**640**). **RF-DETR vs YOLO @896** (same resolution intent) is recorded under **EXP-CAMPO-RFDETR-TRACKIDMAJORITY-896** — see [`camponotus_rfdetr_trackidmajor_896_vs_yolo896_{val,test}.json`](../experiments/results/camponotus_rfdetr_trackidmajor_896_vs_yolo896_val.json).
+
 **Quantitative results (track_id-majority split):**
 
 | Split | mAP@[.50:.95] | mAP@.50 | mAP@.75 | Precision | Recall | TP/FP/FN | FPS | Latency mean (ms) |
@@ -741,6 +930,56 @@ On this **small** dataset, **YOLO26n** reaches **high COCO mAP and matched recal
 - **Test (track_id-majority minus sequence-safe):** mAP@[.5:.95] **−0.037**, mAP@.50 **−0.177**, precision **−0.246**, recall **−0.396**, FPS **−8.0**, latency **+53.5 ms**.
 - **Interpretation:** within RF-DETR, the track_id-majority split looks much easier on val but clearly harder on test (and slower). Treat this as split-policy sensitivity, not a model-family ranking by itself.
 - **Qualitative finding (video-level behavior):** in manual review, the track_id-majority setup often keeps short temporal windows more identity-consistent, so trophallaxis episodes can appear more stable and less frequently "overwritten" by nearby ant frames. Keep this as a complementary diagnostic signal: useful for interaction-readability analysis, but not a replacement for stricter held-out sequence-safe generalization metrics.
+
+---
+
+### EXP-CAMPO-RFDETR-TRACKIDMAJORITY-896 — RF-DETR Small (Idea 1, train/infer @896)
+
+**Goal:** Train RF-DETR at **`resolution=896`** on the **`track_id`-majority** split and compare to **YOLO26n @896** on the **same** GT and image roots — controlled input scale vs the prior **640** RF-DETR vs YOLO table.
+
+**Training:** [`experiments/rfdetr/camponotus_rfdetr_trackidmajor_896/config.yaml`](../experiments/rfdetr/camponotus_rfdetr_trackidmajor_896/config.yaml) — `RFDETRSmall`, `epochs=30`, `batch_size=4`, `grad_accum_steps=4`, `resolution=896`, `seed=42`. **Trainer-native val** (epoch 29): best regular mAP **0.5130** → checkpoint `checkpoint_best_regular.pth`; weights copied to **`experiments/rfdetr/camponotus_rfdetr_trackidmajor_896/weights/best.pth`**. **Paper-facing** metrics below are **`evaluate.py`** (pycocotools + matched P/R), not the trainer table.
+
+**Data:** Roboflow-style export under `datasets/camponotus_rfdetr_coco_trackidmajor/` from [`prepare_camponotus_coco_rfdetr.py`](../scripts/datasets/prepare_camponotus_coco_rfdetr.py) (see manifest `camponotus_rfdetr_manifest.json`).
+
+**Inference / eval:** `infer_rfdetr.py` → `bench_rfdetr.py` → `evaluate.py` with **`--inference-benchmark-json`**; GT/images under `datasets/camponotus_coco/.../trackidmajor/` and `datasets/camponotus_yolo/camponotus_full_export_unique_trackidmajor/images/{val,test}`.
+
+**Artifacts (unified `evaluate.py`):**
+
+- Val: [`experiments/results/camponotus_rfdetr_trackidmajor_896_metrics_val.json`](../experiments/results/camponotus_rfdetr_trackidmajor_896_metrics_val.json)
+- Test: [`experiments/results/camponotus_rfdetr_trackidmajor_896_metrics_test.json`](../experiments/results/camponotus_rfdetr_trackidmajor_896_metrics_test.json)
+- Predictions / bench: `experiments/results/camponotus_rfdetr_trackidmajor_896_predictions_{val,test}.json`, `…_bench_{val,test}.json`
+
+**896 RF-DETR quantitative results (matched P/R @ IoU≥0.5, score≥0.25):**
+
+| Split | mAP@[.50:.95] | mAP@.50 | mAP@.75 | Precision | Recall | TP/FP/FN | FPS | Latency mean (ms) |
+|-------|---------------:|--------:|--------:|----------:|-------:|----------:|----:|------------------:|
+| Val | 0.356 | 0.650 | 0.341 | 0.745 | 0.855 | 2346/804/397 | 25.1 | 39.9 |
+| Test | 0.325 | 0.575 | 0.343 | 0.548 | 0.407 | 1480/1220/2155 | 18.1 | 55.2 |
+
+**RF-DETR − YOLO896** (same split; baseline = `camponotus_idea1_trackidmajor_full_896_metrics_*`; Δ = RF-DETR − YOLO). Bundles: [`camponotus_rfdetr_trackidmajor_896_vs_yolo896_val.json`](../experiments/results/camponotus_rfdetr_trackidmajor_896_vs_yolo896_val.json), [`…_test.json`](../experiments/results/camponotus_rfdetr_trackidmajor_896_vs_yolo896_test.json).
+
+| Split | mAP@[.5:.95] | mAP@.50 | mAP_medium | Matched ΔP | Matched ΔR | FPS Δ | Latency mean Δ (ms) |
+|-------|-------------:|--------:|-----------:|-----------:|-----------:|------:|---------------------:|
+| Val | **+0.038** | **+0.013** | **−0.030** | −0.023 | **+0.050** | **−28.3** | **+21.2** |
+| Test | **+0.032** | **+0.038** | 0.000* | **−0.143** | **−0.084** | **−23.4** | **+31.1** |
+
+\*Test **mAP_medium = 0** for both runs; **0.000** is not a substantive “no change in medium objects.”
+
+**Regenerate compare JSONs:**
+
+```bash
+python3 scripts/evaluation/compare_camponotus_rfdetr_vs_yolo.py \
+  --baseline experiments/results/camponotus_idea1_trackidmajor_full_896_metrics_val.json \
+  --compare experiments/results/camponotus_rfdetr_trackidmajor_896_metrics_val.json \
+  --out experiments/results/camponotus_rfdetr_trackidmajor_896_vs_yolo896_val.json
+
+python3 scripts/evaluation/compare_camponotus_rfdetr_vs_yolo.py \
+  --baseline experiments/results/camponotus_idea1_trackidmajor_full_896_metrics_test.json \
+  --compare experiments/results/camponotus_rfdetr_trackidmajor_896_metrics_test.json \
+  --out experiments/results/camponotus_rfdetr_trackidmajor_896_vs_yolo896_test.json
+```
+
+**Interpretation (draft):** At **896**, RF-DETR **improves COCO mAP** (@[.5:.95] and @.50) vs YOLO on **both** val and test — consistent with the **640** Camponotus RF-DETR advantage, now at matched **train/infer resolution** to YOLO896. **Throughput** remains strongly in YOLO’s favor (FPS down ~23–28, latency up ~21–31 ms on RTX 4070). **Val** greedy matched **recall** rises vs YOLO896 at a small **precision** cost. **Test** shows **higher mAP** for RF-DETR but **lower** greedy matched P/R and **fewer TPs** than YOLO in this run — COCO AP and greedy IoU≥0.5 matching can disagree when score/calibration differs; treat **test** readouts as requiring both **mAP** and **matched P/R** side by side. **Within RF-DETR:** comparing **896** to the recorded **640** track_id-majority RF-DETR run is a **resolution + schedule** change (30 ep @896 vs prior RF-DETR full run), not a single-variable ablation.
 
 ### EXP-CAMPO-PRELABEL-TRACKING-001 — ByteTrack prelabel ablation for Idea 1 dataset workflow
 
@@ -832,10 +1071,61 @@ On this **small** dataset, **YOLO26n** reaches **high COCO mAP and matched recal
 
 ---
 
+### Idea 1 — Paper-ready summary (YOLO26n vs RF-DETR Small)
+
+**Headline readout (generalization):** For claims about **sequence-held-out** generalization, prioritize **sequence-safe test** metrics (same GT/images under `…/camponotus_full_export_unique_sequence_safe/`). Treat **track_id–majority** as a **supplementary** split (different val/test images); use it for within-split comparisons, not as a drop-in replacement for sequence-safe.
+
+**Convention:** All numbers from unified [`evaluate.py`](../scripts/evaluation/evaluate.py) (COCO mAP + matched P/R @ IoU≥0.5, score≥0.25; RTX 4070 where recorded). Rows are **not** controlled for training budget — see footnotes and per-experiment subsections above.
+
+#### Sequence-safe split
+
+| Model | Split | mAP@[.5:.95] | mAP@.50 | P | R | FPS | Latency mean (ms) |
+|-------|-------|-------------:|--------:|--:|--:|----:|------------------:|
+| YOLO26n @640 | Val | 0.146 | 0.299 | 0.600 | 0.469 | 21.3 | 46.9 |
+| YOLO26n @896 | Val | 0.188 | 0.380 | 0.623 | 0.538 | 33.2 | 30.1 |
+| RF-DETR Small @640 | Val | 0.261 | 0.467 | 0.589 | 0.532 | 11.3 | 88.5 |
+| RF-DETR Small @896 | Val | **TBD** | **TBD** | **TBD** | **TBD** | **TBD** | **TBD** |
+| YOLO26n @640 | Test | 0.240 | 0.518 | 0.743 | 0.790 | 30.3 | 33.0 |
+| YOLO26n @896 | Test | 0.167 | 0.353 | 0.645 | 0.705 | 41.5 | 24.1 |
+| RF-DETR Small @640 | Test | 0.364 | 0.777 | 0.810 | 0.858 | 16.9 | 59.1 |
+| RF-DETR Small @896 | Test | **TBD** | **TBD** | **TBD** | **TBD** | **TBD** | **TBD** |
+
+**Metrics JSONs (sequence-safe):** YOLO640 `camponotus_idea1_sequence_safe_full_100ep_metrics_{val,test}.json`; YOLO896 `camponotus_idea1_sequence_safe_full_896_metrics_{val,test}.json`; RF-DETR640 `camponotus_rfdetr_sequence_safe_{val,test}_metrics.json`. **RF-DETR @896** on this split: run [`prepare_camponotus_coco_rfdetr.py`](../scripts/datasets/prepare_camponotus_coco_rfdetr.py) with sequence-safe YOLO root + `out_root` such as `datasets/camponotus_rfdetr_coco_sequence_safe`, then train/infer/eval ([`cli_commands.md`](cli_commands.md)).
+
+#### track_id–majority split
+
+| Model | Split | mAP@[.5:.95] | mAP@.50 | P | R | FPS | Latency mean (ms) |
+|-------|-------|-------------:|--------:|--:|--:|----:|------------------:|
+| YOLO26n @640 | Val | 0.365 | 0.638 | 0.815 | 0.767 | 37.2 | 26.8 |
+| YOLO26n @896 | Val | 0.319 | 0.637 | 0.768 | 0.805 | 53.4 | 18.7 |
+| RF-DETR Small @640 | Val | 0.427 | 0.727 | 0.751 | 0.869 | 12.1 | 82.6 |
+| RF-DETR Small @896 | Val | 0.356 | 0.650 | 0.745 | 0.855 | 25.1 | 39.9 |
+| YOLO26n @640 | Test | 0.293 | 0.525 | 0.664 | 0.394 | 31.0 | 32.3 |
+| YOLO26n @896 | Test | 0.293 | 0.536 | 0.691 | 0.491 | 41.5 | 24.1 |
+| RF-DETR Small @640 | Test | 0.327 | 0.600 | 0.564 | 0.462 | 8.9 | 112.6 |
+| RF-DETR Small @896 | Test | 0.325 | 0.575 | 0.548 | 0.407 | 18.1 | 55.2 |
+
+**Metrics JSONs (track_id–majority):** YOLO640 `camponotus_idea1_trackidmajor_full_40ep_b8w4_metrics_{val,test}.json`; YOLO896 `camponotus_idea1_trackidmajor_full_896_metrics_{val,test}.json`; RF-DETR640 `camponotus_rfdetr_trackidmajor_{val,test}_metrics.json`; RF-DETR896 `camponotus_rfdetr_trackidmajor_896_metrics_{val,test}.json`. **Vs YOLO @896:** `camponotus_rfdetr_trackidmajor_896_vs_yolo896_{val,test}.json`.
+
+**Footnotes:** (1) **YOLO sequence-safe @640** = 100 epochs, `imgsz=640`, batch 4, workers 0; **YOLO sequence-safe @896** = 40 epochs, `imgsz=896`, batch 8, workers 4, early stop — not comparable as a pure resolution sweep. (2) **YOLO track_id–majority @640 vs @896** uses matched early-stop schedule for 896 (`b8w4`); see **EXP-CAMPO-IDEA1-TRACKIDMAJORITY-FULL-896**. (3) **RF-DETR @896 (track_id–majority)** = 30 epochs, `batch_size=4`, `grad_accum_steps=4`, `resolution=896` (**EXP-CAMPO-RFDETR-TRACKIDMAJORITY-896**). (4) Cross-split **sequence-safe vs track_id–majority** at the same resolution is **diagnostic only** (different images); see the cross-split subsection under YOLO896.
+
+**Optional throughput (RF-DETR):** `infer_rfdetr.py` can enable `model.optimize_for_inference()` when the environment variable `EXP_A005_OPTIMIZE_INFERENCE` is set (same pattern as ants EXP-A005). Re-benchmark and re-evaluate if you report optimized FPS; do not assume mAP is unchanged without checking.
+
+**Planned benchmark steps:** [`camponotus_research_roadmap.md`](camponotus_research_roadmap.md) → section **“Idea 1 — Next steps (benchmark)”**.
+
+---
+
 ## Changelog
 
 | Date | Experiment(s) | Summary |
 |------|----------------|---------|
+| 2026-03-31 | OOD qualitative diagnostic (Idea 1) | New-lab clip `trophalaxis_001_example.mp4` (455 frames, expected mostly trophallaxis) with YOLO track_id-majority @896 + soft state-priority (`--conf 0.25`) still outputs **normal-dominant** counts: `normal=698`, `trophallaxis=262`, `unique_tracks=31`, `relabel_count=9`. New `per_track` analytics reveals asymmetric long identities: `id 1` = 211 troph / 159 normal vs `id 2` = 442 normal / 1 troph. Interpretation: likely label-policy/domain-shift limitation for Idea 1 two-class frame labels; add label-audit checklist and treat this as failure analysis while planning Idea 2 event-level modeling. Artifact: `experiments/visualizations/camponotus_idea1_trackidmajor_full_896_tracked_camponotus_trophalaxis_001_soft_analytics.json`. |
+| 2026-03-31 | Documentation | **Idea 1 paper-ready summary:** two matrices (sequence-safe + track_id–majority) for YOLO640 / YOLO896 / RF-DETR640 / RF-DETR896 with mAP, matched P/R, FPS, latency; **TBD** row for **RF-DETR @896 sequence-safe**; headline readout = sequence-safe **test**; footnotes on schedule mismatch; pointer to optional `EXP_A005_OPTIMIZE_INFERENCE` for RF-DETR latency; **Next steps** in `camponotus_research_roadmap.md`. |
+| 2026-03-31 | EXP-CAMPO-RFDETR-TRACKIDMAJORITY-896 (RF-DETR Small) | Track_id-majority @ **896** (`epochs=30`, `batch=4`, `grad_accum=4`, best epoch **29**): **val** mAP@[.5:.95]=0.356, mAP@.50=0.650, matched P/R=0.745/0.855 (2346/804/397), FPS 25.1, latency 39.9 ms. **Test:** mAP@[.5:.95]=0.325, mAP@.50=0.575, matched P/R=0.548/0.407 (1480/1220/2155), FPS 18.1, latency 55.2 ms. **Vs YOLO896:** val ΔmAP@[.5:.95] **+0.038**, matched R **+0.050**, FPS **−28.3**; test ΔmAP@[.5:.95] **+0.032**, matched P/R **−0.143 / −0.084**, FPS **−23.4**. Metrics: `camponotus_rfdetr_trackidmajor_896_metrics_{val,test}.json`. Compare: `camponotus_rfdetr_trackidmajor_896_vs_yolo896_{val,test}.json`. |
+| 2026-03-30 | Documentation | Added Camponotus **prior work** block: Greenwald *et al.* (2015) *Sci. Rep.* trophallaxis / fluorescence + barcode citation, discussion contrast vs this repo’s video-only benchmark; BibTeX. Cross-link from `camponotus_research_roadmap.md`. |
+| 2026-03-30 | Cross-split diagnostic (YOLO896) | `compare_metrics.py`: track_id–majority **896** minus sequence-safe **896** on val/test **labels** only (different images). **Val Δ:** mAP@[.5:.95] **+0.130**, mAP@.50 **+0.257**, matched P/R **+0.144 / +0.267**, FPS **+20.2**. **Test Δ:** mAP@[.5:.95] **+0.126**, mAP@.50 **+0.184**, matched P **+0.046**, R **−0.214**, FPS ~flat. Files: `camponotus_crosssplit_seqsafe896_vs_trackid896_{val,test}.json`. |
+| 2026-03-30 | EXP-CAMPO-IDEA1-TRACKIDMAJORITY-FULL-896 (YOLO26n) | Track_id-majority Idea 1 @ **896** (same schedule as 640 b8w4: early stop at 35 epochs, best epoch 20): **val** mAP@[.5:.95]=0.319, mAP@.50=0.637, matched P/R=0.768/0.805 (2208/668/535), FPS 53.4, latency 18.7 ms. **Test:** mAP@[.5:.95]=0.293, mAP@.50=0.536, matched P/R=0.691/0.491 (1785/799/1850), FPS 41.5, latency 24.1 ms. **Vs 640 b8w4:** val ΔmAP@[.5:.95] **−0.047** (mAP@.50 ~flat), matched R **+0.038** / P **−0.048**, FPS **+16.2**; test ΔmAP@[.5:.95] **~0**, mAP@.50 **+0.012**, matched R **+0.097**, FPS **+10.5**. Metrics: `camponotus_idea1_trackidmajor_full_896_metrics_{val,test}.json`. Compare: `camponotus_trackidmajor_896_vs_640_{val,test}.json`. |
+| 2026-03-30 | EXP-CAMPO-IDEA1-SEQUENCE-SAFE-FULL-896 (YOLO26n) | Sequence-safe Idea 1 @ **896** (`epochs=40`, `batch=8`, `workers=4`, early stop): **val** mAP@[.5:.95]=0.188, mAP@.50=0.380, matched P/R=0.623/0.538 (2523/1525/2165), FPS 33.2, latency 30.1 ms. **Test:** mAP@[.5:.95]=0.167, mAP@.50=0.353, matched P/R=0.645/0.705 (771/424/322), FPS 41.5, latency 24.1 ms. **Vs 640/100ep:** val ΔmAP@[.5:.95] **+0.042**, test **−0.073**; val/test throughput faster vs recorded 640 bench. Metrics: `camponotus_idea1_sequence_safe_full_896_metrics_{val,test}.json`. **`compare_metrics.py` bundles:** `camponotus_sequence_safe_896_vs_640_100ep_{val,test}.json`. |
 | 2026-03-30 | EXP-CAMPO-RFDETR-TRACKIDMAJORITY-FULL (RF-DETR Small) | RF-DETR on track_id-majority split. **Val:** mAP@[.5:.95]=0.427, mAP@.50=0.727, matched P/R=0.751/0.869 (TP/FP/FN 2385/791/358), FPS 12.1, latency 82.6 ms. **Test:** mAP@[.5:.95]=0.327, mAP@.50=0.600, matched P/R=0.564/0.462 (1679/1299/1956), FPS 8.9, latency 112.6 ms. Vs YOLO track_id-majority baseline: val ΔmAP@[.5:.95] +0.062, test +0.034; throughput much slower (val FPS −25.1, test FPS −22.1). |
 | 2026-03-30 | EXP-CAMPO-RFDETR-SEQUENCE-SAFE-FULL (RF-DETR Small) | First recorded Camponotus RF-DETR sequence-safe run. **Val:** mAP@[.5:.95]=0.261, mAP@.50=0.467, matched P/R=0.589/0.532 (TP/FP/FN 2495/1741/2193), FPS 11.3, latency 88.5 ms. **Test:** mAP@[.5:.95]=0.364, mAP@.50=0.777, matched P/R=0.810/0.858 (938/220/155), FPS 16.9, latency 59.1 ms. Vs YOLO sequence-safe baseline: val ΔmAP@[.5:.95] +0.115, test +0.124; throughput slower (val FPS −10.0, test FPS −13.4). |
 | 2026-03-30 | EXP-CAMPO-IDEA1-TRACKIDMAJORITY-FULL-40EP-B8W4 (YOLO26n) | Track_id-majority full run with `epochs=40`, `batch=8`, `workers=4`, `patience=15` (early stop at epoch 35, best epoch 20): val mAP@[.5:.95]=0.365 (mAP@.50=0.638), test mAP@[.5:.95]=0.293 (mAP@.50=0.525); matched P/R: val 0.815/0.767 (TP/FP/FN 2105/477/638), test 0.664/0.394 (1431/724/2204); FPS/latency mean: val 37.2 / 26.8 ms, test 31.0 / 32.3 ms. Strong gain vs prior 1-epoch track_id-majority smoke (+0.243 val and +0.280 test mAP@[.5:.95]). |

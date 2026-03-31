@@ -186,6 +186,7 @@ def main() -> None:
     )
     state_counts: dict[str, int] = defaultdict(int)
     track_frames: dict[int, list[int]] = defaultdict(list)
+    track_state_counts: defaultdict[int, defaultdict[str, int]] = defaultdict(lambda: defaultdict(int))
     soft_relabels = 0
     frame_index = -1
     frames = 0
@@ -224,6 +225,7 @@ def main() -> None:
                 state = state_from_class_id(c)
                 color = color_for_state(state) if args.color_mode == "state" else color_for_id(tid)
                 state_counts[state] += 1
+                track_state_counts[tid][state] += 1
                 track_frames[tid].append(frame_index)
 
                 cv2.rectangle(frame, (x1, y1), (x2, y2), color, max(1, int(args.line_thickness)))
@@ -270,6 +272,7 @@ def main() -> None:
             frames=frames,
             state_counts=dict(state_counts),
             track_frames={k: list(v) for k, v in track_frames.items()},
+            track_state_counts=dict((k, dict(v)) for k, v in track_state_counts.items()),
             soft_relabels=soft_relabels,
             tracker_info={
                 "tracker": "bytetrack",

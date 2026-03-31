@@ -81,6 +81,27 @@ def state_priority_soft_relabel_xyxy(
     return out, relabeled
 
 
+def _per_track_state_summary(
+    track_state_counts: dict[int, dict[str, int]],
+    track_frames: dict[int, list[int]],
+) -> dict[str, Any]:
+    """Per-track class histogram + dominant state (helps debug OOD / mis-trophallaxis on one identity)."""
+    out: dict[str, Any] = {}
+    for tid in sorted(track_state_counts.keys()):
+        counts = {k: int(v) for k, v in track_state_counts[tid].items()}
+        total = sum(counts.values())
+        dom = max(counts, key=counts.get) if counts else "unknown"
+        frac = float(counts.get(dom, 0)) / float(total) if total else 0.0
+        out[str(tid)] = {
+            "state_counts": counts,
+            "dominant_state": dom,
+            "dominant_fraction": round(frac, 4),
+            "detection_observations": int(total),
+            "frame_indices_recorded": int(len(track_frames.get(tid, []))),
+        }
+    return {"per_track": out}
+
+
 def write_tracking_analytics(
     *,
     analytics_out: Path,
@@ -94,6 +115,7 @@ def write_tracking_analytics(
     tracker_info: dict[str, Any],
     state_priority_info: dict[str, Any],
     extra: dict[str, Any] | None = None,
+    track_state_counts: dict[int, dict[str, int]] | None = None,
 ) -> None:
     lens = [len(v) for v in track_frames.values()]
     short2 = sum(1 for l in lens if l <= 2)
@@ -125,6 +147,8 @@ def write_tracking_analytics(
         },
     }
     analytics.update(tracker_info)
+    if track_state_counts:
+        analytics.update(_per_track_state_summary(track_state_counts, track_frames))
     if extra:
         analytics.update(extra)
 
