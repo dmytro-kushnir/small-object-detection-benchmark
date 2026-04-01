@@ -1,0 +1,57 @@
+{
+  "version": "idea2_event_benchmark_v1",
+  "description": "Frozen clip subset for Camponotus Idea 2 event-level evaluation.",
+  "fps": 25.0,
+  "notes": [
+    "track_id_a and track_id_b are unordered pair IDs within sequence_name.",
+    "Frame indices are 1-indexed and inclusive.",
+    "This subset is frozen by clip list; event rows can be refined with annotation revisions."
+  ],
+  "clips": [
+    {
+      "clip_id": "campo_trophalaxis_001",
+      "sequence_name": "trophalaxis_001_example",
+      "annotation_status": "draft",
+      "events": [
+        {
+          "event_id": "campo_trophalaxis_001_e1",
+          "track_id_a": 1,
+          "track_id_b": 2,
+          "start_frame": 1,
+          "end_frame": 420,
+          "label": "trophallaxis"
+        }
+      ]
+    },
+    {
+      "clip_id": "camponotus_006",
+      "sequence_name": "camponotus_006",
+      "annotation_status": "draft",
+      "events": []
+    },
+    {
+      "clip_id": "camponotus_010",
+      "sequence_name": "camponotus_010",
+      "annotation_status": "draft",
+      "events": []
+    },
+    {
+      "clip_id": "camponotus_015",
+      "sequence_name": "camponotus_015",
+      "annotation_status": "draft",
+      "events": []
+    },
+    {
+      "clip_id": "camponotus_021",
+      "sequence_name": "camponotus_021",
+      "annotation_status": "draft",
+      "events": []
+    },
+    {
+      "clip_id": "camponotus_024",
+      "sequence_name": "camponotus_024",
+      "annotation_status": "draft",
+      "events": []
+    }
+  ]
+}

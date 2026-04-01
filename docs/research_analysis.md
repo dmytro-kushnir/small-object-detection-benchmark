@@ -981,6 +981,41 @@ python3 scripts/evaluation/compare_camponotus_rfdetr_vs_yolo.py \
 
 **Interpretation (draft):** At **896**, RF-DETR **improves COCO mAP** (@[.5:.95] and @.50) vs YOLO on **both** val and test — consistent with the **640** Camponotus RF-DETR advantage, now at matched **train/infer resolution** to YOLO896. **Throughput** remains strongly in YOLO’s favor (FPS down ~23–28, latency up ~21–31 ms on RTX 4070). **Val** greedy matched **recall** rises vs YOLO896 at a small **precision** cost. **Test** shows **higher mAP** for RF-DETR but **lower** greedy matched P/R and **fewer TPs** than YOLO in this run — COCO AP and greedy IoU≥0.5 matching can disagree when score/calibration differs; treat **test** readouts as requiring both **mAP** and **matched P/R** side by side. **Within RF-DETR:** comparing **896** to the recorded **640** track_id-majority RF-DETR run is a **resolution + schedule** change (30 ep @896 vs prior RF-DETR full run), not a single-variable ablation.
 
+### EXP-CAMPO-RFDETR-SEQUENCE-SAFE-896 — RF-DETR Small (Idea 1, train/infer @896)
+
+**Goal:** Fill the sequence-safe **RF-DETR @896** rows in the Idea 1 matrix and compare against both YOLO baselines (**@896** and legacy **@640/100ep**) plus prior RF-DETR sequence-safe **@640**.
+
+**Artifacts (unified `evaluate.py`):**
+
+- Metrics: `experiments/results/camponotus_rfdetr_sequence_safe_896_metrics_{val,test}.json`
+- Predictions / bench: `experiments/results/camponotus_rfdetr_sequence_safe_896_predictions_{val,test}.json`, `experiments/results/camponotus_rfdetr_sequence_safe_896_bench_{val,test}.json`
+- Compare bundles:
+  - vs YOLO896: `camponotus_rfdetr_sequence_safe_896_vs_yolo896_{val,test}.json`
+  - vs YOLO640: `camponotus_rfdetr_sequence_safe_896_vs_yolo640_{val,test}.json`
+  - vs RF-DETR640: `camponotus_rfdetr_sequence_safe_896_vs_640_{val,test}.json`
+
+**RF-DETR @896 quantitative results (matched P/R @ IoU≥0.5, score≥0.25):**
+
+| Split | mAP@[.50:.95] | mAP@.50 | mAP@.75 | Precision | Recall | TP/FP/FN | FPS | Latency mean (ms) |
+|-------|---------------:|--------:|--------:|----------:|-------:|----------:|----:|------------------:|
+| Val | 0.208 | 0.384 | 0.197 | 0.535 | 0.472 | 2215/1925/2473 | 11.5 | 86.8 |
+| Test | 0.311 | 0.712 | 0.235 | 0.760 | 0.848 | 927/292/166 | 16.9 | 59.3 |
+
+**RF-DETR896 − YOLO896 (sequence-safe):**
+
+| Split | mAP@[.5:.95] | mAP@.50 | mAP_medium | Matched ΔP | Matched ΔR | FPS Δ | Latency mean Δ (ms) |
+|-------|-------------:|--------:|-----------:|-----------:|-----------:|------:|---------------------:|
+| Val | **+0.020** | **+0.004** | 0.000* | −0.088 | −0.066 | **−21.7** | **+56.7** |
+| Test | **+0.144** | **+0.360** | **+0.300** | **+0.115** | **+0.143** | **−24.7** | **+35.2** |
+
+\*Val `mAP_medium=0` for both runs; delta 0.000 is not a substantive medium-bucket finding.
+
+**RF-DETR896 − YOLO640 (sequence-safe legacy baseline):** Val mAP@[.5:.95] **+0.062**, mAP@.50 **+0.085**, FPS **−9.8**, latency **+39.9 ms**. Test mAP@[.5:.95] **+0.072**, mAP@.50 **+0.194**, FPS **−13.4**, latency **+26.2 ms**.
+
+**RF-DETR896 − RF-DETR640 (same split, compare − baseline):** Val mAP@[.5:.95] **−0.053**, mAP@.50 **−0.083**, matched P/R **−0.054 / −0.060**, FPS **+0.23**. Test mAP@[.5:.95] **−0.053**, mAP@.50 **−0.065**, matched P/R **−0.050 / −0.010**, FPS **−0.04** (essentially flat).
+
+**Interpretation (draft):** On the sequence-safe split, RF-DETR896 strongly beats YOLO896 on **test** quality (both AP and matched P/R), but not on throughput (much slower). Compared with prior RF-DETR640 sequence-safe, the new 896 run is **lower** on val/test AP and slightly lower on matched P/R, with near-identical speed; treat it as a schedule/config-sensitive result rather than a pure “higher resolution helps” claim.
+
 ### EXP-CAMPO-PRELABEL-TRACKING-001 — ByteTrack prelabel ablation for Idea 1 dataset workflow
 
 **Goal:** Improve CVAT prelabel usability for Idea 1 (two-class detection) by adding stable `track_id` while avoiding excessive box loss.
@@ -1084,13 +1119,13 @@ python3 scripts/evaluation/compare_camponotus_rfdetr_vs_yolo.py \
 | YOLO26n @640 | Val | 0.146 | 0.299 | 0.600 | 0.469 | 21.3 | 46.9 |
 | YOLO26n @896 | Val | 0.188 | 0.380 | 0.623 | 0.538 | 33.2 | 30.1 |
 | RF-DETR Small @640 | Val | 0.261 | 0.467 | 0.589 | 0.532 | 11.3 | 88.5 |
-| RF-DETR Small @896 | Val | **TBD** | **TBD** | **TBD** | **TBD** | **TBD** | **TBD** |
+| RF-DETR Small @896 | Val | 0.208 | 0.384 | 0.535 | 0.472 | 11.5 | 86.8 |
 | YOLO26n @640 | Test | 0.240 | 0.518 | 0.743 | 0.790 | 30.3 | 33.0 |
 | YOLO26n @896 | Test | 0.167 | 0.353 | 0.645 | 0.705 | 41.5 | 24.1 |
 | RF-DETR Small @640 | Test | 0.364 | 0.777 | 0.810 | 0.858 | 16.9 | 59.1 |
-| RF-DETR Small @896 | Test | **TBD** | **TBD** | **TBD** | **TBD** | **TBD** | **TBD** |
+| RF-DETR Small @896 | Test | 0.311 | 0.712 | 0.760 | 0.848 | 16.9 | 59.3 |
 
-**Metrics JSONs (sequence-safe):** YOLO640 `camponotus_idea1_sequence_safe_full_100ep_metrics_{val,test}.json`; YOLO896 `camponotus_idea1_sequence_safe_full_896_metrics_{val,test}.json`; RF-DETR640 `camponotus_rfdetr_sequence_safe_{val,test}_metrics.json`. **RF-DETR @896** on this split: run [`prepare_camponotus_coco_rfdetr.py`](../scripts/datasets/prepare_camponotus_coco_rfdetr.py) with sequence-safe YOLO root + `out_root` such as `datasets/camponotus_rfdetr_coco_sequence_safe`, then train/infer/eval ([`cli_commands.md`](cli_commands.md)).
+**Metrics JSONs (sequence-safe):** YOLO640 `camponotus_idea1_sequence_safe_full_100ep_metrics_{val,test}.json`; YOLO896 `camponotus_idea1_sequence_safe_full_896_metrics_{val,test}.json`; RF-DETR640 `camponotus_rfdetr_sequence_safe_{val,test}_metrics.json`; RF-DETR896 `camponotus_rfdetr_sequence_safe_896_metrics_{val,test}.json`. **RF-DETR896 compare bundles:** `camponotus_rfdetr_sequence_safe_896_vs_yolo896_{val,test}.json`, `camponotus_rfdetr_sequence_safe_896_vs_yolo640_{val,test}.json`, `camponotus_rfdetr_sequence_safe_896_vs_640_{val,test}.json`.
 
 #### track_id–majority split
 
@@ -1115,10 +1150,32 @@ python3 scripts/evaluation/compare_camponotus_rfdetr_vs_yolo.py \
 
 ---
 
+## Idea 2 — Event-level baseline template (hybrid)
+
+Use this template for each Idea 2 run:
+
+- **Prediction artifact:** `experiments/results/<run>_events.json`
+- **Evaluation artifact:** `experiments/results/<run>_events_eval.json`
+- **Compare artifact (optional):** `experiments/results/<run>_vs_<baseline>.json`
+
+Recommended table (fill after each run):
+
+| Run | Helper signal | tIoU match thr | Precision | Recall | F1 | Mean tIoU (matched) | TP | FP | FN |
+|-----|---------------|----------------|----------:|-------:|---:|---------------------:|---:|---:|---:|
+| `<run_name>` | on/off | 0.30 | TBD | TBD | TBD | TBD | TBD | TBD | TBD |
+
+**Per-clip reporting:** include the worst clips by F1 and top identity-pair misses from the evaluator `per_sequence` block.
+
+**Protocol reference:** [`camponotus_idea2_event_protocol.md`](camponotus_idea2_event_protocol.md).
+
+---
+
 ## Changelog
 
 | Date | Experiment(s) | Summary |
 |------|----------------|---------|
+| 2026-03-31 | Idea 2 hybrid baseline tooling (phases 1-5 scaffold) | Added event protocol doc (`camponotus_idea2_event_protocol.md`), frozen benchmark subset scaffold (`datasets/camponotus_idea2_event_benchmark_v1.json`), and runnable scripts for event inference/evaluation/compare: `infer_camponotus_idea2_events.py`, `evaluate_camponotus_idea2_events.py`, `compare_camponotus_idea2_event_metrics.py`. Added reproducible Idea 2 CLI recipes and event-results template sections for ongoing experiments. |
+| 2026-03-31 | EXP-CAMPO-RFDETR-SEQUENCE-SAFE-896 (RF-DETR Small) | Sequence-safe RF-DETR @896 (`camponotus_rfdetr_sequence_safe_896_metrics_{val,test}.json`): **val** mAP@[.5:.95]=0.208, mAP@.50=0.384, matched P/R=0.535/0.472 (TP/FP/FN 2215/1925/2473), FPS 11.5, latency 86.8 ms; **test** mAP@[.5:.95]=0.311, mAP@.50=0.712, matched P/R=0.760/0.848 (927/292/166), FPS 16.9, latency 59.3 ms. **Vs YOLO896:** val ΔmAP@[.5:.95] +0.020 (P/R down), test ΔmAP@[.5:.95] +0.144 with P/R up; throughput slower by ~21.7 FPS (val) and ~24.7 FPS (test). **Vs RF-DETR640:** mAP drops ~0.053 on both val/test with near-flat speed. |
 | 2026-03-31 | OOD qualitative diagnostic (Idea 1) | New-lab clip `trophalaxis_001_example.mp4` (455 frames, expected mostly trophallaxis) with YOLO track_id-majority @896 + soft state-priority (`--conf 0.25`) still outputs **normal-dominant** counts: `normal=698`, `trophallaxis=262`, `unique_tracks=31`, `relabel_count=9`. New `per_track` analytics reveals asymmetric long identities: `id 1` = 211 troph / 159 normal vs `id 2` = 442 normal / 1 troph. Interpretation: likely label-policy/domain-shift limitation for Idea 1 two-class frame labels; add label-audit checklist and treat this as failure analysis while planning Idea 2 event-level modeling. Artifact: `experiments/visualizations/camponotus_idea1_trackidmajor_full_896_tracked_camponotus_trophalaxis_001_soft_analytics.json`. |
 | 2026-03-31 | Documentation | **Idea 1 paper-ready summary:** two matrices (sequence-safe + track_id–majority) for YOLO640 / YOLO896 / RF-DETR640 / RF-DETR896 with mAP, matched P/R, FPS, latency; **TBD** row for **RF-DETR @896 sequence-safe**; headline readout = sequence-safe **test**; footnotes on schedule mismatch; pointer to optional `EXP_A005_OPTIMIZE_INFERENCE` for RF-DETR latency; **Next steps** in `camponotus_research_roadmap.md`. |
 | 2026-03-31 | EXP-CAMPO-RFDETR-TRACKIDMAJORITY-896 (RF-DETR Small) | Track_id-majority @ **896** (`epochs=30`, `batch=4`, `grad_accum=4`, best epoch **29**): **val** mAP@[.5:.95]=0.356, mAP@.50=0.650, matched P/R=0.745/0.855 (2346/804/397), FPS 25.1, latency 39.9 ms. **Test:** mAP@[.5:.95]=0.325, mAP@.50=0.575, matched P/R=0.548/0.407 (1480/1220/2155), FPS 18.1, latency 55.2 ms. **Vs YOLO896:** val ΔmAP@[.5:.95] **+0.038**, matched R **+0.050**, FPS **−28.3**; test ΔmAP@[.5:.95] **+0.032**, matched P/R **−0.143 / −0.084**, FPS **−23.4**. Metrics: `camponotus_rfdetr_trackidmajor_896_metrics_{val,test}.json`. Compare: `camponotus_rfdetr_trackidmajor_896_vs_yolo896_{val,test}.json`. |

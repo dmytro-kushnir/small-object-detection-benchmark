@@ -200,6 +200,129 @@ python3 scripts/evaluation/compare_camponotus_rfdetr_vs_yolo.py \
 
 ---
 
+## Camponotus — Idea 2 hybrid events (tracking + helper)
+
+Inputs:
+
+- MOT JSON from prelabel/tracking export (`bootstrap_camponotus_autolabel.py --mot-out-json`)
+- event GT subset (`datasets/camponotus_idea2_event_benchmark_v1.json`)
+
+Run baseline with helper signal:
+
+```bash
+python3 scripts/inference/infer_camponotus_idea2_events.py \
+  --mot-json experiments/cvat_prelabels/camponotus_prelabels_trackidmajor_mot.json \
+  --out experiments/results/camponotus_idea2_events_hybrid_with_helper.json \
+  --max-dist-px 90 \
+  --pair-score-threshold 0.45 \
+  --min-active-frames 12 \
+  --max-gap-frames 3
+```
+
+Run ablation without helper signal:
+
+```bash
+python3 scripts/inference/infer_camponotus_idea2_events.py \
+  --mot-json experiments/cvat_prelabels/camponotus_prelabels_trackidmajor_mot.json \
+  --out experiments/results/camponotus_idea2_events_hybrid_no_helper.json \
+  --disable-helper-signal \
+  --max-dist-px 90 \
+  --pair-score-threshold 0.45 \
+  --min-active-frames 12 \
+  --max-gap-frames 3
+```
+
+Evaluate each prediction file:
+
+```bash
+python3 scripts/evaluation/evaluate_camponotus_idea2_events.py \
+  --gt-events datasets/camponotus_idea2_event_benchmark_v1.json \
+  --pred-events experiments/results/camponotus_idea2_events_hybrid_with_helper.json \
+  --out experiments/results/camponotus_idea2_events_hybrid_with_helper_eval.json \
+  --match-tiou-threshold 0.30
+
+python3 scripts/evaluation/evaluate_camponotus_idea2_events.py \
+  --gt-events datasets/camponotus_idea2_event_benchmark_v1.json \
+  --pred-events experiments/results/camponotus_idea2_events_hybrid_no_helper.json \
+  --out experiments/results/camponotus_idea2_events_hybrid_no_helper_eval.json \
+  --match-tiou-threshold 0.30
+```
+
+Compare helper vs no-helper:
+
+```bash
+python3 scripts/evaluation/compare_camponotus_idea2_event_metrics.py \
+  --baseline experiments/results/camponotus_idea2_events_hybrid_no_helper_eval.json \
+  --compare experiments/results/camponotus_idea2_events_hybrid_with_helper_eval.json \
+  --out experiments/results/camponotus_idea2_events_helper_vs_no_helper.json \
+  --evaluation-note "Idea 2 hybrid baseline ablation: helper signal contribution."
+```
+
+Protocol reference: [`camponotus_idea2_event_protocol.md`](camponotus_idea2_event_protocol.md).
+
+Build a **draft** event GT from existing CVAT COCO `state` + `track_id` labels:
+
+```bash
+python3 scripts/datasets/build_camponotus_idea2_event_gt.py \
+  --coco-annotations "/media/dmytro/data/datasets/camponotus fellah trophallaxis FULL dataset/annotations/instances_default.json" \
+  --out datasets/camponotus_idea2_event_benchmark_v1_auto.json \
+  --fps 25 \
+  --state-attr state \
+  --trophallaxis-state-value trophallaxis \
+  --track-id-attr track_id \
+  --max-pair-dist-px 90 \
+  --min-active-frames 12 \
+  --max-gap-frames 3
+```
+
+Then review and correct this draft before using it as the frozen benchmark file.
+
+Recommended v1 subset mix (from current Camponotus curation notes):
+
+- almost fully trophallaxis:
+  - `seq_camponotus_trophallaxis_007`
+  - `seq_camponotus_trophallaxis_005`
+  - `seq_camponotus_trophallaxis_003`
+- partial:
+  - `seq_camponotus_009`
+  - `seq_camponotus_007`
+- no trophallaxis:
+  - `seq_camponotus_003`
+  - `seq_camponotus_002`
+- ant-dense mostly non-event:
+  - `seq_camponotus_010`
+
+Example command using an external-drive CVAT export and explicit sequence allowlist:
+
+```bash
+python3 scripts/datasets/build_camponotus_idea2_event_gt.py \
+  --coco-annotations "/media/dmytro/data/datasets/camponotus fellah trophallaxis FULL dataset/annotations/instances_default.json" \
+  --out datasets/camponotus_idea2_event_benchmark_v1_auto.json \
+  --fps 25 \
+  --state-attr state \
+  --trophallaxis-state-value trophallaxis \
+  --track-id-attr track_id \
+  --max-pair-dist-px 90 \
+  --min-active-frames 12 \
+  --max-gap-frames 3 \
+  --clip-allowlist "seq_camponotus_trophallaxis_007,seq_camponotus_trophallaxis_005,seq_camponotus_trophallaxis_003,seq_camponotus_009,seq_camponotus_007,seq_camponotus_003,seq_camponotus_002,seq_camponotus_010"
+```
+
+One-shot runner (MOT -> events -> eval -> compare) against final GT file:
+
+```bash
+GT_EVENTS=datasets/camponotus_idea2_event_benchmark_v1.json \
+IN_SITU_ROOT="/media/dmytro/data/datasets/camponotus fellah trophallaxis FULL dataset/images/default/in_situ" \
+BACKEND=yolo \
+YOLO_WEIGHTS=experiments/yolo/camponotus_idea1_trackidmajor_full_896/weights/best.pt \
+RUN_NAME=camponotus_idea2_hybrid_v1_yolo \
+bash scripts/run_camponotus_idea2_hybrid.sh
+```
+
+For RF-DETR, switch `BACKEND=rfdetr` and provide `RFDETR_WEIGHTS=/path/to/best.pth`.
+
+---
+
 ## Smokes and generic benchmark scripts
 
 | Task | Entry point |

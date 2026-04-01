@@ -20,7 +20,7 @@ This document aligns the three research directions with **one canonical annotati
 
 Synthesis table: [`research_analysis.md`](research_analysis.md) → **“Idea 1 — Paper-ready summary”**.
 
-1. **RF-DETR @896 on the sequence-safe split** — Prepare Roboflow export from `datasets/camponotus_yolo/camponotus_full_export_unique_sequence_safe` into e.g. `datasets/camponotus_rfdetr_coco_sequence_safe`, train with `--resolution 896`, run `infer_rfdetr.py` → `bench_rfdetr.py` → `evaluate.py`, then [`compare_camponotus_rfdetr_vs_yolo.py`](../scripts/evaluation/compare_camponotus_rfdetr_vs_yolo.py) with baseline `camponotus_idea1_sequence_safe_full_896_metrics_{val,test}.json`. Fills **TBD** cells in the paper summary matrix and completes **RF-DETR640 vs RF-DETR896** on the **same** split (subject to schedule parity caveats).
+1. **RF-DETR @896 on the sequence-safe split** — ✅ **Completed (2026-03-31)**. Recorded outputs: `camponotus_rfdetr_sequence_safe_896_metrics_{val,test}.json`; compares vs YOLO896 (`camponotus_rfdetr_sequence_safe_896_vs_yolo896_{val,test}.json`) and vs RF-DETR640 (`camponotus_rfdetr_sequence_safe_896_vs_640_{val,test}.json`). See [`research_analysis.md`](research_analysis.md) section **EXP-CAMPO-RFDETR-SEQUENCE-SAFE-896**.
 2. **Within RF-DETR @640 vs @896** — On each split separately, optional `compare_metrics.py` between `camponotus_rfdetr_*_metrics_*.json` (640) and the new 896 metrics (same split label only).
 3. **Optional latency row** — Re-benchmark RF-DETR with `EXP_A005_OPTIMIZE_INFERENCE=1` if you need optimized inference timing; re-verify mAP ([`infer_rfdetr.py`](../scripts/inference/infer_rfdetr.py)).
 4. **Idea 2+** — After Idea 1 tables stabilize: event / MOT-style metrics for interaction modeling (see Idea 2 below); ant-only exports for detector training as needed.
@@ -58,18 +58,42 @@ If checklist failures persist even after relabeling, prioritize Idea 2 event inf
 
 **Data (training):** Derived **ant-only** export — [`export_camponotus_ant_only_for_idea2.py`](../scripts/datasets/export_camponotus_ant_only_for_idea2.py) → `datasets/camponotus_coco_ant_only` / `datasets/camponotus_yolo_ant_only`. Each COCO annotation keeps a non-standard boolean **`trophallaxis_gt`** for future event-level evaluation (ignored by standard COCOeval). Preserve **`track_id`** in CVAT exports when practical.
 
-**Data (evaluation, proposed):** Ground-truth **events** (pairs of `track_id`s or boxes with overlapping `trophallaxis_gt` in time) are **not** produced by this repo yet. After Idea 1 metrics, define explicitly:
+**Data (evaluation):** Frozen benchmark subset scaffold at `datasets/camponotus_idea2_event_benchmark_v1.json` with clip-level event rows (`track_id_a`, `track_id_b`, `start_frame`, `end_frame`). Keep clip list fixed and only revise event rows via documented annotation updates.
 
-- pairing rules (IoU / centroid distance thresholds),
-- minimum contiguous frames for a positive event,
-- how `state` / `trophallaxis_gt` on both ants maps to one interaction label.
+**Protocol:** Canonical event definition, temporal merge rules, and temporal-IoU matching are documented in [`camponotus_idea2_event_protocol.md`](camponotus_idea2_event_protocol.md).
 
-**Metrics (future):** Event-centric precision/recall or temporal IoU — separate from bbox mAP.
-Include MOT-style identity metrics (e.g., IDF1 / ID switches, optionally HOTA/MOTA) as a primary evaluation axis for Idea 2 tracking quality.
+**Metrics (implemented baseline):** Event precision/recall/F1 with temporal IoU matching (`evaluate_camponotus_idea2_events.py`) plus per-sequence TP/FP/FN summaries. MOT-style identity metrics (IDF1 / ID switches / HOTA) remain a planned extension.
 
 **Planning note (to avoid confusion):** MOT-style metrics are mainly an **Idea 2** requirement. For **Idea 1**, they can be used as optional diagnostics for tracker behavior, but model ranking should remain detection-first (COCO mAP + matched precision/recall).
 
 **Relation to ants EXP-A006:** [`run_ants_expA006.sh`](../scripts/run_ants_expA006.sh) adds tracking + smoothing for **detection** stability, not behavioral interaction detection.
+
+### Idea 2 — benchmark v1 subset intention
+
+Current intention for the first frozen event benchmark (`v1`) is to use a balanced 8-sequence subset from the full in-situ source (`/media/dmytro/data/datasets/camponotus fellah trophallaxis FULL dataset/images/default/in_situ`) with labels from `instances_default.json`:
+
+- almost fully trophallaxis: `seq_camponotus_trophallaxis_007`, `seq_camponotus_trophallaxis_005`, `seq_camponotus_trophallaxis_003`
+- partial interaction: `seq_camponotus_009`, `seq_camponotus_007`
+- no trophallaxis (negative controls): `seq_camponotus_003`, `seq_camponotus_002`
+- ant-dense mostly non-event stress case: `seq_camponotus_010`
+
+This mix is meant to prevent a positive-only benchmark and to expose both false positives and false negatives in event inference.
+
+### Idea 2 — current baseline tooling (hybrid)
+
+Implemented first-pass hybrid baseline:
+
+1. **Event inference from tracks:** `scripts/inference/infer_camponotus_idea2_events.py`
+   - Input: MOT JSON sequences/rows with tracked ants.
+   - Features: pair IoU + center distance + optional trophallaxis helper class signal.
+   - Temporal logic: run extraction + gap-merge + minimum-duration filter.
+2. **Event evaluation:** `scripts/evaluation/evaluate_camponotus_idea2_events.py`
+   - One-to-one temporal-IoU matching per sequence and identity pair.
+   - Aggregate + per-sequence metrics.
+3. **A/B compare utility:** `scripts/evaluation/compare_camponotus_idea2_event_metrics.py`
+   - Helper-vs-no-helper deltas for precision/recall/F1/tIoU and TP/FP/FN.
+
+Reproducible command patterns are listed in [`cli_commands.md`](cli_commands.md).
 
 ## Idea 3 — Segmentation-assisted interaction
 

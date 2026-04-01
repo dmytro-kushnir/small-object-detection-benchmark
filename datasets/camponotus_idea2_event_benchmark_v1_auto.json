@@ -1,0 +1,183 @@
+{
+  "version": "idea2_event_benchmark_v1",
+  "description": "Auto-drafted from CVAT COCO state labels. Requires manual QA before final scoring.",
+  "fps": 25.0,
+  "source_coco_annotations": "/media/dmytro/data/datasets/camponotus fellah trophallaxis FULL dataset/annotations/instances_default.json",
+  "auto_params": {
+    "state_attr": "state",
+    "trophallaxis_state_value": "trophallaxis",
+    "track_id_attr": "track_id",
+    "max_pair_dist_px": 90.0,
+    "min_pair_iou": 0.0,
+    "min_active_frames": 12,
+    "max_gap_frames": 3
+  },
+  "notes": [
+    "track_id_a and track_id_b are unordered pair IDs within sequence_name.",
+    "Frame indices are 1-indexed and inclusive.",
+    "Generated events are drafts and must be reviewed before final benchmarking."
+  ],
+  "clips": [
+    {
+      "clip_id": "seq_camponotus_002",
+      "sequence_name": "seq_camponotus_002",
+      "annotation_status": "draft_auto",
+      "events": []
+    },
+    {
+      "clip_id": "seq_camponotus_003",
+      "sequence_name": "seq_camponotus_003",
+      "annotation_status": "draft_auto",
+      "events": []
+    },
+    {
+      "clip_id": "seq_camponotus_007",
+      "sequence_name": "seq_camponotus_007",
+      "annotation_status": "draft_auto",
+      "events": [
+        {
+          "event_id": "seq_camponotus_007_342_343_1",
+          "track_id_a": 342,
+          "track_id_b": 343,
+          "start_frame": 1,
+          "end_frame": 23,
+          "label": "trophallaxis",
+          "source": "auto_from_cvat_state"
+        },
+        {
+          "event_id": "seq_camponotus_007_342_344_1",
+          "track_id_a": 342,
+          "track_id_b": 344,
+          "start_frame": 1,
+          "end_frame": 23,
+          "label": "trophallaxis",
+          "source": "auto_from_cvat_state"
+        },
+        {
+          "event_id": "seq_camponotus_007_342_345_1",
+          "track_id_a": 342,
+          "track_id_b": 345,
+          "start_frame": 1,
+          "end_frame": 23,
+          "label": "trophallaxis",
+          "source": "auto_from_cvat_state"
+        },
+        {
+          "event_id": "seq_camponotus_007_343_344_1",
+          "track_id_a": 343,
+          "track_id_b": 344,
+          "start_frame": 1,
+          "end_frame": 23,
+          "label": "trophallaxis",
+          "source": "auto_from_cvat_state"
+        },
+        {
+          "event_id": "seq_camponotus_007_343_345_1",
+          "track_id_a": 343,
+          "track_id_b": 345,
+          "start_frame": 1,
+          "end_frame": 23,
+          "label": "trophallaxis",
+          "source": "auto_from_cvat_state"
+        },
+        {
+          "event_id": "seq_camponotus_007_344_345_1",
+          "track_id_a": 344,
+          "track_id_b": 345,
+          "start_frame": 1,
+          "end_frame": 44,
+          "label": "trophallaxis",
+          "source": "auto_from_cvat_state"
+        }
+      ]
+    },
+    {
+      "clip_id": "seq_camponotus_009",
+      "sequence_name": "seq_camponotus_009",
+      "annotation_status": "draft_auto",
+      "events": [
+        {
+          "event_id": "seq_camponotus_009_356_357_1",
+          "track_id_a": 356,
+          "track_id_b": 357,
+          "start_frame": 1,
+          "end_frame": 87,
+          "label": "trophallaxis",
+          "source": "auto_from_cvat_state"
+        }
+      ]
+    },
+    {
+      "clip_id": "seq_camponotus_010",
+      "sequence_name": "seq_camponotus_010",
+      "annotation_status": "draft_auto",
+      "events": []
+    },
+    {
+      "clip_id": "seq_camponotus_trophallaxis_003",
+      "sequence_name": "seq_camponotus_trophallaxis_003",
+      "annotation_status": "draft_auto",
+      "events": [
+        {
+          "event_id": "seq_camponotus_trophallaxis_003_618_619_1",
+          "track_id_a": 618,
+          "track_id_b": 619,
+          "start_frame": 1,
+          "end_frame": 65,
+          "label": "trophallaxis",
+          "source": "auto_from_cvat_state"
+        },
+        {
+          "event_id": "seq_camponotus_trophallaxis_003_618_621_1",
+          "track_id_a": 618,
+          "track_id_b": 621,
+          "start_frame": 1,
+          "end_frame": 65,
+          "label": "trophallaxis",
+          "source": "auto_from_cvat_state"
+        },
+        {
+          "event_id": "seq_camponotus_trophallaxis_003_619_621_1",
+          "track_id_a": 619,
+          "track_id_b": 621,
+          "start_frame": 1,
+          "end_frame": 65,
+          "label": "trophallaxis",
+          "source": "auto_from_cvat_state"
+        }
+      ]
+    },
+    {
+      "clip_id": "seq_camponotus_trophallaxis_005",
+      "sequence_name": "seq_camponotus_trophallaxis_005",
+      "annotation_status": "draft_auto",
+      "events": [
+        {
+          "event_id": "seq_camponotus_trophallaxis_005_639_644_1",
+          "track_id_a": 639,
+          "track_id_b": 644,
+          "start_frame": 1,
+          "end_frame": 30,
+          "label": "trophallaxis",
+          "source": "auto_from_cvat_state"
+        }
+      ]
+    },
+    {
+      "clip_id": "seq_camponotus_trophallaxis_007",
+      "sequence_name": "seq_camponotus_trophallaxis_007",
+      "annotation_status": "draft_auto",
+      "events": [
+        {
+          "event_id": "seq_camponotus_trophallaxis_007_656_660_1",
+          "track_id_a": 656,
+          "track_id_b": 660,
+          "start_frame": 1,
+          "end_frame": 97,
+          "label": "trophallaxis",
+          "source": "auto_from_cvat_state"
+        }
+      ]
+    }
+  ]
+}
