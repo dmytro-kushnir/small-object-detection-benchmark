@@ -5,13 +5,13 @@
   "notes": [
     "track_id_a and track_id_b are unordered pair IDs within sequence_name.",
     "Frame indices are 1-indexed and inclusive.",
-    "This subset is frozen by clip list; event rows can be refined with annotation revisions."
+    "This subset is frozen by clip list; event rows are manually validated."
   ],
   "clips": [
     {
       "clip_id": "campo_trophalaxis_001",
       "sequence_name": "trophalaxis_001_example",
-      "annotation_status": "draft",
+      "annotation_status": "final_v1",
       "events": [
         {
           "event_id": "campo_trophalaxis_001_e1",
@@ -19,39 +19,65 @@
           "track_id_b": 2,
           "start_frame": 1,
           "end_frame": 420,
-          "label": "trophallaxis"
+          "label": "trophallaxis",
+          "source": "manual_qa"
         }
       ]
     },
     {
       "clip_id": "camponotus_006",
       "sequence_name": "camponotus_006",
-      "annotation_status": "draft",
+      "annotation_status": "final_v1",
       "events": []
     },
     {
       "clip_id": "camponotus_010",
       "sequence_name": "camponotus_010",
-      "annotation_status": "draft",
+      "annotation_status": "final_v1",
       "events": []
     },
     {
       "clip_id": "camponotus_015",
       "sequence_name": "camponotus_015",
-      "annotation_status": "draft",
+      "annotation_status": "final_v1",
       "events": []
     },
     {
       "clip_id": "camponotus_021",
       "sequence_name": "camponotus_021",
-      "annotation_status": "draft",
+      "annotation_status": "final_v1",
       "events": []
     },
     {
       "clip_id": "camponotus_024",
       "sequence_name": "camponotus_024",
-      "annotation_status": "draft",
+      "annotation_status": "final_v1",
       "events": []
+    },
+    {
+      "clip_id": "seq_camponotus_007",
+      "sequence_name": "seq_camponotus_007",
+      "annotation_status": "final_v1",
+      "events": [
+        {
+          "event_id": "seq_camponotus_007_341_342_1",
+          "track_id_a": 341,
+          "track_id_b": 342,
+          "start_frame": 1,
+          "end_frame": 23,
+          "label": "trophallaxis",
+          "source": "manual_qa"
+        },
+        {
+          "event_id": "seq_camponotus_007_343_344_1",
+          "track_id_a": 343,
+          "track_id_b": 344,
+          "start_frame": 1,
+          "end_frame": 44,
+          "label": "trophallaxis",
+          "source": "manual_qa"
+        }
+      ]
     }
   ]
 }

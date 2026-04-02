@@ -195,6 +195,7 @@ def main() -> None:
     clips_out: list[dict[str, Any]] = []
     for seq, ims in sorted(by_seq_img.items(), key=lambda kv: kv[0]):
         pair_frames: dict[tuple[int, int], list[int]] = defaultdict(list)
+        prev_pairs: set[tuple[int, int]] = set()
         for im in ims:
             iid = int(im["id"])
             frame = frame_idx_by_image_id[iid]
@@ -217,16 +218,56 @@ def main() -> None:
                 candidates.append({"track_id": int(tid), "bbox": [float(v) for v in bbox]})
 
             candidates.sort(key=lambda x: x["track_id"])
-            for i in range(len(candidates)):
-                for j in range(i + 1, len(candidates)):
-                    a = candidates[i]
-                    b = candidates[j]
-                    iou = _bbox_iou_xywh(a["bbox"], b["bbox"])
-                    dist = _center_dist_xywh(a["bbox"], b["bbox"])
-                    if iou < float(args.min_pair_iou) and dist > float(args.max_pair_dist_px):
+            n = len(candidates)
+            # Temporal consistency: carry disjoint pairs from the previous frame when
+            # both tracks still appear as trophallaxis and center distance stays within
+            # max_pair_dist_px; then greedy-match remaining ants (same IoU/distance gate).
+            tid_to_bbox: dict[int, list[float]] = {}
+            for c in candidates:
+                tid_to_bbox[int(c["track_id"])] = c["bbox"]
+
+            pairs_this_frame: list[tuple[int, int]] = []
+            used: set[int] = set()
+            for key in sorted(prev_pairs):
+                ta, tb = key
+                if ta not in tid_to_bbox or tb not in tid_to_bbox:
+                    continue
+                dist = _center_dist_xywh(tid_to_bbox[ta], tid_to_bbox[tb])
+                if dist > float(args.max_pair_dist_px):
+                    continue
+                pairs_this_frame.append(key)
+                used.add(ta)
+                used.add(tb)
+
+            if n >= 2:
+                edges: list[tuple[float, tuple[int, int]]] = []
+                for i in range(n):
+                    for j in range(i + 1, n):
+                        a, b = candidates[i], candidates[j]
+                        tid_a = int(a["track_id"])
+                        tid_b = int(b["track_id"])
+                        if tid_a in used or tid_b in used:
+                            continue
+                        iou = _bbox_iou_xywh(a["bbox"], b["bbox"])
+                        dist = _center_dist_xywh(a["bbox"], b["bbox"])
+                        if iou < float(args.min_pair_iou) and dist > float(args.max_pair_dist_px):
+                            continue
+                        if tid_a == tid_b:
+                            continue
+                        key = _pair_key(tid_a, tid_b)
+                        edges.append((dist, key))
+                edges.sort(key=lambda t: t[0])
+                for _dist, key in edges:
+                    ta, tb = key
+                    if ta in used or tb in used:
                         continue
-                    key = _pair_key(int(a["track_id"]), int(b["track_id"]))
-                    pair_frames[key].append(frame)
+                    used.add(ta)
+                    used.add(tb)
+                    pairs_this_frame.append(key)
+
+            prev_pairs = set(pairs_this_frame)
+            for key in pairs_this_frame:
+                pair_frames[key].append(frame)
 
         events: list[dict[str, Any]] = []
         for (ta, tb), frames in sorted(pair_frames.items(), key=lambda kv: (kv[0][0], kv[0][1])):

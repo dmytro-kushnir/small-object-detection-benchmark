@@ -36,6 +36,15 @@
       "annotation_status": "draft_auto",
       "events": [
         {
+          "event_id": "seq_camponotus_007_341_344_1",
+          "track_id_a": 341,
+          "track_id_b": 344,
+          "start_frame": 1,
+          "end_frame": 23,
+          "label": "trophallaxis",
+          "source": "auto_from_cvat_state"
+        },
+        {
           "event_id": "seq_camponotus_007_342_343_1",
           "track_id_a": 342,
           "track_id_b": 343,
@@ -45,46 +54,10 @@
           "source": "auto_from_cvat_state"
         },
         {
-          "event_id": "seq_camponotus_007_342_344_1",
-          "track_id_a": 342,
-          "track_id_b": 344,
-          "start_frame": 1,
-          "end_frame": 23,
-          "label": "trophallaxis",
-          "source": "auto_from_cvat_state"
-        },
-        {
-          "event_id": "seq_camponotus_007_342_345_1",
-          "track_id_a": 342,
-          "track_id_b": 345,
-          "start_frame": 1,
-          "end_frame": 23,
-          "label": "trophallaxis",
-          "source": "auto_from_cvat_state"
-        },
-        {
           "event_id": "seq_camponotus_007_343_344_1",
           "track_id_a": 343,
           "track_id_b": 344,
-          "start_frame": 1,
-          "end_frame": 23,
-          "label": "trophallaxis",
-          "source": "auto_from_cvat_state"
-        },
-        {
-          "event_id": "seq_camponotus_007_343_345_1",
-          "track_id_a": 343,
-          "track_id_b": 345,
-          "start_frame": 1,
-          "end_frame": 23,
-          "label": "trophallaxis",
-          "source": "auto_from_cvat_state"
-        },
-        {
-          "event_id": "seq_camponotus_007_344_345_1",
-          "track_id_a": 344,
-          "track_id_b": 345,
-          "start_frame": 1,
+          "start_frame": 24,
           "end_frame": 44,
           "label": "trophallaxis",
           "source": "auto_from_cvat_state"
@@ -97,9 +70,9 @@
       "annotation_status": "draft_auto",
       "events": [
         {
-          "event_id": "seq_camponotus_009_356_357_1",
-          "track_id_a": 356,
-          "track_id_b": 357,
+          "event_id": "seq_camponotus_009_355_356_1",
+          "track_id_a": 355,
+          "track_id_b": 356,
           "start_frame": 1,
           "end_frame": 87,
           "label": "trophallaxis",
@@ -119,27 +92,9 @@
       "annotation_status": "draft_auto",
       "events": [
         {
-          "event_id": "seq_camponotus_trophallaxis_003_618_619_1",
-          "track_id_a": 618,
-          "track_id_b": 619,
-          "start_frame": 1,
-          "end_frame": 65,
-          "label": "trophallaxis",
-          "source": "auto_from_cvat_state"
-        },
-        {
-          "event_id": "seq_camponotus_trophallaxis_003_618_621_1",
-          "track_id_a": 618,
-          "track_id_b": 621,
-          "start_frame": 1,
-          "end_frame": 65,
-          "label": "trophallaxis",
-          "source": "auto_from_cvat_state"
-        },
-        {
-          "event_id": "seq_camponotus_trophallaxis_003_619_621_1",
-          "track_id_a": 619,
-          "track_id_b": 621,
+          "event_id": "seq_camponotus_trophallaxis_003_617_618_1",
+          "track_id_a": 617,
+          "track_id_b": 618,
           "start_frame": 1,
           "end_frame": 65,
           "label": "trophallaxis",
@@ -153,9 +108,9 @@
       "annotation_status": "draft_auto",
       "events": [
         {
-          "event_id": "seq_camponotus_trophallaxis_005_639_644_1",
-          "track_id_a": 639,
-          "track_id_b": 644,
+          "event_id": "seq_camponotus_trophallaxis_005_638_643_1",
+          "track_id_a": 638,
+          "track_id_b": 643,
           "start_frame": 1,
           "end_frame": 30,
           "label": "trophallaxis",
@@ -169,9 +124,9 @@
       "annotation_status": "draft_auto",
       "events": [
         {
-          "event_id": "seq_camponotus_trophallaxis_007_656_660_1",
-          "track_id_a": 656,
-          "track_id_b": 660,
+          "event_id": "seq_camponotus_trophallaxis_007_655_659_1",
+          "track_id_a": 655,
+          "track_id_b": 659,
           "start_frame": 1,
           "end_frame": 97,
           "label": "trophallaxis",
