@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+from collections import deque
 from pathlib import Path
 from typing import Any
 
@@ -81,6 +82,85 @@ def state_priority_soft_relabel_xyxy(
     return out, relabeled
 
 
+def state_priority_consensus_relabel_normal_near_troph_xyxy(
+    dets: list[dict[str, object]],
+    *,
+    iou_thresh: float,
+) -> tuple[list[dict[str, object]], int]:
+    """Relabel normal→trophallaxis if the box overlaps any trophallaxis detection.
+
+    Unlike :func:`state_priority_soft_relabel_xyxy`, there is **no** score-gap check:
+    any high-IoU pair forces the normal side to trophallaxis. Intended for **OOD /
+    visualization**; can increase false trophallaxis when unrelated ants touch.
+    """
+    troph = [d for d in dets if int(d.get("class_id", -1)) == 1]
+    if not troph:
+        return dets, 0
+    out: list[dict[str, object]] = []
+    relabeled = 0
+    thr = float(iou_thresh)
+    for d in dets:
+        if int(d.get("class_id", -1)) != 0:
+            out.append(d)
+            continue
+        n_score = float(d.get("score", 0.0))
+        partner_score = 0.0
+        should_flip = False
+        for t in troph:
+            iou = bbox_iou_xyxy(
+                [float(v) for v in d["xyxy"]],  # type: ignore[index]
+                [float(v) for v in t["xyxy"]],  # type: ignore[index]
+            )
+            if iou < thr:
+                continue
+            should_flip = True
+            partner_score = max(partner_score, float(t.get("score", 0.0)))
+        if should_flip:
+            nd = dict(d)
+            nd["class_id"] = 1
+            nd["score"] = max(n_score, partner_score)
+            out.append(nd)
+            relabeled += 1
+        else:
+            out.append(d)
+    return out, relabeled
+
+
+def temporal_majority_smooth_dets(
+    dets: list[dict[str, object]],
+    *,
+    history: dict[int, deque[int]],
+) -> list[dict[str, object]]:
+    """Sliding-window majority vote on ``class_id`` (0/1) per ``track_id``.
+
+    Append each frame's class (typically after state-priority relabel steps)
+    to ``history[track_id]``. Deques must use ``maxlen=K`` set by the caller.
+
+    **Tie rule:** if normal and trophallaxis counts are equal in the window, keep
+    this frame's class (no bias toward either label).
+
+    Returns shallow-copied det dicts with updated ``class_id``.
+    """
+    out: list[dict[str, object]] = []
+    for d in dets:
+        tid = int(d["track_id"])
+        cid = int(d.get("class_id", 0))
+        q = history[tid]
+        q.append(cid)
+        c0 = sum(1 for x in q if int(x) == 0)
+        c1 = len(q) - c0
+        if c0 == c1:
+            smoothed = cid
+        elif c0 > c1:
+            smoothed = 0
+        else:
+            smoothed = 1
+        nd = dict(d)
+        nd["class_id"] = int(smoothed)
+        out.append(nd)
+    return out
+
+
 def _per_track_state_summary(
     track_state_counts: dict[int, dict[str, int]],
     track_frames: dict[int, list[int]],
@@ -114,6 +194,7 @@ def write_tracking_analytics(
     soft_relabels: int,
     tracker_info: dict[str, Any],
     state_priority_info: dict[str, Any],
+    state_priority_consensus_info: dict[str, Any] | None = None,
     extra: dict[str, Any] | None = None,
     track_state_counts: dict[int, dict[str, int]] | None = None,
 ) -> None:
@@ -146,6 +227,8 @@ def write_tracking_analytics(
             "relabel_count": int(soft_relabels),
         },
     }
+    if state_priority_consensus_info is not None:
+        analytics["state_priority_consensus"] = dict(state_priority_consensus_info)
     analytics.update(tracker_info)
     if track_state_counts:
         analytics.update(_per_track_state_summary(track_state_counts, track_frames))

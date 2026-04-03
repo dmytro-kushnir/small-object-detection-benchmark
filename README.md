@@ -53,7 +53,7 @@ Cross-model comparison uses the **same** COCO preds + [`scripts/evaluation/evalu
 
 ## Other scripts
 
-- `python scripts/inference/infer_yolo.py --weights … --source … --coco-gt …/instances_val.json --out preds.json` — COCO **list** JSON for `pycocotools` (`image_id` aligned to GT)
+- `python scripts/inference/infer_yolo.py --weights … --source … --coco-gt …/instances_val.json --out preds.json` — COCO **list** JSON for `pycocotools` (`image_id` aligned to GT). Omit `--coco-gt` for external images only (synthetic `image_id`, see `docs/cli_commands.md`). Same modes for `scripts/inference/infer_rfdetr.py`.
 - `python scripts/evaluation/evaluate.py --gt … --pred … --weights … --images-dir …/val --out experiments/results/test_run_metrics.json` — COCOeval mAP / AR + P/R + FPS
 
 **EXP-000 baseline:** `./scripts/run_smoke_test.sh` (see [`docs/experiments.md`](docs/experiments.md)).

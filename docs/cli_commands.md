@@ -100,7 +100,7 @@ python3 scripts/inference/track_rfdetr_video.py \
   --analytics-out experiments/visualizations/camponotus_rfdetr_trackidmajor_896_tracked_camponotus_010_analytics.json
 ```
 
-Optional: `--state-priority-soft` and related thresholds (see `--help`) to match prelabel / QA tooling.
+Optional: `--state-priority-soft` and related thresholds (see `--help`) to match prelabel / QA tooling. **`--state-priority-consensus`** (YOLO + RF-DETR) relabels any `normal` detection that overlaps a `trophallaxis` detection at IoU ≥ `--state-priority-iou-thresh` to trophallaxis (no score-gap check; OOD / viz — can add false troph when ants merely touch). Optional **`--temporal-state-window K`** for sliding majority smoothing (see YOLO subsection below).
 
 ---
 
@@ -125,7 +125,27 @@ python3 scripts/inference/track_yolo_video.py \
   --analytics-out experiments/visualizations/camponotus_idea1_trackidmajor_full_896_tracked_camponotus_010_analytics.json
 ```
 
-Adjust `--weights` to your actual run directory. Optional: `--botsort-with-reid`, `--state-priority-soft`.
+Adjust `--weights` to your actual run directory. Optional: `--botsort-with-reid`, `--state-priority-soft`, `--state-priority-consensus`.
+
+### OOD / qualitative: temporal state smoothing (not COCO benchmark)
+
+After optional `--state-priority-soft`, **`--temporal-state-window K`** (default `0` = off) applies a **sliding majority** on `class_id` per `track_id` over the last `K` frames. Ties keep the current frame’s class. Analytics JSON gains `temporal_state_smooth.window` when `K>0`. Same flag exists on [`track_rfdetr_video.py`](../scripts/inference/track_rfdetr_video.py).
+
+Example (YOLO, match prior OOD diagnostic: conf 0.25 + soft + `K=9`):
+
+```bash
+python3 scripts/inference/track_yolo_video.py \
+  --weights experiments/yolo/camponotus_idea1_trackidmajor_full_896/weights/best.pt \
+  --source-video /path/to/trophalaxis_001_example.mp4 \
+  --out-video experiments/visualizations/ood_troph001_k9.mp4 \
+  --imgsz 896 \
+  --conf 0.25 \
+  --state-priority-soft \
+  --temporal-state-window 9 \
+  --analytics-out experiments/visualizations/ood_troph001_k9_analytics.json
+```
+
+Loop `K ∈ {3,5,9,15}` vs `K=0` baseline and compare each `states` and `per_track` in the analytics files. One-shot driver: [`scripts/run_camponotus_ood_temporal_sweep.sh`](../scripts/run_camponotus_ood_temporal_sweep.sh) (`VIDEO=...` required).
 
 ---
 
@@ -170,6 +190,36 @@ python3 scripts/evaluation/evaluate.py \
 ```
 
 **YOLO** Camponotus runs follow the same **GT + predictions + `evaluate.py`** pattern; use `scripts/inference/infer_yolo.py` and pass `--imgsz` when it must match training resolution.
+
+### External-only inference (no COCO GT)
+
+For ad-hoc PNG/JPEG/WebP not in a benchmark JSON: **omit `--coco-gt`**. Images get sequential `image_id` values starting at **`--synthetic-image-id-start`** (default `1`). Output is still a COCO **list** JSON; `evaluate.py` only scores rows whose `image_id` exists in the GT you pass there.
+
+**YOLO:**
+
+```bash
+python3 scripts/inference/infer_yolo.py \
+  --weights experiments/yolo/camponotus_idea1_trackidmajor_full_896/weights/best.pt \
+  --source /path/to/frame.png \
+  --imgsz 896 \
+  --out experiments/results/ood_single_frame_yolo.json
+```
+
+**RF-DETR:**
+
+```bash
+python3 scripts/inference/infer_rfdetr.py \
+  --weights experiments/rfdetr/camponotus_rfdetr_trackidmajor_896/weights/best.pth \
+  --source /path/to/frame.png \
+  --model-class RFDETRSmall \
+  --conf 0.25 \
+  --class-id-mode multiclass \
+  --out experiments/results/ood_single_frame_rfdetr.json
+```
+
+Optional overlays (OpenCV, same boxes as JSON): **`--save-vis`** and **`--vis-dir`** (default `…/viz_infer_rfdetr` next to `--out`). Human-readable labels: **`--vis-names-json`** with a JSON object like `{"0":"normal","1":"trophallaxis"}`.
+
+**GT + extra folders/files:** keep `--coco-gt` and add **`--extra-source PATH`** (repeatable). Extra images get ids from **`--extra-image-id-start`** or, by default, **`max(image_id in COCO) + 1`**. Shared helpers: [`infer_image_common.py`](../scripts/inference/infer_image_common.py), [`coco_pred_common.py`](../scripts/inference/coco_pred_common.py) (`max_image_id_in_coco`).
 
 ---
 

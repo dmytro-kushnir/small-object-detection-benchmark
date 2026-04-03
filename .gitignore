@@ -56,6 +56,16 @@ experiments/results/**/camponotus_idea2_*_prelabels_coco.json
 # EXP-000 figures (regenerate via scripts/run_visualization.sh)
 experiments/visualizations/
 
+# Ad-hoc test frames often saved as browser default names at repo root
+/download.jpeg
+/download.jpg
+/download.png
+/download.webp
+
+# infer_rfdetr.py --save-vis (default viz_infer_rfdetr next to --out) + common OOD viz dirs
+experiments/results/**/viz_infer_rfdetr/
+experiments/results/ood_rfdetr_viz/
+
 # Local weights / exports (keep models/.gitkeep + README only)
 models/*
 !models/.gitkeep

@@ -19,7 +19,9 @@ from track_video_common import (
     color_for_id,
     color_for_state,
     state_from_class_id,
+    state_priority_consensus_relabel_normal_near_troph_xyxy,
     state_priority_soft_relabel_xyxy,
+    temporal_majority_smooth_dets,
     write_tracking_analytics,
 )
 
@@ -96,10 +98,19 @@ def main() -> None:
         ),
     )
     p.add_argument(
+        "--state-priority-consensus",
+        action="store_true",
+        help=(
+            "OOD / viz: relabel every normal box that overlaps any trophallaxis box "
+            "(IoU >= --state-priority-iou-thresh) to trophallaxis; no score-gap check. "
+            "Runs after --state-priority-soft when both are set."
+        ),
+    )
+    p.add_argument(
         "--state-priority-iou-thresh",
         type=float,
         default=0.7,
-        help="IoU threshold for --state-priority-soft.",
+        help="IoU threshold for --state-priority-soft and --state-priority-consensus.",
     )
     p.add_argument(
         "--state-priority-score-gap-max",
@@ -114,6 +125,15 @@ def main() -> None:
         "--optimize-for-inference",
         action="store_true",
         help="Call RF-DETR optimize_for_inference() before processing video.",
+    )
+    p.add_argument(
+        "--temporal-state-window",
+        type=int,
+        default=0,
+        help=(
+            "Sliding majority vote on class_id (0/1) per track over K frames; 0 disables. "
+            "Applied after state-priority relabels. OOD / qualitative only — not COCO benchmark."
+        ),
     )
     args = p.parse_args()
 
@@ -188,8 +208,14 @@ def main() -> None:
     track_frames: dict[int, list[int]] = defaultdict(list)
     track_state_counts: defaultdict[int, defaultdict[str, int]] = defaultdict(lambda: defaultdict(int))
     soft_relabels = 0
+    consensus_relabels = 0
     frame_index = -1
     frames = 0
+    tw = int(args.temporal_state_window)
+    temporal_hist: defaultdict[int, deque[int]] | None = None
+    if tw > 0:
+        k = max(1, tw)
+        temporal_hist = defaultdict(lambda: deque(maxlen=k))
 
     try:
         while True:
@@ -214,6 +240,14 @@ def main() -> None:
                     score_gap_max=float(args.state_priority_score_gap_max),
                 )
                 soft_relabels += int(n)
+            if args.state_priority_consensus:
+                out_dets, nc = state_priority_consensus_relabel_normal_near_troph_xyxy(
+                    out_dets,
+                    iou_thresh=float(args.state_priority_iou_thresh),
+                )
+                consensus_relabels += int(nc)
+            if temporal_hist is not None:
+                out_dets = temporal_majority_smooth_dets(out_dets, history=temporal_hist)
 
             for d in out_dets:
                 tid = int(d["track_id"])
@@ -287,10 +321,20 @@ def main() -> None:
                 "iou_thresh": float(args.state_priority_iou_thresh),
                 "score_gap_max": float(args.state_priority_score_gap_max),
             },
+            state_priority_consensus_info=(
+                {
+                    "enabled": True,
+                    "iou_thresh": float(args.state_priority_iou_thresh),
+                    "relabel_count": int(consensus_relabels),
+                }
+                if args.state_priority_consensus
+                else None
+            ),
             extra={
                 "backend": "rfdetr",
                 "model_class": str(args.model_class),
                 "optimize_for_inference": bool(args.optimize_for_inference),
+                **({"temporal_state_smooth": {"window": int(tw)}} if tw > 0 else {}),
             },
         )
         print(f"Wrote analytics: {ap}")
