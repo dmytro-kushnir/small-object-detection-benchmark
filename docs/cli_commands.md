@@ -202,6 +202,8 @@ python3 scripts/evaluation/compare_camponotus_rfdetr_vs_yolo.py \
 
 ## Camponotus — Idea 2 hybrid events (tracking + helper)
 
+Artifact index: [`camponotus_idea2_artifacts.md`](camponotus_idea2_artifacts.md) (what each JSON is, default run folder `experiments/results/idea2/<RUN_NAME>/`).
+
 Inputs:
 
 - MOT JSON from prelabel/tracking export (`bootstrap_camponotus_autolabel.py --mot-out-json`)
@@ -316,6 +318,7 @@ IN_SITU_ROOT="/media/dmytro/data/datasets/camponotus fellah trophallaxis FULL da
 BACKEND=yolo \
 YOLO_WEIGHTS=experiments/yolo/camponotus_idea1_trackidmajor_full_896/weights/best.pt \
 RUN_NAME=camponotus_idea2_hybrid_v1_yolo \
+OUT_DIR=experiments/results/idea2/camponotus_idea2_hybrid_v1_yolo \
 bash scripts/run_camponotus_idea2_hybrid.sh
 ```
 

@@ -9,10 +9,13 @@ cd "$ROOT"
 GT_EVENTS="${GT_EVENTS:-$ROOT/datasets/camponotus_idea2_event_benchmark_v1.json}"
 IN_SITU_ROOT="${IN_SITU_ROOT:-/media/dmytro/data/datasets/camponotus fellah trophallaxis FULL dataset/images/default/in_situ}"
 RUN_NAME="${RUN_NAME:-camponotus_idea2_hybrid_v1}"
-OUT_DIR="${OUT_DIR:-$ROOT/experiments/results/$RUN_NAME}"
+# Default: one run per folder under experiments/results/idea2/ (override with OUT_DIR).
+OUT_DIR="${OUT_DIR:-$ROOT/experiments/results/idea2/$RUN_NAME}"
 
 # Comma-separated sequence folder names under IN_SITU_ROOT.
 SEQ_LIST="${SEQ_LIST:-seq_camponotus_trophallaxis_007,seq_camponotus_trophallaxis_005,seq_camponotus_trophallaxis_003,seq_camponotus_009,seq_camponotus_007,seq_camponotus_003,seq_camponotus_002,seq_camponotus_010}"
+# Staging strategy: symlink_files (default), symlink_dir, copy
+STAGE_MODE="${STAGE_MODE:-symlink_files}"
 
 # Detector backend: yolo | rfdetr
 BACKEND="${BACKEND:-yolo}"
@@ -78,7 +81,25 @@ for seq in "${SEQS[@]}"; do
     echo "Missing sequence folder: $src" >&2
     exit 1
   fi
-  ln -s "$src" "$STAGE_DIR/$seq_trimmed"
+  dst="$STAGE_DIR/$seq_trimmed"
+  mkdir -p "$dst"
+  case "$STAGE_MODE" in
+    symlink_files)
+      # Create a real directory tree with symlinked files (no data copy).
+      cp -as "$src/." "$dst/"
+      ;;
+    symlink_dir)
+      rmdir "$dst"
+      ln -s "$src" "$dst"
+      ;;
+    copy)
+      cp -a "$src/." "$dst/"
+      ;;
+    *)
+      echo "Unsupported STAGE_MODE='$STAGE_MODE' (expected symlink_files|symlink_dir|copy)." >&2
+      exit 1
+      ;;
+  esac
 done
 
 PRELABEL_COCO="$OUT_DIR/${RUN_NAME}_prelabels_coco.json"

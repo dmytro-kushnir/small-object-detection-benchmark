@@ -1,11 +1,12 @@
 {
   "version": "idea2_event_benchmark_v1",
-  "description": "Frozen clip subset for Camponotus Idea 2 event-level evaluation.",
+  "description": "Manually verified event-level benchmark for Camponotus trophallaxis detection based on CVAT tracking annotations.",
   "fps": 25.0,
   "notes": [
     "track_id_a and track_id_b are unordered pair IDs within sequence_name.",
     "Frame indices are 1-indexed and inclusive.",
-    "This subset is frozen by clip list; event rows are manually validated."
+    "Events were manually verified against CVAT tracking and state annotations.",
+    "Pair inference in draft stage was based on spatial proximity and temporal consistency heuristics."
   ],
   "clips": [
     {
@@ -74,6 +75,70 @@
           "track_id_b": 344,
           "start_frame": 1,
           "end_frame": 44,
+          "label": "trophallaxis",
+          "source": "manual_qa"
+        }
+      ]
+    },
+    {
+      "clip_id": "seq_camponotus_009",
+      "sequence_name": "seq_camponotus_009",
+      "annotation_status": "final_v1",
+      "events": [
+        {
+          "event_id": "seq_camponotus_009_355_356_1",
+          "track_id_a": 355,
+          "track_id_b": 356,
+          "start_frame": 1,
+          "end_frame": 87,
+          "label": "trophallaxis",
+          "source": "manual_qa"
+        }
+      ]
+    },
+    {
+      "clip_id": "seq_camponotus_trophallaxis_003",
+      "sequence_name": "seq_camponotus_trophallaxis_003",
+      "annotation_status": "final_v1",
+      "events": [
+        {
+          "event_id": "seq_camponotus_trophallaxis_003_617_618_1",
+          "track_id_a": 617,
+          "track_id_b": 618,
+          "start_frame": 1,
+          "end_frame": 65,
+          "label": "trophallaxis",
+          "source": "manual_qa"
+        }
+      ]
+    },
+    {
+      "clip_id": "seq_camponotus_trophallaxis_005",
+      "sequence_name": "seq_camponotus_trophallaxis_005",
+      "annotation_status": "final_v1",
+      "events": [
+        {
+          "event_id": "seq_camponotus_trophallaxis_005_638_643_1",
+          "track_id_a": 638,
+          "track_id_b": 643,
+          "start_frame": 1,
+          "end_frame": 30,
+          "label": "trophallaxis",
+          "source": "manual_qa"
+        }
+      ]
+    },
+    {
+      "clip_id": "seq_camponotus_trophallaxis_007",
+      "sequence_name": "seq_camponotus_trophallaxis_007",
+      "annotation_status": "final_v1",
+      "events": [
+        {
+          "event_id": "seq_camponotus_trophallaxis_007_655_659_1",
+          "track_id_a": 655,
+          "track_id_b": 659,
+          "start_frame": 1,
+          "end_frame": 97,
           "label": "trophallaxis",
           "source": "manual_qa"
         }

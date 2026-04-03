@@ -50,6 +50,9 @@ experiments/rfdetr/*
 # EXP-000 / smoke metrics (regenerate via scripts/run_smoke_test.sh)
 experiments/results/*.json
 
+# Idea 2 hybrid: large COCO prelabel sidecars (regenerate via run_camponotus_idea2_hybrid.sh / bootstrap)
+experiments/results/**/camponotus_idea2_*_prelabels_coco.json
+
 # EXP-000 figures (regenerate via scripts/run_visualization.sh)
 experiments/visualizations/
 

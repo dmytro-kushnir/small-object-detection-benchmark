@@ -1,0 +1,75 @@
+{
+  "format": "camponotus_idea2_event_eval_v1",
+  "gt_events": "/media/dmytro/data/Develop/small-object-detection-benchmark/datasets/camponotus_idea2_event_benchmark_v1_auto.json",
+  "pred_events": "/media/dmytro/data/Develop/small-object-detection-benchmark/experiments/results/camponotus_idea2_hybrid_v1_subset/camponotus_idea2_hybrid_v1_subset_events_no_helper.json",
+  "match_tiou_threshold": 0.3,
+  "aggregate": {
+    "tp": 0,
+    "fp": 1,
+    "fn": 7,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0,
+    "mean_tiou_matched": 0.0,
+    "num_gt": 7,
+    "num_pred": 1
+  },
+  "per_sequence": {
+    "seq_camponotus_007": {
+      "tp": 0,
+      "fp": 1,
+      "fn": 3,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "mean_tiou_matched": 0.0,
+      "num_gt": 3,
+      "num_pred": 1
+    },
+    "seq_camponotus_009": {
+      "tp": 0,
+      "fp": 0,
+      "fn": 1,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "mean_tiou_matched": 0.0,
+      "num_gt": 1,
+      "num_pred": 0
+    },
+    "seq_camponotus_trophallaxis_003": {
+      "tp": 0,
+      "fp": 0,
+      "fn": 1,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "mean_tiou_matched": 0.0,
+      "num_gt": 1,
+      "num_pred": 0
+    },
+    "seq_camponotus_trophallaxis_005": {
+      "tp": 0,
+      "fp": 0,
+      "fn": 1,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "mean_tiou_matched": 0.0,
+      "num_gt": 1,
+      "num_pred": 0
+    },
+    "seq_camponotus_trophallaxis_007": {
+      "tp": 0,
+      "fp": 0,
+      "fn": 1,
+      "precision": 0.0,
+      "recall": 0.0,
+      "f1": 0.0,
+      "mean_tiou_matched": 0.0,
+      "num_gt": 1,
+      "num_pred": 0
+    }
+  },
+  "matches": []
+}

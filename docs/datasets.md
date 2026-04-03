@@ -56,3 +56,4 @@ Supporting docs:
 - `docs/camponotus_labeling_guidelines.md`
 - `docs/camponotus_cvat_workflow.md`
 - `docs/camponotus_research_roadmap.md`
+- **Idea 2 benchmark files** (`camponotus_idea2_event_benchmark_v1*.json`) and experiment JSON layout: [`camponotus_idea2_artifacts.md`](camponotus_idea2_artifacts.md)

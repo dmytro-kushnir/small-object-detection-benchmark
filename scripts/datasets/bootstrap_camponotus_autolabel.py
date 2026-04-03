@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import argparse
+import os
 import re
 import shutil
 import subprocess
@@ -32,7 +33,16 @@ from datasets.camponotus_tracking_exports import (
 
 def _collect_images(images_root: Path, max_images: int | None) -> list[Path]:
     exts = {".jpg", ".jpeg", ".png", ".bmp", ".webp"}
-    imgs = sorted(p for p in images_root.rglob("*") if p.is_file() and p.suffix.lower() in exts)
+    imgs: list[Path] = []
+    # followlinks=True is required when images_root contains symlinked sequence dirs
+    # (e.g., one-shot staging or external datasets wired via symlinks).
+    for root, _dirs, files in os.walk(images_root, followlinks=True):
+        root_path = Path(root)
+        for name in files:
+            p = root_path / name
+            if p.suffix.lower() in exts:
+                imgs.append(p)
+    imgs.sort()
     if max_images is not None:
         imgs = imgs[: max(0, max_images)]
     return imgs
@@ -647,7 +657,8 @@ def main() -> None:
             coco_images.append(
                 {
                     "id": i,
-                    "file_name": str(img_path.resolve().relative_to(images_root)),
+                    # Keep staged-relative path even when staged files are symlinks.
+                    "file_name": str(img_path.relative_to(images_root)),
                     "width": int(w),
                     "height": int(h),
                 }

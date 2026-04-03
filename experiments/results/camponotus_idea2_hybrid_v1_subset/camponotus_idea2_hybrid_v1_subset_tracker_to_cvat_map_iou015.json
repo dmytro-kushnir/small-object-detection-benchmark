@@ -1,0 +1,1439 @@
+{
+  "format": "camponotus_track_id_mapping_v1",
+  "tracker_mot_json": "/media/dmytro/data/Develop/small-object-detection-benchmark/experiments/results/camponotus_idea2_hybrid_v1_subset/camponotus_idea2_hybrid_v1_subset_mot.json",
+  "cvat_coco_annotations": "/media/dmytro/data/datasets/camponotus fellah trophallaxis FULL dataset/annotations/instances_default.json",
+  "min_iou": 0.15,
+  "clip_allowlist": [
+    "seq_camponotus_002",
+    "seq_camponotus_003",
+    "seq_camponotus_007",
+    "seq_camponotus_009",
+    "seq_camponotus_010",
+    "seq_camponotus_trophallaxis_003",
+    "seq_camponotus_trophallaxis_005",
+    "seq_camponotus_trophallaxis_007"
+  ],
+  "num_sequences_with_mapping": 8,
+  "mapping_by_sequence": {
+    "seq_camponotus_002": {
+      "num_tracker_tracks_mapped": 51,
+      "pairs": [
+        {
+          "tracker_track_id": 1,
+          "cvat_track_id": 12,
+          "support_frames": 8,
+          "mean_iou": 0.8609103059080166
+        },
+        {
+          "tracker_track_id": 2,
+          "cvat_track_id": 9,
+          "support_frames": 8,
+          "mean_iou": 0.851363461740832
+        },
+        {
+          "tracker_track_id": 3,
+          "cvat_track_id": 294,
+          "support_frames": 8,
+          "mean_iou": 0.8669766224163367
+        },
+        {
+          "tracker_track_id": 4,
+          "cvat_track_id": 272,
+          "support_frames": 8,
+          "mean_iou": 0.8125482930057711
+        },
+        {
+          "tracker_track_id": 5,
+          "cvat_track_id": 279,
+          "support_frames": 8,
+          "mean_iou": 0.7979867349854417
+        },
+        {
+          "tracker_track_id": 6,
+          "cvat_track_id": 13,
+          "support_frames": 8,
+          "mean_iou": 0.8626467775471731
+        },
+        {
+          "tracker_track_id": 7,
+          "cvat_track_id": 292,
+          "support_frames": 8,
+          "mean_iou": 0.7849794898517883
+        },
+        {
+          "tracker_track_id": 8,
+          "cvat_track_id": 283,
+          "support_frames": 8,
+          "mean_iou": 0.8455416401063126
+        },
+        {
+          "tracker_track_id": 9,
+          "cvat_track_id": 263,
+          "support_frames": 7,
+          "mean_iou": 0.7947576014973105
+        },
+        {
+          "tracker_track_id": 10,
+          "cvat_track_id": 265,
+          "support_frames": 8,
+          "mean_iou": 0.7929386461309128
+        },
+        {
+          "tracker_track_id": 11,
+          "cvat_track_id": 275,
+          "support_frames": 7,
+          "mean_iou": 0.8402718344907621
+        },
+        {
+          "tracker_track_id": 12,
+          "cvat_track_id": 16,
+          "support_frames": 7,
+          "mean_iou": 0.7898963943349037
+        },
+        {
+          "tracker_track_id": 13,
+          "cvat_track_id": 8,
+          "support_frames": 8,
+          "mean_iou": 0.8624764724538548
+        },
+        {
+          "tracker_track_id": 14,
+          "cvat_track_id": 10,
+          "support_frames": 8,
+          "mean_iou": 0.8956505898502796
+        },
+        {
+          "tracker_track_id": 15,
+          "cvat_track_id": 14,
+          "support_frames": 8,
+          "mean_iou": 0.7780303804574322
+        },
+        {
+          "tracker_track_id": 16,
+          "cvat_track_id": 266,
+          "support_frames": 6,
+          "mean_iou": 0.8747073388755714
+        },
+        {
+          "tracker_track_id": 17,
+          "cvat_track_id": 273,
+          "support_frames": 8,
+          "mean_iou": 0.8969449054600096
+        },
+        {
+          "tracker_track_id": 18,
+          "cvat_track_id": 296,
+          "support_frames": 8,
+          "mean_iou": 0.8605759327108067
+        },
+        {
+          "tracker_track_id": 19,
+          "cvat_track_id": 261,
+          "support_frames": 8,
+          "mean_iou": 0.7217971558076098
+        },
+        {
+          "tracker_track_id": 20,
+          "cvat_track_id": 258,
+          "support_frames": 5,
+          "mean_iou": 0.863686157875895
+        },
+        {
+          "tracker_track_id": 21,
+          "cvat_track_id": 282,
+          "support_frames": 8,
+          "mean_iou": 0.8303292889640125
+        },
+        {
+          "tracker_track_id": 22,
+          "cvat_track_id": 274,
+          "support_frames": 8,
+          "mean_iou": 0.8683561908048231
+        },
+        {
+          "tracker_track_id": 23,
+          "cvat_track_id": 269,
+          "support_frames": 6,
+          "mean_iou": 0.7725035594538271
+        },
+        {
+          "tracker_track_id": 24,
+          "cvat_track_id": 264,
+          "support_frames": 8,
+          "mean_iou": 0.8107107719105704
+        },
+        {
+          "tracker_track_id": 25,
+          "cvat_track_id": 289,
+          "support_frames": 8,
+          "mean_iou": 0.8258002011830816
+        },
+        {
+          "tracker_track_id": 26,
+          "cvat_track_id": 284,
+          "support_frames": 6,
+          "mean_iou": 0.8338550109239596
+        },
+        {
+          "tracker_track_id": 27,
+          "cvat_track_id": 293,
+          "support_frames": 4,
+          "mean_iou": 0.851048998134517
+        },
+        {
+          "tracker_track_id": 28,
+          "cvat_track_id": 15,
+          "support_frames": 4,
+          "mean_iou": 0.8272882577650034
+        },
+        {
+          "tracker_track_id": 29,
+          "cvat_track_id": 281,
+          "support_frames": 8,
+          "mean_iou": 0.7362487376200464
+        },
+        {
+          "tracker_track_id": 30,
+          "cvat_track_id": 278,
+          "support_frames": 8,
+          "mean_iou": 0.7857170916807104
+        },
+        {
+          "tracker_track_id": 31,
+          "cvat_track_id": 267,
+          "support_frames": 8,
+          "mean_iou": 0.7953327068229674
+        },
+        {
+          "tracker_track_id": 32,
+          "cvat_track_id": 291,
+          "support_frames": 3,
+          "mean_iou": 0.3733145438966814
+        },
+        {
+          "tracker_track_id": 33,
+          "cvat_track_id": 17,
+          "support_frames": 6,
+          "mean_iou": 0.8324929809702325
+        },
+        {
+          "tracker_track_id": 35,
+          "cvat_track_id": 262,
+          "support_frames": 8,
+          "mean_iou": 0.8071150738535249
+        },
+        {
+          "tracker_track_id": 36,
+          "cvat_track_id": 271,
+          "support_frames": 3,
+          "mean_iou": 0.7797008225122973
+        },
+        {
+          "tracker_track_id": 38,
+          "cvat_track_id": 276,
+          "support_frames": 3,
+          "mean_iou": 0.6812517421670643
+        },
+        {
+          "tracker_track_id": 39,
+          "cvat_track_id": 286,
+          "support_frames": 2,
+          "mean_iou": 0.8261963862745098
+        },
+        {
+          "tracker_track_id": 40,
+          "cvat_track_id": 290,
+          "support_frames": 8,
+          "mean_iou": 0.7081061427156052
+        },
+        {
+          "tracker_track_id": 41,
+          "cvat_track_id": 260,
+          "support_frames": 6,
+          "mean_iou": 0.781420914500393
+        },
+        {
+          "tracker_track_id": 42,
+          "cvat_track_id": 270,
+          "support_frames": 5,
+          "mean_iou": 0.7443000690386293
+        },
+        {
+          "tracker_track_id": 43,
+          "cvat_track_id": 11,
+          "support_frames": 8,
+          "mean_iou": 0.8379345808459966
+        },
+        {
+          "tracker_track_id": 45,
+          "cvat_track_id": 295,
+          "support_frames": 6,
+          "mean_iou": 0.6683180724082227
+        },
+        {
+          "tracker_track_id": 46,
+          "cvat_track_id": 21,
+          "support_frames": 6,
+          "mean_iou": 0.8852178852834004
+        },
+        {
+          "tracker_track_id": 47,
+          "cvat_track_id": 285,
+          "support_frames": 6,
+          "mean_iou": 0.7236248555771527
+        },
+        {
+          "tracker_track_id": 56,
+          "cvat_track_id": 18,
+          "support_frames": 5,
+          "mean_iou": 0.8308121593466529
+        },
+        {
+          "tracker_track_id": 58,
+          "cvat_track_id": 22,
+          "support_frames": 4,
+          "mean_iou": 0.9107300251047363
+        },
+        {
+          "tracker_track_id": 60,
+          "cvat_track_id": 280,
+          "support_frames": 4,
+          "mean_iou": 0.7653319293234975
+        },
+        {
+          "tracker_track_id": 64,
+          "cvat_track_id": 268,
+          "support_frames": 4,
+          "mean_iou": 0.8329284176023493
+        },
+        {
+          "tracker_track_id": 71,
+          "cvat_track_id": 277,
+          "support_frames": 3,
+          "mean_iou": 0.8115849383729671
+        },
+        {
+          "tracker_track_id": 72,
+          "cvat_track_id": 259,
+          "support_frames": 3,
+          "mean_iou": 0.7197263459550602
+        },
+        {
+          "tracker_track_id": 76,
+          "cvat_track_id": 287,
+          "support_frames": 2,
+          "mean_iou": 0.6739172298024969
+        }
+      ]
+    },
+    "seq_camponotus_003": {
+      "num_tracker_tracks_mapped": 14,
+      "pairs": [
+        {
+          "tracker_track_id": 95,
+          "cvat_track_id": 298,
+          "support_frames": 75,
+          "mean_iou": 0.7931483870944025
+        },
+        {
+          "tracker_track_id": 97,
+          "cvat_track_id": 302,
+          "support_frames": 41,
+          "mean_iou": 0.8130571260452698
+        },
+        {
+          "tracker_track_id": 98,
+          "cvat_track_id": 303,
+          "support_frames": 55,
+          "mean_iou": 0.8189589648019233
+        },
+        {
+          "tracker_track_id": 99,
+          "cvat_track_id": 301,
+          "support_frames": 65,
+          "mean_iou": 0.7658046517354009
+        },
+        {
+          "tracker_track_id": 100,
+          "cvat_track_id": 297,
+          "support_frames": 65,
+          "mean_iou": 0.778934081217275
+        },
+        {
+          "tracker_track_id": 104,
+          "cvat_track_id": 300,
+          "support_frames": 58,
+          "mean_iou": 0.8251764710697437
+        },
+        {
+          "tracker_track_id": 108,
+          "cvat_track_id": 299,
+          "support_frames": 40,
+          "mean_iou": 0.7633729141562283
+        },
+        {
+          "tracker_track_id": 114,
+          "cvat_track_id": 304,
+          "support_frames": 37,
+          "mean_iou": 0.8428716157804019
+        },
+        {
+          "tracker_track_id": 115,
+          "cvat_track_id": 306,
+          "support_frames": 35,
+          "mean_iou": 0.8043513552323929
+        },
+        {
+          "tracker_track_id": 120,
+          "cvat_track_id": 305,
+          "support_frames": 29,
+          "mean_iou": 0.7990226385520143
+        },
+        {
+          "tracker_track_id": 127,
+          "cvat_track_id": 307,
+          "support_frames": 21,
+          "mean_iou": 0.8158707430559428
+        },
+        {
+          "tracker_track_id": 137,
+          "cvat_track_id": 308,
+          "support_frames": 10,
+          "mean_iou": 0.7848138944215792
+        },
+        {
+          "tracker_track_id": 140,
+          "cvat_track_id": 309,
+          "support_frames": 11,
+          "mean_iou": 0.8062959077577624
+        },
+        {
+          "tracker_track_id": 142,
+          "cvat_track_id": 310,
+          "support_frames": 9,
+          "mean_iou": 0.771991121898821
+        }
+      ]
+    },
+    "seq_camponotus_007": {
+      "num_tracker_tracks_mapped": 33,
+      "pairs": [
+        {
+          "tracker_track_id": 152,
+          "cvat_track_id": 39,
+          "support_frames": 10,
+          "mean_iou": 0.9260236483272057
+        },
+        {
+          "tracker_track_id": 153,
+          "cvat_track_id": 43,
+          "support_frames": 4,
+          "mean_iou": 0.860399414988923
+        },
+        {
+          "tracker_track_id": 155,
+          "cvat_track_id": 332,
+          "support_frames": 5,
+          "mean_iou": 0.8577796104465822
+        },
+        {
+          "tracker_track_id": 157,
+          "cvat_track_id": 41,
+          "support_frames": 51,
+          "mean_iou": 0.8224795383582085
+        },
+        {
+          "tracker_track_id": 158,
+          "cvat_track_id": 330,
+          "support_frames": 5,
+          "mean_iou": 0.8537488373013717
+        },
+        {
+          "tracker_track_id": 159,
+          "cvat_track_id": 345,
+          "support_frames": 29,
+          "mean_iou": 0.8383086213859695
+        },
+        {
+          "tracker_track_id": 160,
+          "cvat_track_id": 333,
+          "support_frames": 5,
+          "mean_iou": 0.8350426474472391
+        },
+        {
+          "tracker_track_id": 161,
+          "cvat_track_id": 325,
+          "support_frames": 51,
+          "mean_iou": 0.8689783960028542
+        },
+        {
+          "tracker_track_id": 162,
+          "cvat_track_id": 46,
+          "support_frames": 51,
+          "mean_iou": 0.8350779095954906
+        },
+        {
+          "tracker_track_id": 163,
+          "cvat_track_id": 342,
+          "support_frames": 49,
+          "mean_iou": 0.8909427366704259
+        },
+        {
+          "tracker_track_id": 164,
+          "cvat_track_id": 341,
+          "support_frames": 46,
+          "mean_iou": 0.898322610619785
+        },
+        {
+          "tracker_track_id": 166,
+          "cvat_track_id": 38,
+          "support_frames": 11,
+          "mean_iou": 0.9304664114742274
+        },
+        {
+          "tracker_track_id": 167,
+          "cvat_track_id": 44,
+          "support_frames": 4,
+          "mean_iou": 0.7766235967271442
+        },
+        {
+          "tracker_track_id": 168,
+          "cvat_track_id": 323,
+          "support_frames": 51,
+          "mean_iou": 0.8391310509361203
+        },
+        {
+          "tracker_track_id": 169,
+          "cvat_track_id": 347,
+          "support_frames": 39,
+          "mean_iou": 0.78911833676387
+        },
+        {
+          "tracker_track_id": 170,
+          "cvat_track_id": 336,
+          "support_frames": 5,
+          "mean_iou": 0.8395359894180435
+        },
+        {
+          "tracker_track_id": 172,
+          "cvat_track_id": 337,
+          "support_frames": 4,
+          "mean_iou": 0.8524216527195569
+        },
+        {
+          "tracker_track_id": 173,
+          "cvat_track_id": 324,
+          "support_frames": 51,
+          "mean_iou": 0.8231795452120548
+        },
+        {
+          "tracker_track_id": 174,
+          "cvat_track_id": 334,
+          "support_frames": 5,
+          "mean_iou": 0.8762416221324845
+        },
+        {
+          "tracker_track_id": 175,
+          "cvat_track_id": 331,
+          "support_frames": 5,
+          "mean_iou": 0.7597161696657093
+        },
+        {
+          "tracker_track_id": 176,
+          "cvat_track_id": 344,
+          "support_frames": 44,
+          "mean_iou": 0.8752472776434064
+        },
+        {
+          "tracker_track_id": 177,
+          "cvat_track_id": 329,
+          "support_frames": 27,
+          "mean_iou": 0.7804588460331096
+        },
+        {
+          "tracker_track_id": 178,
+          "cvat_track_id": 340,
+          "support_frames": 51,
+          "mean_iou": 0.8874031904381365
+        },
+        {
+          "tracker_track_id": 182,
+          "cvat_track_id": 343,
+          "support_frames": 28,
+          "mean_iou": 0.8556384338671427
+        },
+        {
+          "tracker_track_id": 183,
+          "cvat_track_id": 339,
+          "support_frames": 4,
+          "mean_iou": 0.8370476636317044
+        },
+        {
+          "tracker_track_id": 184,
+          "cvat_track_id": 326,
+          "support_frames": 31,
+          "mean_iou": 0.8224643713596634
+        },
+        {
+          "tracker_track_id": 188,
+          "cvat_track_id": 338,
+          "support_frames": 3,
+          "mean_iou": 0.49328822130393907
+        },
+        {
+          "tracker_track_id": 189,
+          "cvat_track_id": 362,
+          "support_frames": 2,
+          "mean_iou": 0.8221060738669654
+        },
+        {
+          "tracker_track_id": 219,
+          "cvat_track_id": 327,
+          "support_frames": 29,
+          "mean_iou": 0.9244771903381035
+        },
+        {
+          "tracker_track_id": 229,
+          "cvat_track_id": 328,
+          "support_frames": 9,
+          "mean_iou": 0.7796205057820953
+        },
+        {
+          "tracker_track_id": 235,
+          "cvat_track_id": 45,
+          "support_frames": 28,
+          "mean_iou": 0.8745535108798219
+        },
+        {
+          "tracker_track_id": 241,
+          "cvat_track_id": 335,
+          "support_frames": 19,
+          "mean_iou": 0.7516839131552624
+        },
+        {
+          "tracker_track_id": 247,
+          "cvat_track_id": 346,
+          "support_frames": 4,
+          "mean_iou": 0.8556298065878473
+        }
+      ]
+    },
+    "seq_camponotus_009": {
+      "num_tracker_tracks_mapped": 14,
+      "pairs": [
+        {
+          "tracker_track_id": 159,
+          "cvat_track_id": 57,
+          "support_frames": 87,
+          "mean_iou": 0.9253627652986722
+        },
+        {
+          "tracker_track_id": 163,
+          "cvat_track_id": 359,
+          "support_frames": 87,
+          "mean_iou": 0.9326772877000157
+        },
+        {
+          "tracker_track_id": 177,
+          "cvat_track_id": 56,
+          "support_frames": 86,
+          "mean_iou": 0.9483355638613861
+        },
+        {
+          "tracker_track_id": 278,
+          "cvat_track_id": 355,
+          "support_frames": 86,
+          "mean_iou": 0.9400690704342852
+        },
+        {
+          "tracker_track_id": 279,
+          "cvat_track_id": 55,
+          "support_frames": 52,
+          "mean_iou": 0.9262334987628336
+        },
+        {
+          "tracker_track_id": 280,
+          "cvat_track_id": 357,
+          "support_frames": 80,
+          "mean_iou": 0.8960555681904037
+        },
+        {
+          "tracker_track_id": 281,
+          "cvat_track_id": 54,
+          "support_frames": 83,
+          "mean_iou": 0.8834626651795582
+        },
+        {
+          "tracker_track_id": 282,
+          "cvat_track_id": 358,
+          "support_frames": 86,
+          "mean_iou": 0.8396735411525779
+        },
+        {
+          "tracker_track_id": 283,
+          "cvat_track_id": 360,
+          "support_frames": 85,
+          "mean_iou": 0.9266235917754614
+        },
+        {
+          "tracker_track_id": 284,
+          "cvat_track_id": 356,
+          "support_frames": 83,
+          "mean_iou": 0.9534538519186535
+        },
+        {
+          "tracker_track_id": 286,
+          "cvat_track_id": 53,
+          "support_frames": 85,
+          "mean_iou": 0.9003012169006019
+        },
+        {
+          "tracker_track_id": 290,
+          "cvat_track_id": 58,
+          "support_frames": 37,
+          "mean_iou": 0.8838429068084627
+        },
+        {
+          "tracker_track_id": 292,
+          "cvat_track_id": 361,
+          "support_frames": 75,
+          "mean_iou": 0.8255788913025744
+        },
+        {
+          "tracker_track_id": 324,
+          "cvat_track_id": 59,
+          "support_frames": 2,
+          "mean_iou": 0.8568469769327324
+        }
+      ]
+    },
+    "seq_camponotus_010": {
+      "num_tracker_tracks_mapped": 89,
+      "pairs": [
+        {
+          "tracker_track_id": 348,
+          "cvat_track_id": 63,
+          "support_frames": 49,
+          "mean_iou": 0.8906045468348295
+        },
+        {
+          "tracker_track_id": 349,
+          "cvat_track_id": 383,
+          "support_frames": 49,
+          "mean_iou": 0.7708416116434993
+        },
+        {
+          "tracker_track_id": 350,
+          "cvat_track_id": 85,
+          "support_frames": 13,
+          "mean_iou": 0.8770000762594616
+        },
+        {
+          "tracker_track_id": 351,
+          "cvat_track_id": 364,
+          "support_frames": 33,
+          "mean_iou": 0.7379822405193639
+        },
+        {
+          "tracker_track_id": 352,
+          "cvat_track_id": 67,
+          "support_frames": 13,
+          "mean_iou": 0.7395443625653993
+        },
+        {
+          "tracker_track_id": 353,
+          "cvat_track_id": 363,
+          "support_frames": 26,
+          "mean_iou": 0.6660480138311782
+        },
+        {
+          "tracker_track_id": 354,
+          "cvat_track_id": 366,
+          "support_frames": 12,
+          "mean_iou": 0.7558053146202682
+        },
+        {
+          "tracker_track_id": 355,
+          "cvat_track_id": 69,
+          "support_frames": 33,
+          "mean_iou": 0.7641721099989354
+        },
+        {
+          "tracker_track_id": 357,
+          "cvat_track_id": 83,
+          "support_frames": 19,
+          "mean_iou": 0.7901643050903822
+        },
+        {
+          "tracker_track_id": 358,
+          "cvat_track_id": 70,
+          "support_frames": 20,
+          "mean_iou": 0.8668152303750734
+        },
+        {
+          "tracker_track_id": 359,
+          "cvat_track_id": 382,
+          "support_frames": 49,
+          "mean_iou": 0.7769449624546951
+        },
+        {
+          "tracker_track_id": 360,
+          "cvat_track_id": 77,
+          "support_frames": 9,
+          "mean_iou": 0.8072190498497319
+        },
+        {
+          "tracker_track_id": 361,
+          "cvat_track_id": 365,
+          "support_frames": 48,
+          "mean_iou": 0.7938755154754878
+        },
+        {
+          "tracker_track_id": 362,
+          "cvat_track_id": 74,
+          "support_frames": 46,
+          "mean_iou": 0.8751729867202959
+        },
+        {
+          "tracker_track_id": 363,
+          "cvat_track_id": 389,
+          "support_frames": 17,
+          "mean_iou": 0.7590692293601451
+        },
+        {
+          "tracker_track_id": 365,
+          "cvat_track_id": 68,
+          "support_frames": 49,
+          "mean_iou": 0.8920546770908024
+        },
+        {
+          "tracker_track_id": 366,
+          "cvat_track_id": 62,
+          "support_frames": 49,
+          "mean_iou": 0.7979446316214309
+        },
+        {
+          "tracker_track_id": 367,
+          "cvat_track_id": 79,
+          "support_frames": 28,
+          "mean_iou": 0.8570939923749048
+        },
+        {
+          "tracker_track_id": 368,
+          "cvat_track_id": 371,
+          "support_frames": 7,
+          "mean_iou": 0.8509395669405084
+        },
+        {
+          "tracker_track_id": 369,
+          "cvat_track_id": 72,
+          "support_frames": 22,
+          "mean_iou": 0.7515535709572105
+        },
+        {
+          "tracker_track_id": 370,
+          "cvat_track_id": 82,
+          "support_frames": 15,
+          "mean_iou": 0.8535253132898258
+        },
+        {
+          "tracker_track_id": 371,
+          "cvat_track_id": 84,
+          "support_frames": 25,
+          "mean_iou": 0.8762145733776877
+        },
+        {
+          "tracker_track_id": 372,
+          "cvat_track_id": 370,
+          "support_frames": 32,
+          "mean_iou": 0.7674257856337692
+        },
+        {
+          "tracker_track_id": 373,
+          "cvat_track_id": 387,
+          "support_frames": 13,
+          "mean_iou": 0.6599205204477742
+        },
+        {
+          "tracker_track_id": 375,
+          "cvat_track_id": 66,
+          "support_frames": 11,
+          "mean_iou": 0.6912031533162314
+        },
+        {
+          "tracker_track_id": 376,
+          "cvat_track_id": 87,
+          "support_frames": 25,
+          "mean_iou": 0.7669119483647227
+        },
+        {
+          "tracker_track_id": 377,
+          "cvat_track_id": 81,
+          "support_frames": 22,
+          "mean_iou": 0.934783461576411
+        },
+        {
+          "tracker_track_id": 378,
+          "cvat_track_id": 86,
+          "support_frames": 22,
+          "mean_iou": 0.699643528218783
+        },
+        {
+          "tracker_track_id": 379,
+          "cvat_track_id": 391,
+          "support_frames": 11,
+          "mean_iou": 0.751785929108956
+        },
+        {
+          "tracker_track_id": 380,
+          "cvat_track_id": 75,
+          "support_frames": 21,
+          "mean_iou": 0.7481739116187187
+        },
+        {
+          "tracker_track_id": 382,
+          "cvat_track_id": 377,
+          "support_frames": 18,
+          "mean_iou": 0.8073452224013654
+        },
+        {
+          "tracker_track_id": 383,
+          "cvat_track_id": 64,
+          "support_frames": 26,
+          "mean_iou": 0.8423353842234176
+        },
+        {
+          "tracker_track_id": 384,
+          "cvat_track_id": 380,
+          "support_frames": 7,
+          "mean_iou": 0.6421190016685481
+        },
+        {
+          "tracker_track_id": 386,
+          "cvat_track_id": 99,
+          "support_frames": 30,
+          "mean_iou": 0.8451259206024357
+        },
+        {
+          "tracker_track_id": 387,
+          "cvat_track_id": 367,
+          "support_frames": 49,
+          "mean_iou": 0.9060848138794502
+        },
+        {
+          "tracker_track_id": 388,
+          "cvat_track_id": 402,
+          "support_frames": 48,
+          "mean_iou": 0.7375252916733158
+        },
+        {
+          "tracker_track_id": 389,
+          "cvat_track_id": 376,
+          "support_frames": 3,
+          "mean_iou": 0.7538409435261211
+        },
+        {
+          "tracker_track_id": 391,
+          "cvat_track_id": 78,
+          "support_frames": 14,
+          "mean_iou": 0.8828224583336631
+        },
+        {
+          "tracker_track_id": 392,
+          "cvat_track_id": 65,
+          "support_frames": 23,
+          "mean_iou": 0.7218817737166646
+        },
+        {
+          "tracker_track_id": 399,
+          "cvat_track_id": 372,
+          "support_frames": 7,
+          "mean_iou": 0.8087464913548502
+        },
+        {
+          "tracker_track_id": 402,
+          "cvat_track_id": 95,
+          "support_frames": 9,
+          "mean_iou": 0.6897290760737812
+        },
+        {
+          "tracker_track_id": 405,
+          "cvat_track_id": 388,
+          "support_frames": 14,
+          "mean_iou": 0.7493188532792319
+        },
+        {
+          "tracker_track_id": 412,
+          "cvat_track_id": 97,
+          "support_frames": 7,
+          "mean_iou": 0.835168641535043
+        },
+        {
+          "tracker_track_id": 413,
+          "cvat_track_id": 386,
+          "support_frames": 5,
+          "mean_iou": 0.7838388139097276
+        },
+        {
+          "tracker_track_id": 414,
+          "cvat_track_id": 392,
+          "support_frames": 21,
+          "mean_iou": 0.7776656251290717
+        },
+        {
+          "tracker_track_id": 419,
+          "cvat_track_id": 80,
+          "support_frames": 33,
+          "mean_iou": 0.801367246102622
+        },
+        {
+          "tracker_track_id": 426,
+          "cvat_track_id": 71,
+          "support_frames": 37,
+          "mean_iou": 0.8064562475413695
+        },
+        {
+          "tracker_track_id": 428,
+          "cvat_track_id": 368,
+          "support_frames": 47,
+          "mean_iou": 0.83535541931251
+        },
+        {
+          "tracker_track_id": 430,
+          "cvat_track_id": 375,
+          "support_frames": 29,
+          "mean_iou": 0.7602845437285135
+        },
+        {
+          "tracker_track_id": 436,
+          "cvat_track_id": 89,
+          "support_frames": 42,
+          "mean_iou": 0.7618147327122667
+        },
+        {
+          "tracker_track_id": 437,
+          "cvat_track_id": 91,
+          "support_frames": 17,
+          "mean_iou": 0.7778757898186295
+        },
+        {
+          "tracker_track_id": 438,
+          "cvat_track_id": 381,
+          "support_frames": 43,
+          "mean_iou": 0.8545216535274397
+        },
+        {
+          "tracker_track_id": 454,
+          "cvat_track_id": 399,
+          "support_frames": 8,
+          "mean_iou": 0.6867088095187117
+        },
+        {
+          "tracker_track_id": 456,
+          "cvat_track_id": 90,
+          "support_frames": 11,
+          "mean_iou": 0.7508186944682255
+        },
+        {
+          "tracker_track_id": 457,
+          "cvat_track_id": 405,
+          "support_frames": 13,
+          "mean_iou": 0.7147356004992763
+        },
+        {
+          "tracker_track_id": 468,
+          "cvat_track_id": 92,
+          "support_frames": 37,
+          "mean_iou": 0.8304477451232375
+        },
+        {
+          "tracker_track_id": 469,
+          "cvat_track_id": 398,
+          "support_frames": 20,
+          "mean_iou": 0.72024478792206
+        },
+        {
+          "tracker_track_id": 487,
+          "cvat_track_id": 94,
+          "support_frames": 1,
+          "mean_iou": 0.8820359046186036
+        },
+        {
+          "tracker_track_id": 488,
+          "cvat_track_id": 401,
+          "support_frames": 31,
+          "mean_iou": 0.7634576035135674
+        },
+        {
+          "tracker_track_id": 496,
+          "cvat_track_id": 403,
+          "support_frames": 2,
+          "mean_iou": 0.6111142202722535
+        },
+        {
+          "tracker_track_id": 499,
+          "cvat_track_id": 385,
+          "support_frames": 11,
+          "mean_iou": 0.7880068617003757
+        },
+        {
+          "tracker_track_id": 510,
+          "cvat_track_id": 397,
+          "support_frames": 33,
+          "mean_iou": 0.7549421411690793
+        },
+        {
+          "tracker_track_id": 527,
+          "cvat_track_id": 100,
+          "support_frames": 7,
+          "mean_iou": 0.8027956438021532
+        },
+        {
+          "tracker_track_id": 528,
+          "cvat_track_id": 110,
+          "support_frames": 16,
+          "mean_iou": 0.8572708512745104
+        },
+        {
+          "tracker_track_id": 541,
+          "cvat_track_id": 396,
+          "support_frames": 13,
+          "mean_iou": 0.7418154794368884
+        },
+        {
+          "tracker_track_id": 552,
+          "cvat_track_id": 61,
+          "support_frames": 22,
+          "mean_iou": 0.7404585539606309
+        },
+        {
+          "tracker_track_id": 568,
+          "cvat_track_id": 404,
+          "support_frames": 10,
+          "mean_iou": 0.606908838774763
+        },
+        {
+          "tracker_track_id": 581,
+          "cvat_track_id": 390,
+          "support_frames": 6,
+          "mean_iou": 0.8119171336814537
+        },
+        {
+          "tracker_track_id": 606,
+          "cvat_track_id": 374,
+          "support_frames": 21,
+          "mean_iou": 0.7309406409461932
+        },
+        {
+          "tracker_track_id": 610,
+          "cvat_track_id": 102,
+          "support_frames": 2,
+          "mean_iou": 0.7994916330028967
+        },
+        {
+          "tracker_track_id": 613,
+          "cvat_track_id": 103,
+          "support_frames": 14,
+          "mean_iou": 0.7912281355145355
+        },
+        {
+          "tracker_track_id": 637,
+          "cvat_track_id": 378,
+          "support_frames": 23,
+          "mean_iou": 0.7890234414654351
+        },
+        {
+          "tracker_track_id": 641,
+          "cvat_track_id": 104,
+          "support_frames": 18,
+          "mean_iou": 0.9035192826779672
+        },
+        {
+          "tracker_track_id": 680,
+          "cvat_track_id": 410,
+          "support_frames": 7,
+          "mean_iou": 0.7399640670333535
+        },
+        {
+          "tracker_track_id": 686,
+          "cvat_track_id": 93,
+          "support_frames": 11,
+          "mean_iou": 0.8350204513536501
+        },
+        {
+          "tracker_track_id": 707,
+          "cvat_track_id": 395,
+          "support_frames": 6,
+          "mean_iou": 0.6274843412398081
+        },
+        {
+          "tracker_track_id": 722,
+          "cvat_track_id": 384,
+          "support_frames": 14,
+          "mean_iou": 0.6001797627448627
+        },
+        {
+          "tracker_track_id": 723,
+          "cvat_track_id": 394,
+          "support_frames": 7,
+          "mean_iou": 0.6840344892946307
+        },
+        {
+          "tracker_track_id": 725,
+          "cvat_track_id": 400,
+          "support_frames": 14,
+          "mean_iou": 0.7589597194720517
+        },
+        {
+          "tracker_track_id": 733,
+          "cvat_track_id": 109,
+          "support_frames": 8,
+          "mean_iou": 0.6006615828787695
+        },
+        {
+          "tracker_track_id": 734,
+          "cvat_track_id": 111,
+          "support_frames": 2,
+          "mean_iou": 0.9196157303287922
+        },
+        {
+          "tracker_track_id": 753,
+          "cvat_track_id": 105,
+          "support_frames": 11,
+          "mean_iou": 0.7721592802776189
+        },
+        {
+          "tracker_track_id": 754,
+          "cvat_track_id": 98,
+          "support_frames": 11,
+          "mean_iou": 0.7281526270032433
+        },
+        {
+          "tracker_track_id": 755,
+          "cvat_track_id": 112,
+          "support_frames": 2,
+          "mean_iou": 0.8065162242746358
+        },
+        {
+          "tracker_track_id": 775,
+          "cvat_track_id": 369,
+          "support_frames": 10,
+          "mean_iou": 0.8210225243462939
+        },
+        {
+          "tracker_track_id": 785,
+          "cvat_track_id": 379,
+          "support_frames": 10,
+          "mean_iou": 0.807393693877764
+        },
+        {
+          "tracker_track_id": 799,
+          "cvat_track_id": 117,
+          "support_frames": 2,
+          "mean_iou": 0.7654396697437016
+        },
+        {
+          "tracker_track_id": 803,
+          "cvat_track_id": 116,
+          "support_frames": 5,
+          "mean_iou": 0.7990330700007555
+        },
+        {
+          "tracker_track_id": 814,
+          "cvat_track_id": 118,
+          "support_frames": 3,
+          "mean_iou": 0.8964631689628574
+        }
+      ]
+    },
+    "seq_camponotus_trophallaxis_003": {
+      "num_tracker_tracks_mapped": 8,
+      "pairs": [
+        {
+          "tracker_track_id": 882,
+          "cvat_track_id": 619,
+          "support_frames": 103,
+          "mean_iou": 0.9163043811783068
+        },
+        {
+          "tracker_track_id": 883,
+          "cvat_track_id": 617,
+          "support_frames": 102,
+          "mean_iou": 0.9296520274405626
+        },
+        {
+          "tracker_track_id": 884,
+          "cvat_track_id": 618,
+          "support_frames": 103,
+          "mean_iou": 0.9161810315336426
+        },
+        {
+          "tracker_track_id": 885,
+          "cvat_track_id": 620,
+          "support_frames": 102,
+          "mean_iou": 0.8877770624537806
+        },
+        {
+          "tracker_track_id": 886,
+          "cvat_track_id": 622,
+          "support_frames": 5,
+          "mean_iou": 0.843996804927075
+        },
+        {
+          "tracker_track_id": 888,
+          "cvat_track_id": 621,
+          "support_frames": 2,
+          "mean_iou": 0.7560186135207181
+        },
+        {
+          "tracker_track_id": 896,
+          "cvat_track_id": 234,
+          "support_frames": 6,
+          "mean_iou": 0.8566096631537956
+        },
+        {
+          "tracker_track_id": 902,
+          "cvat_track_id": 235,
+          "support_frames": 8,
+          "mean_iou": 0.7998309086499225
+        }
+      ]
+    },
+    "seq_camponotus_trophallaxis_005": {
+      "num_tracker_tracks_mapped": 12,
+      "pairs": [
+        {
+          "tracker_track_id": 882,
+          "cvat_track_id": 642,
+          "support_frames": 15,
+          "mean_iou": 0.8000770476518346
+        },
+        {
+          "tracker_track_id": 883,
+          "cvat_track_id": 638,
+          "support_frames": 30,
+          "mean_iou": 0.6269103350533294
+        },
+        {
+          "tracker_track_id": 896,
+          "cvat_track_id": 640,
+          "support_frames": 3,
+          "mean_iou": 0.6921232185287632
+        },
+        {
+          "tracker_track_id": 908,
+          "cvat_track_id": 240,
+          "support_frames": 28,
+          "mean_iou": 0.9114693224587237
+        },
+        {
+          "tracker_track_id": 909,
+          "cvat_track_id": 243,
+          "support_frames": 27,
+          "mean_iou": 0.7797986183148284
+        },
+        {
+          "tracker_track_id": 910,
+          "cvat_track_id": 645,
+          "support_frames": 22,
+          "mean_iou": 0.6844774833742041
+        },
+        {
+          "tracker_track_id": 911,
+          "cvat_track_id": 643,
+          "support_frames": 27,
+          "mean_iou": 0.6911590997560493
+        },
+        {
+          "tracker_track_id": 912,
+          "cvat_track_id": 639,
+          "support_frames": 28,
+          "mean_iou": 0.7523503308750648
+        },
+        {
+          "tracker_track_id": 914,
+          "cvat_track_id": 242,
+          "support_frames": 27,
+          "mean_iou": 0.7767873603275417
+        },
+        {
+          "tracker_track_id": 940,
+          "cvat_track_id": 641,
+          "support_frames": 17,
+          "mean_iou": 0.7253473676386142
+        },
+        {
+          "tracker_track_id": 943,
+          "cvat_track_id": 644,
+          "support_frames": 8,
+          "mean_iou": 0.7954405243239809
+        },
+        {
+          "tracker_track_id": 958,
+          "cvat_track_id": 646,
+          "support_frames": 4,
+          "mean_iou": 0.738356389659334
+        }
+      ]
+    },
+    "seq_camponotus_trophallaxis_007": {
+      "num_tracker_tracks_mapped": 9,
+      "pairs": [
+        {
+          "tracker_track_id": 912,
+          "cvat_track_id": 653,
+          "support_frames": 92,
+          "mean_iou": 0.8112276563574897
+        },
+        {
+          "tracker_track_id": 958,
+          "cvat_track_id": 654,
+          "support_frames": 45,
+          "mean_iou": 0.8107447296724939
+        },
+        {
+          "tracker_track_id": 962,
+          "cvat_track_id": 659,
+          "support_frames": 86,
+          "mean_iou": 0.8325659214310003
+        },
+        {
+          "tracker_track_id": 979,
+          "cvat_track_id": 655,
+          "support_frames": 85,
+          "mean_iou": 0.828539800773599
+        },
+        {
+          "tracker_track_id": 980,
+          "cvat_track_id": 661,
+          "support_frames": 34,
+          "mean_iou": 0.7377751426568561
+        },
+        {
+          "tracker_track_id": 984,
+          "cvat_track_id": 656,
+          "support_frames": 25,
+          "mean_iou": 0.7508563128570241
+        },
+        {
+          "tracker_track_id": 993,
+          "cvat_track_id": 658,
+          "support_frames": 13,
+          "mean_iou": 0.5714514974046507
+        },
+        {
+          "tracker_track_id": 1001,
+          "cvat_track_id": 660,
+          "support_frames": 26,
+          "mean_iou": 0.6608348421753119
+        },
+        {
+          "tracker_track_id": 1032,
+          "cvat_track_id": 249,
+          "support_frames": 4,
+          "mean_iou": 0.8149889983405717
+        }
+      ]
+    }
+  }
+}

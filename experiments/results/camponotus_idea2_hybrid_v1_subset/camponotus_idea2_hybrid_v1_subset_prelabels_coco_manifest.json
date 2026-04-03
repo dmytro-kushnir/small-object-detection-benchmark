@@ -1,0 +1,38 @@
+{
+  "backend": "yolo",
+  "images_root": "/tmp/camponotus_idea2_stage_VRZYmY",
+  "source_video": null,
+  "output_json": "/media/dmytro/data/Develop/small-object-detection-benchmark/experiments/results/camponotus_idea2_hybrid_v1_subset/camponotus_idea2_hybrid_v1_subset_prelabels_coco.json",
+  "mot_output_json": "/media/dmytro/data/Develop/small-object-detection-benchmark/experiments/results/camponotus_idea2_hybrid_v1_subset/camponotus_idea2_hybrid_v1_subset_mot.json",
+  "cvat_video_xml_out": null,
+  "images_processed": 504,
+  "annotations_generated": 7015,
+  "conf": 0.25,
+  "yolo_imgsz": 896,
+  "weights": {
+    "yolo": "/media/dmytro/data/Develop/small-object-detection-benchmark/experiments/yolo/camponotus_idea1_trackidmajor_full_896/weights/best.pt",
+    "rfdetr": null
+  },
+  "tracking": {
+    "enabled": true,
+    "tracker": "botsort",
+    "with_reid": false,
+    "track_thresh": 0.25,
+    "match_thresh": 0.8,
+    "track_buffer": 30,
+    "min_track_len": 2,
+    "proximity_thresh": 0.5,
+    "appearance_thresh": 0.25,
+    "n_sequences": 8,
+    "n_tracks_total": 343,
+    "n_tracks_kept": 317,
+    "n_detections_after_tracking": 7015
+  },
+  "state_priority_soft": {
+    "enabled": false,
+    "iou_thresh": 0.7,
+    "score_gap_max": 0.12,
+    "relabel_count": 0
+  },
+  "cvat_video_xml": null
+}

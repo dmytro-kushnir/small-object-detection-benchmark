@@ -1,0 +1,30 @@
+{
+  "format": "camponotus_idea2_events_v1",
+  "source_mot_json": "/media/dmytro/data/Develop/small-object-detection-benchmark/experiments/results/camponotus_idea2_hybrid_v1_subset/camponotus_idea2_hybrid_v1_subset_mot.json",
+  "config": {
+    "max_dist_px": 90.0,
+    "pair_score_threshold": 0.45,
+    "min_active_frames": 12,
+    "max_gap_frames": 3,
+    "w_iou": 0.55,
+    "w_dist": 0.35,
+    "w_helper": 0.1,
+    "helper_class_id": 1,
+    "use_helper_signal": false
+  },
+  "num_sequences": 8,
+  "num_events": 1,
+  "events_per_sequence": {
+    "seq_camponotus_002": 0,
+    "seq_camponotus_003": 0,
+    "seq_camponotus_007": 1,
+    "seq_camponotus_009": 0,
+    "seq_camponotus_010": 0,
+    "seq_camponotus_trophallaxis_003": 0,
+    "seq_camponotus_trophallaxis_005": 0,
+    "seq_camponotus_trophallaxis_007": 0
+  },
+  "events": [],
+  "id_mapping_json": "/media/dmytro/data/Develop/small-object-detection-benchmark/experiments/results/camponotus_idea2_hybrid_v1_subset/camponotus_idea2_hybrid_v1_subset_tracker_to_cvat_map.json",
+  "remap_note": "track_id_a/b remapped tracker->CVAT per sequence"
+}

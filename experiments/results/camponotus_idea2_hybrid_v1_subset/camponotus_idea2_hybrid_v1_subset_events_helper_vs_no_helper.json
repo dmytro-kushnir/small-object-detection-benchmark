@@ -1,0 +1,37 @@
+{
+  "format": "camponotus_idea2_event_compare_v1",
+  "baseline": "/media/dmytro/data/Develop/small-object-detection-benchmark/experiments/results/camponotus_idea2_hybrid_v1_subset/camponotus_idea2_hybrid_v1_subset_events_no_helper_eval.json",
+  "compare": "/media/dmytro/data/Develop/small-object-detection-benchmark/experiments/results/camponotus_idea2_hybrid_v1_subset/camponotus_idea2_hybrid_v1_subset_events_with_helper_eval.json",
+  "evaluation_note": "Idea 2 one-shot run: helper signal contribution.",
+  "baseline_metrics": {
+    "tp": 0,
+    "fp": 1,
+    "fn": 7,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0,
+    "mean_tiou_matched": 0.0,
+    "num_gt": 7,
+    "num_pred": 1
+  },
+  "compare_metrics": {
+    "tp": 0,
+    "fp": 1,
+    "fn": 7,
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0,
+    "mean_tiou_matched": 0.0,
+    "num_gt": 7,
+    "num_pred": 1
+  },
+  "delta": {
+    "precision": 0.0,
+    "recall": 0.0,
+    "f1": 0.0,
+    "mean_tiou_matched": 0.0,
+    "tp": 0,
+    "fp": 0,
+    "fn": 0
+  }
+}

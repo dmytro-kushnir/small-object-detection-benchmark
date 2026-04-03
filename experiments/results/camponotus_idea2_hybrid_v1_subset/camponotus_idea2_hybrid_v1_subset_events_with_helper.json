@@ -1,0 +1,41 @@
+{
+  "format": "camponotus_idea2_events_v1",
+  "source_mot_json": "/media/dmytro/data/Develop/small-object-detection-benchmark/experiments/results/camponotus_idea2_hybrid_v1_subset/camponotus_idea2_hybrid_v1_subset_mot.json",
+  "config": {
+    "max_dist_px": 90.0,
+    "pair_score_threshold": 0.45,
+    "min_active_frames": 12,
+    "max_gap_frames": 3,
+    "w_iou": 0.55,
+    "w_dist": 0.35,
+    "w_helper": 0.1,
+    "helper_class_id": 1,
+    "use_helper_signal": true
+  },
+  "num_sequences": 8,
+  "num_events": 1,
+  "events_per_sequence": {
+    "seq_camponotus_002": 0,
+    "seq_camponotus_003": 0,
+    "seq_camponotus_007": 1,
+    "seq_camponotus_009": 0,
+    "seq_camponotus_010": 0,
+    "seq_camponotus_trophallaxis_003": 0,
+    "seq_camponotus_trophallaxis_005": 0,
+    "seq_camponotus_trophallaxis_007": 0
+  },
+  "events": [
+    {
+      "event_id": "seq_camponotus_007_154_184_1",
+      "sequence_name": "seq_camponotus_007",
+      "track_id_a": 154,
+      "track_id_b": 184,
+      "start_frame": 7,
+      "end_frame": 18,
+      "duration_frames": 12,
+      "confidence_mean": 0.6576388869236067,
+      "confidence_max": 0.8135112892063072,
+      "helper_support_frames": 0
+    }
+  ]
+}

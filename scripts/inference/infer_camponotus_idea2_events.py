@@ -127,13 +127,15 @@ def infer_events_for_sequence(
         scores = pair_frame_scores[key]
         mean_score = float(sum(scores) / len(scores)) if scores else 0.0
         max_score = float(max(scores)) if scores else 0.0
-        for idx, (st, en) in enumerate(runs, start=1):
+        event_idx = 0
+        for st, en in runs:
             dur = int(en - st + 1)
             if dur < min_active_frames:
                 continue
+            event_idx += 1
             events.append(
                 {
-                    "event_id": f"{sequence_name}_{key[0]}_{key[1]}_{idx}",
+                    "event_id": f"{sequence_name}_{key[0]}_{key[1]}_{event_idx}",
                     "sequence_name": sequence_name,
                     "track_id_a": int(key[0]),
                     "track_id_b": int(key[1]),
