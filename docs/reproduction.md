@@ -119,6 +119,7 @@ export ANTS_DATASET_ROOT="/path/to/Ant_dataset"
 # ./scripts/run_ants_expA006.sh
 #
 # Camponotus dataset workflow (data prep only; no training):
+# If CVAT export is canonical: use bundle root (parent of images/ + annotations/) as --raw-root; see docs/cli_commands.md "CVAT export bundle".
 # 1) extract frames from videos (optional if already extracted):
 # python scripts/datasets/extract_camponotus_frames.py --videos-root /path/to/videos --out-root datasets/camponotus_raw/in_situ --fps 2
 # 2) generate optional model prelabels:

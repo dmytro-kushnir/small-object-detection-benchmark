@@ -3,6 +3,10 @@
 
 Extra GT annotation fields (e.g. ``track_id`` on Camponotus exports) are ignored; only bbox
 detection metrics are computed.
+
+Output JSON includes ``coco_eval_per_category`` (COCOeval with ``params.catIds`` per class) and
+``matched_pr_per_category`` (same greedy IoU≥0.5 / score≥0.25 rule as ``matched_pr``, per class;
+images are the union of GT and predictions for that class).
 """
 
 from __future__ import annotations
@@ -48,26 +52,16 @@ def _load_predictions(path: Path) -> list[dict[str, Any]]:
     raise ValueError(f"Predictions must be a JSON list or {{'annotations': [...]}}, got {type(raw)}")
 
 
-def _precision_recall_iou50(
-    gt: Any,
-    detections: list[dict[str, Any]],
-    score_thr: float = 0.25,
-) -> tuple[float, float, int, int, int]:
-    """Greedy match per image @ IoU>=0.5, same category; return P, R, TP, FP, FN."""
-    img_to_gts: dict[int, list[dict[str, Any]]] = {}
-    for ann in gt.dataset["annotations"]:
-        img_to_gts.setdefault(int(ann["image_id"]), []).append(ann)
-    img_to_dets: dict[int, list[dict[str, Any]]] = {}
-    for d in detections:
-        if float(d.get("score", 1.0)) < score_thr:
-            continue
-        img_to_dets.setdefault(int(d["image_id"]), []).append(d)
-    for lst in img_to_dets.values():
-        lst.sort(key=lambda x: -float(x.get("score", 1.0)))
-
+def _greedy_tp_fp_fn_iou50(
+    img_to_gts: dict[int, list[dict[str, Any]]],
+    img_to_dets: dict[int, list[dict[str, Any]]],
+    image_ids: list[int],
+) -> tuple[int, int, int]:
+    """Greedy match per image @ IoU>=0.5, same category (gts/dets already filtered)."""
     tp = fp = 0
     fn = 0
-    for img_id, gts in img_to_gts.items():
+    for img_id in image_ids:
+        gts = img_to_gts.get(img_id, [])
         dets = img_to_dets.get(img_id, [])
         used_gt = [False] * len(gts)
         for det in dets:
@@ -90,12 +84,128 @@ def _precision_recall_iou50(
             else:
                 fp += 1
         fn += sum(1 for u in used_gt if not u)
+    return tp, fp, fn
 
+
+def _precision_recall_iou50(
+    gt: Any,
+    detections: list[dict[str, Any]],
+    score_thr: float = 0.25,
+    category_id: int | None = None,
+) -> tuple[float, float, int, int, int]:
+    """Greedy match per image @ IoU>=0.5, same category; return P, R, TP, FP, FN.
+
+    If ``category_id`` is set, only that class contributes; image set is the union of
+    images with GT or predictions for that class (so pred-only FPs count).
+    """
+    img_to_gts: dict[int, list[dict[str, Any]]] = {}
+    for ann in gt.dataset["annotations"]:
+        if category_id is not None and int(ann["category_id"]) != category_id:
+            continue
+        img_to_gts.setdefault(int(ann["image_id"]), []).append(ann)
+    img_to_dets: dict[int, list[dict[str, Any]]] = {}
+    for d in detections:
+        if float(d.get("score", 1.0)) < score_thr:
+            continue
+        if category_id is not None and int(d["category_id"]) != category_id:
+            continue
+        img_to_dets.setdefault(int(d["image_id"]), []).append(d)
+    for lst in img_to_dets.values():
+        lst.sort(key=lambda x: -float(x.get("score", 1.0)))
+
+    if category_id is None:
+        image_ids = list(img_to_gts.keys())
+    else:
+        image_ids = sorted(set(img_to_gts) | set(img_to_dets))
+
+    tp, fp, fn = _greedy_tp_fp_fn_iou50(img_to_gts, img_to_dets, image_ids)
     denom_p = tp + fp
     denom_r = tp + fn
     prec = tp / denom_p if denom_p else 0.0
     rec = tp / denom_r if denom_r else 0.0
     return prec, rec, tp, fp, fn
+
+
+def _coco_metrics_from_stats(stats: Any) -> dict[str, float]:
+    return {
+        "mAP_50_95": float(stats[0]),
+        "mAP_50": float(stats[1]),
+        "mAP_75": float(stats[2]),
+        "mAP_small": float(stats[3]),
+        "mAP_medium": float(stats[4]),
+        "mAP_large": float(stats[5]),
+        "AR_maxDets_1": float(stats[6]),
+        "AR_maxDets_10": float(stats[7]),
+        "AR_maxDets_100": float(stats[8]),
+        "AR_small": float(stats[9]),
+        "AR_medium": float(stats[10]),
+        "AR_large": float(stats[11]),
+    }
+
+
+def _coco_eval_per_category(
+    coco_gt: Any,
+    coco_dt: Any | None,
+    COCOeval: Any,
+) -> dict[str, dict[str, Any]]:
+    """Run COCOeval once per GT category (``params.catIds = [cid]``)."""
+    cat_ids = coco_gt.getCatIds()
+    id_to_name = {int(c["id"]): str(c.get("name", c["id"])) for c in coco_gt.loadCats(cat_ids)}
+    out: dict[str, dict[str, Any]] = {}
+    zeros = _coco_metrics_from_stats([0.0] * 12)
+
+    if coco_dt is None:
+        for cid in cat_ids:
+            cid_i = int(cid)
+            sk = str(cid_i)
+            out[sk] = {
+                "category_id": cid_i,
+                "name": id_to_name.get(cid_i, sk),
+                **zeros,
+            }
+        return out
+
+    for cid in cat_ids:
+        cid_i = int(cid)
+        ev = COCOeval(coco_gt, coco_dt, "bbox")
+        ev.params.catIds = [cid_i]
+        ev.evaluate()
+        ev.accumulate()
+        ev.summarize()
+        sk = str(cid_i)
+        out[sk] = {
+            "category_id": cid_i,
+            "name": id_to_name.get(cid_i, sk),
+            **_coco_metrics_from_stats(ev.stats),
+        }
+    return out
+
+
+def _matched_pr_per_category(
+    coco_gt: Any,
+    detections: list[dict[str, Any]],
+    score_thr: float = 0.25,
+) -> dict[str, dict[str, Any]]:
+    cat_ids = coco_gt.getCatIds()
+    out: dict[str, dict[str, Any]] = {}
+    for cid in cat_ids:
+        cid_i = int(cid)
+        prec, rec, tp, fp, fn = _precision_recall_iou50(
+            coco_gt, detections, score_thr=score_thr, category_id=cid_i
+        )
+        sk = str(cid_i)
+        cats = coco_gt.loadCats([cid_i])
+        name = str(cats[0].get("name", sk)) if cats else sk
+        out[sk] = {
+            "category_id": cid_i,
+            "name": name,
+            "precision_iou50_score025": prec,
+            "recall_iou50_score025": rec,
+            "tp": tp,
+            "fp": fp,
+            "fn": fn,
+        }
+    return out
 
 
 def _system_info() -> dict[str, Any]:
@@ -330,20 +440,8 @@ def main() -> None:
             file=sys.stderr,
         )
         stats = [0.0] * 12
-        coco_metrics = {
-            "mAP_50_95": 0.0,
-            "mAP_50": 0.0,
-            "mAP_75": 0.0,
-            "mAP_small": 0.0,
-            "mAP_medium": 0.0,
-            "mAP_large": 0.0,
-            "AR_maxDets_1": 0.0,
-            "AR_maxDets_10": 0.0,
-            "AR_maxDets_100": 0.0,
-            "AR_small": 0.0,
-            "AR_medium": 0.0,
-            "AR_large": 0.0,
-        }
+        coco_metrics = _coco_metrics_from_stats(stats)
+        coco_dt = None
     else:
         coco_dt = coco_gt.loadRes(dets)
         ev = COCOeval(coco_gt, coco_dt, "bbox")
@@ -352,21 +450,10 @@ def main() -> None:
         ev.summarize()
 
         stats = ev.stats
-        # pycocotools bbox summarize() order (see cocoeval.summarize)
-        coco_metrics = {
-            "mAP_50_95": float(stats[0]),
-            "mAP_50": float(stats[1]),
-            "mAP_75": float(stats[2]),
-            "mAP_small": float(stats[3]),
-            "mAP_medium": float(stats[4]),
-            "mAP_large": float(stats[5]),
-            "AR_maxDets_1": float(stats[6]),
-            "AR_maxDets_10": float(stats[7]),
-            "AR_maxDets_100": float(stats[8]),
-            "AR_small": float(stats[9]),
-            "AR_medium": float(stats[10]),
-            "AR_large": float(stats[11]),
-        }
+        coco_metrics = _coco_metrics_from_stats(stats)
+
+    coco_eval_per_category = _coco_eval_per_category(coco_gt, coco_dt, COCOeval)
+    matched_pr_per_category = _matched_pr_per_category(coco_gt, dets, score_thr=0.25)
 
     prec, rec, tp, fp, fn = _precision_recall_iou50(coco_gt, dets, score_thr=0.25)
     matched = {
@@ -414,7 +501,9 @@ def main() -> None:
         "experiment_id": args.experiment_id,
         "coco_eval": coco_metrics,
         "coco_eval_stats_raw": [float(x) for x in stats],
+        "coco_eval_per_category": coco_eval_per_category,
         "matched_pr": matched,
+        "matched_pr_per_category": matched_pr_per_category,
         "inference_benchmark": perf,
         "paths": {
             "gt": path_for_artifact(gt_path, repo_root),

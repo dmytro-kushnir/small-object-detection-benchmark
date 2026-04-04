@@ -39,7 +39,7 @@ See `configs/prepare_dataset.yaml` for all options. Bbox filters use `filter.app
 
 For the two-class Camponotus dataset (`ant`, `trophallaxis`), use:
 
-- Raw layout: `datasets/camponotus_raw/`
+- Raw pixels: either **`datasets/camponotus_raw/`** (`in_situ/seq_*`, optional `external/images`) **or** a **CVAT export bundle** on disk (`<bundle>/images/` + `<bundle>/annotations/*.json`) with the same path passed as `--raw-root` to `align_coco_filenames_to_camponotus_raw.py` and `prepare_camponotus_detection_dataset.py` (see [`camponotus_cvat_workflow.md`](camponotus_cvat_workflow.md) §1B and [`cli_commands.md`](cli_commands.md)).
 - Processed manifests: `datasets/camponotus_processed/`
 - Exports: `datasets/camponotus_yolo/` and `datasets/camponotus_coco/`
 - RF-DETR train layout (train/valid + `_annotations.coco.json`): `datasets/camponotus_rfdetr_coco/` via `scripts/datasets/prepare_camponotus_coco_rfdetr.py` (optional: `CAMPO_PREP_RFDETR_COCO=1` with `run_camponotus_dataset_workflow.sh`)

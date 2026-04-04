@@ -1,35 +1,35 @@
 {
   "images_by_split": {
-    "train": 1188,
-    "val": 274,
-    "test": 176
+    "train": 1271,
+    "val": 610,
+    "test": 45
   },
   "objects_by_split": {
-    "train": 15365,
-    "val": 2743,
-    "test": 3635
+    "train": 18570,
+    "val": 3729,
+    "test": 487
   },
   "class_counts_by_split": {
     "train": {
-      "0": 14183,
-      "1": 1182
+      "0": 17297,
+      "1": 1273
     },
     "val": {
-      "0": 2477,
-      "1": 266
+      "0": 2928,
+      "1": 801
     },
     "test": {
-      "0": 3359,
-      "1": 276
+      "0": 419,
+      "1": 68
     }
   },
   "source_distribution": {
-    "in_situ": 1638,
+    "in_situ": 1926,
     "external": 0
   },
   "class_balance": {
-    "ant_fraction": 0.9207101135997793,
-    "trophallaxis_fraction": 0.07928988640022076
+    "ant_fraction": 0.9059949091547441,
+    "trophallaxis_fraction": 0.09400509084525586
   },
   "split_source": "manifest"
 }

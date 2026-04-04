@@ -6,16 +6,31 @@ Canonical intermediate export for this project is **CVAT COCO 1.0** (bounding bo
 
 ## 1) Prepare Input Data
 
-Expected raw layout:
+Two supported layouts for **pixels** (pick one; both work with `prepare_camponotus_detection_dataset.py --raw-root <that root>`):
+
+### A — Repo-local frames (sequence folders)
 
 - `datasets/camponotus_raw/in_situ/seq_*/` (default: `seq_<sanitized_video_filename>` per clip)
 - `datasets/camponotus_raw/external/images/`
 
 For video-derived data, extract frames first using:
 
-- `scripts/datasets/extract_camponotus_frames.py`
+- `scripts/datasets/extract_camponotus_frames.py` (prefer `--unique-frame-basenames` if the same `000001.jpg` repeats across sequences)
 
 Then create `datasets/camponotus_processed/splits.json` with `scripts/datasets/split_camponotus_dataset.py` (default: **stratified** split so trophallaxis-named sequences appear in val/test when possible; use `--no-stratify-trophallaxis` for legacy behavior).
+
+### B — CVAT export bundle (recommended when CVAT is source of truth)
+
+Use the **same directory tree you export from CVAT**: a folder containing **`images/`** (all labeled frames) and **`annotations/`** (e.g. `instances_default.json`). This matches the task **after** you delete or skip frames in CVAT — you are not forced to mirror an older `in_situ` extraction that may contain extra files.
+
+1. Export **COCO 1.0** from CVAT into `…/annotations/instances_default.json` (or copy the file there).
+2. Set **`FULL_ROOT`** to the **parent** of `images/` and `annotations/` (not the `images` folder alone).
+3. Run `align_coco_filenames_to_camponotus_raw.py` with **`--raw-root "$FULL_ROOT"`** so flat `file_name` values like `000001.jpg` become unique paths such as `images/000001.jpg` under that root (fails if two files share the same basename under `FULL_ROOT`).
+4. Pass the **same** `--raw-root "$FULL_ROOT"` into `prepare_camponotus_detection_dataset.py`.
+
+Copy-paste commands (track_id–majority prep and train) live in [`cli_commands.md`](cli_commands.md) → **Camponotus — CVAT export bundle (`images/` + annotations)**.
+
+Machine-specific absolute paths under `/media/...` are normal; keep the **relative** layout (`images/`, `annotations/`) when describing reproducibility.
 
 Alternative: `track_id`-majority split manifest (leakage proxy)
 - Use `scripts/datasets/split_camponotus_dataset_by_track_id_majority.py` to create a split manifest from `annotations[].attributes.track_id` (majority track_id per image).
@@ -87,7 +102,7 @@ The split manifest lists repo-relative paths such as `datasets/camponotus_raw/in
 
 Use **`--split-source auto`** on `prepare_camponotus_detection_dataset.py`: only images that resolve under `--raw-root` are shuffled and split by ratio (defaults: `ratios` from `splits.json` if present, else 0.7 / 0.15 / remainder test; override with `--train-ratio` / `--val-ratio` / `--auto-split-seed`). Sequence-safe splitting still requires either aligned `file_name` values with **`--split-source manifest`** or running `split_camponotus_dataset.py` on the same directory layout the export uses.
 
-**Sequence-safe workflow (manifest mode):** (1) Put frames under `datasets/camponotus_raw/in_situ/` in **multiple** `seq_*` directories (at least **three** logical sequences so val/test are non-empty — one folder ⇒ the splitter cannot spread frames across splits). Default extraction uses `000001.jpg`-style names **inside each** `seq_*` folder, so the **same basename repeats across sequences**; `align_coco_filenames_to_camponotus_raw.py` will then fail. Prefer `extract_camponotus_frames.py --unique-frame-basenames` (writes `seq_camponotus_001_000001.jpg`, …) so every basename is unique under `raw-root`, then re-run `split_camponotus_dataset.py`. (2) `mkdir -p datasets/camponotus_raw/external/images` (may stay empty). (3) Run `scripts/datasets/split_camponotus_dataset.py` → `datasets/camponotus_processed/splits.json`. (4) If CVAT exports **flat** `file_name` values, run `scripts/datasets/align_coco_filenames_to_camponotus_raw.py --coco … --raw-root datasets/camponotus_raw` so each basename matches **exactly one** file. (5) `prepare_camponotus_detection_dataset.py --split-source manifest --raw-root datasets/camponotus_raw …`.
+**Sequence-safe workflow (manifest mode):** (1) Put frames under `datasets/camponotus_raw/in_situ/` in **multiple** `seq_*` directories (at least **three** logical sequences so val/test are non-empty — one folder ⇒ the splitter cannot spread frames across splits). Default extraction uses `000001.jpg`-style names **inside each** `seq_*` folder, so the **same basename repeats across sequences**; `align_coco_filenames_to_camponotus_raw.py` will then fail. Prefer `extract_camponotus_frames.py --unique-frame-basenames` (writes `seq_camponotus_001_000001.jpg`, …) so every basename is unique under `raw-root`, then re-run `split_camponotus_dataset.py`. (2) `mkdir -p datasets/camponotus_raw/external/images` (may stay empty). (3) Run `scripts/datasets/split_camponotus_dataset.py` → `datasets/camponotus_processed/splits.json`. (4) If CVAT exports **flat** `file_name` values, run `scripts/datasets/align_coco_filenames_to_camponotus_raw.py --coco … --raw-root <root>` where `<root>` is either `datasets/camponotus_raw` **or** the **CVAT bundle root** (parent of `images/`). (5) `prepare_camponotus_detection_dataset.py --split-source manifest --raw-root <same root> …`.
 
 ### Optional `track_id` and `state` in processed exports
 

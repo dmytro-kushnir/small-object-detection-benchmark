@@ -6,6 +6,69 @@ For full experiment narratives and numbers, see [`research_analysis.md`](researc
 
 ---
 
+## Camponotus — CVAT export bundle (`images/` + annotations)
+
+Use this when your **ground-truth images** are exactly the CVAT task export (not a separate `datasets/camponotus_raw/in_situ` tree). Set **`FULL_ROOT`** to the folder that contains **`images/`** and **`annotations/`** (same level). Paths with spaces must stay **quoted**.
+
+**Example (this machine):**
+
+```bash
+export FULL_ROOT="/media/dmytro/data/datasets/camponotus fellah trophallaxis FULL dataset"
+export CVAT_COCO="$FULL_ROOT/annotations/instances_default.json"
+export REPO="$PWD"   # repository root
+
+export ALIGNED="$REPO/datasets/camponotus_processed/camponotus_full_cvat_aligned.json"
+export SPLITS_TM="$REPO/datasets/camponotus_processed/splits_trackid_majority_full_export_unique.json"
+export YOLO_OUT="$REPO/datasets/camponotus_yolo/camponotus_full_export_unique_trackidmajor"
+export COCO_OUT="$REPO/datasets/camponotus_coco/camponotus_full_export_unique_trackidmajor"
+```
+
+**1) Align** flat `file_name` → paths under `FULL_ROOT` (e.g. `images/000001.jpg`):
+
+```bash
+python3 scripts/datasets/align_coco_filenames_to_camponotus_raw.py \
+  --coco "$CVAT_COCO" \
+  --raw-root "$FULL_ROOT" \
+  --out "$ALIGNED"
+```
+
+**2) `track_id`–majority split manifest** (optional QA: `qa_track_id_overlap_in_splits.py`):
+
+```bash
+python3 scripts/datasets/split_camponotus_dataset_by_track_id_majority.py \
+  --coco-json "$ALIGNED" \
+  --out "$SPLITS_TM" \
+  --seed 42
+```
+
+**3) YOLO + COCO exports** (`--raw-root` **must** be the same **`FULL_ROOT`**):
+
+```bash
+python3 scripts/datasets/prepare_camponotus_detection_dataset.py \
+  --coco-annotations "$ALIGNED" \
+  --split-source manifest \
+  --splits "$SPLITS_TM" \
+  --raw-root "$FULL_ROOT" \
+  --out-yolo "$YOLO_OUT" \
+  --out-coco "$COCO_OUT" \
+  --analysis-out "$REPO/datasets/camponotus_processed/analysis.json" \
+  --copy-mode symlink
+```
+
+**4) RF-DETR Roboflow layout** (then train as in the next sections):
+
+```bash
+python3 scripts/datasets/prepare_camponotus_coco_rfdetr.py \
+  --camponotus-yolo-root "$YOLO_OUT" \
+  --out-root "$REPO/datasets/camponotus_rfdetr_coco_trackidmajor"
+```
+
+**5) Train YOLO26 / RF-DETR** — use [`train_yolo.py`](../scripts/train/train_yolo.py) with `data="$YOLO_OUT/dataset.yaml"` and [`train_rfdetr_ants.py`](../scripts/train/train_rfdetr_ants.py) with `--dataset-dir` pointing at the Roboflow root from step 4 (see **Camponotus — train RF-DETR** below).
+
+Workflow background: [`camponotus_cvat_workflow.md`](camponotus_cvat_workflow.md) §1B.
+
+---
+
 ## Camponotus — RF-DETR Roboflow-style dataset
 
 Builds `train/` + `valid/` + mirrored annotations from a Camponotus YOLO export (example: **track_id–majority**):
@@ -189,6 +252,8 @@ python3 scripts/evaluation/evaluate.py \
   --inference-benchmark-json experiments/results/camponotus_rfdetr_trackidmajor_896_bench_val.json
 ```
 
+**Metrics JSON shape:** Each `evaluate.py` run writes aggregate **`coco_eval`** / **`matched_pr`** plus **`coco_eval_per_category`** (pycocotools AP per GT category) and **`matched_pr_per_category`** (same IoU≥0.5 / score≥0.25 greedy rule, per class). Use the per-category blocks for ant vs trophallaxis tables. **`compare_camponotus_rfdetr_vs_yolo.py`** and **`compare_metrics.py`** still compare **global** metrics only; per-class deltas are a manual JSON diff unless you add a small script later.
+
 **YOLO** Camponotus runs follow the same **GT + predictions + `evaluate.py`** pattern; use `scripts/inference/infer_yolo.py` and pass `--imgsz` when it must match training resolution.
 
 ### External-only inference (no COCO GT)
@@ -247,6 +312,8 @@ python3 scripts/evaluation/compare_camponotus_rfdetr_vs_yolo.py \
   --compare experiments/results/camponotus_rfdetr_trackidmajor_896_metrics_val.json \
   --out experiments/results/camponotus_rfdetr_trackidmajor_896_vs_yolo896_val.json
 ```
+
+**Full 1926-image CVAT bundle** (YOLO run `camponotus_trackidmajor_full_896`): baseline = `experiments/results/camponotus_trackidmajor_full_896_metrics_{val,test}.json`, out = `experiments/results/camponotus_rfdetr_trackidmajor_896_vs_yolo896_full_export_{val,test}.json` — see [`research_analysis.md`](research_analysis.md) **EXP-CAMPO-FULL-CVAT-EXPORT-TRACKIDMAJORITY-896**.
 
 ---
 
