@@ -47,6 +47,16 @@ def _copy_or_link(src: Path, dst: Path, mode: str) -> None:
     shutil.copy2(src, dst)
 
 
+def _yolo_flat_image_name(file_name: str) -> str:
+    """Unique filename under ``images/{split}/`` when the same basename appears in many seq_* dirs."""
+    fn = str(file_name).strip().replace("\\", "/")
+    while fn.startswith("./"):
+        fn = fn[2:]
+    if "/" not in fn:
+        return Path(fn).name
+    return fn.replace("/", "__")
+
+
 def _build_image_lookup(coco: dict[str, Any]) -> dict[int, dict[str, Any]]:
     out: dict[int, dict[str, Any]] = {}
     for im in coco.get("images", []):
@@ -327,7 +337,7 @@ def main() -> None:
             src = iid_to_src.get(iid)
         if split not in ("train", "val", "test") or src is None:
             continue
-        dst_name = Path(im["file_name"]).name
+        dst_name = _yolo_flat_image_name(str(im["file_name"]))
         dst_img = out_yolo / "images" / split / dst_name
         _copy_or_link(src, dst_img, mode=str(args.copy_mode))
         counts["images"][split] += 1

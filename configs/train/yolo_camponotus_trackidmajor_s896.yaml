@@ -1,0 +1,28 @@
+# @package _global_
+# YOLO26 **small** on full CVAT track_id–majority export @896 (2511-image bundle; capacity vs yolo26n).
+
+defaults:
+  - yolo
+  - _self_
+
+model: yolo26s.pt
+data: datasets/camponotus_yolo/camponotus_full_export_unique_trackidmajor/dataset.yaml
+
+epochs: 100
+imgsz: 896
+batch: 6
+workers: 4
+device: 0
+
+project: experiments/yolo
+name: camponotus_trackidmajor_full_s8962
+
+seed: 42
+patience: 50
+save: true
+plots: true
+verbose: true
+exist_ok: false
+
+optimizer:
+  lr0: null

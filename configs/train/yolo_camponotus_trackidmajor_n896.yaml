@@ -1,0 +1,28 @@
+# @package _global_
+# YOLO26 **nano** on full CVAT track_id–majority export @896 (matches EXP-CAMPO-FULL recipe: batch 8, 100 ep, patience 50).
+
+defaults:
+  - yolo
+  - _self_
+
+model: yolo26n.pt
+data: datasets/camponotus_yolo/camponotus_full_export_unique_trackidmajor/dataset.yaml
+
+epochs: 100
+imgsz: 896
+batch: 8
+workers: 4
+device: 0
+
+project: experiments/yolo
+name: camponotus_trackidmajor_full_896
+
+seed: 42
+patience: 50
+save: true
+plots: true
+verbose: true
+exist_ok: false
+
+optimizer:
+  lr0: null

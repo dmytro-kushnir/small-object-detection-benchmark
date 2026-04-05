@@ -1021,22 +1021,22 @@ python3 scripts/evaluation/compare_camponotus_rfdetr_vs_yolo.py \
 
 | Split | mAP@[.50:.95] | mAP@.50 | mAP@.75 | Precision | Recall | TP/FP/FN | FPS | Latency mean (ms) |
 |-------|---------------:|--------:|--------:|----------:|-------:|----------:|----:|------------------:|
-| Val | 0.163 | 0.323 | 0.127 | 0.593 | 0.254 | 948/650/2781 | 46.5 | 21.5 |
-| Test | 0.317 | 0.475 | 0.360 | 0.759 | 0.784 | 382/121/105 | 35.7 | 28.0 |
+| Val | 0.163 | 0.323 | 0.127 | 0.593 | 0.254 | 948/650/2781 | 53.7 | 18.6 |
+| Test | 0.317 | 0.475 | 0.360 | 0.759 | 0.784 | 382/121/105 | 48.4 | 20.7 |
 
 **RF-DETR Small (full export, same GT) — unified `evaluate.py`:**
 
 | Split | mAP@[.50:.95] | mAP@.50 | mAP@.75 | Precision | Recall | TP/FP/FN | FPS | Latency mean (ms) |
 |-------|---------------:|--------:|--------:|----------:|-------:|----------:|----:|------------------:|
-| Val | 0.071 | 0.150 | 0.046 | 0.244 | 0.209 | 781/2415/2948 | 22.4 | 44.7 |
-| Test | 0.208 | 0.394 | 0.197 | 0.840 | 0.614 | 299/57/188 | 22.1 | 45.3 |
+| Val | 0.071 | 0.150 | 0.046 | 0.244 | 0.209 | 781/2415/2948 | 24.0 | 41.6 |
+| Test | 0.208 | 0.394 | 0.197 | 0.840 | 0.614 | 299/57/188 | 23.2 | 43.0 |
 
-**RF-DETR − YOLO** (Δ = RF-DETR − YOLO; baseline = `camponotus_trackidmajor_full_896_metrics_*`):
+**RF-DETR − YOLO** (Δ = RF-DETR − YOLO; baseline = `camponotus_trackidmajor_full_896_metrics_*`; from [`camponotus_rfdetr_trackidmajor_896_vs_yolo896_full_export_{val,test}.json`](../experiments/results/camponotus_rfdetr_trackidmajor_896_vs_yolo896_full_export_val.json)):
 
 | Split | mAP@[.5:.95] | mAP@.50 | Matched ΔP | Matched ΔR | FPS Δ | Latency mean Δ (ms) |
 |-------|-------------:|--------:|-----------:|-----------:|------:|---------------------:|
-| Val | **−0.092** | **−0.172** | **−0.349** | **−0.045** | **−24.2** | **+23.2** |
-| Test | **−0.108** | **−0.081** | **+0.080** | **−0.170** | **−13.6** | **+17.3** |
+| Val | **−0.092** | **−0.172** | **−0.349** | **−0.045** | **−29.6** | **+22.9** |
+| Test | **−0.108** | **−0.081** | **+0.080** | **−0.170** | **−25.2** | **+22.4** |
 
 **Regenerate full-export compare JSONs:**
 
@@ -1052,7 +1052,188 @@ python3 scripts/evaluation/compare_camponotus_rfdetr_vs_yolo.py \
   --out experiments/results/camponotus_rfdetr_trackidmajor_896_vs_yolo896_full_export_test.json
 ```
 
-**Interpretation (draft):** On the **larger, troph-heavier** val split, **YOLO clearly leads** on COCO mAP and on greedy matched P/R. RF-DETR produces **far more FP** on val (2415 vs 650), driving precision and COCO AP down. On **test**, YOLO still leads on **mAP**; RF-DETR shows **higher matched precision** but **lower recall** and **fewer TP** (299 vs 382). **Throughput** favors YOLO (~2× FPS on recorded runs). This **reverses** the archived smaller-export ordering where RF-DETR led on mAP — likely a mix of **harder val distribution**, **schedule/capacity**, and **calibration at `conf=0.25`**. Next levers: longer RF-DETR training, `conf` / NMS tuning, `optimize_for_inference()`, cleaning split image dirs, and verifying **category_id** alignment if metrics look inconsistent.
+**Improving RF-DETR (draft plan):** The recorded **30-epoch** RF-DETR run is **much shorter** than the full-export YOLO schedule (**~46** effective epochs). Prefer a **longer max epoch** count with **early stopping** (see [`configs/camponotus_rfdetr_trackidmajor_896_long_train.yaml`](../configs/camponotus_rfdetr_trackidmajor_896_long_train.yaml) and [`cli_commands.md`](cli_commands.md) — *Longer schedule*). Then **sweep `conf`** (and NMS if available) on val to cut **FP**; optional **`optimize_for_inference()`** for throughput only (re-bench + spot-check mAP). Clean **`images/{val,test}`** vs COCO lists to remove infer warnings.
+
+**Interpretation (draft):** On the **larger, troph-heavier** val split, **YOLO clearly leads** on COCO mAP and on greedy matched P/R. RF-DETR produces **far more FP** on val (2415 vs 650), driving precision and COCO AP down. On **test**, YOLO still leads on **mAP**; RF-DETR shows **higher matched precision** but **lower recall** and **fewer TP** (299 vs 382). **Throughput** favors YOLO (~**2.2×** FPS on the refreshed bench below). This **reverses** the archived smaller-export ordering where RF-DETR led on mAP — likely a mix of **harder val distribution**, **shorter RF-DETR schedule vs YOLO**, and **calibration at `conf=0.25`**. Next levers: longer RF-DETR training (config above), `conf` / NMS tuning, `optimize_for_inference()`, cleaning split image dirs, and verifying **category_id** alignment if metrics look inconsistent.
+
+**Update (2026-04):** After the **2511-image** CVAT refresh (unique flat YOLO filenames, [`prepare_camponotus_detection_dataset.py`](../scripts/datasets/prepare_camponotus_detection_dataset.py)), **long RF-DETR training** ([`camponotus_rfdetr_trackidmajor_896_long_train.yaml`](../configs/camponotus_rfdetr_trackidmajor_896_long_train.yaml)), and a fresh YOLO26n run **`camponotus_trackidmajor_full_8962`**, unified **`evaluate.py`** shows **RF-DETR ahead on COCO mAP** on **both** val and test — see **EXP-CAMPO-FULL-2511-YOLO8962-RFDETR-EP60** below. **YOLO26s** on the same bundle (**`full_s8962`**) does **not** beat nano on headline mAP; see **EXP-CAMPO-FULL-2511-YOLO-S8962**. The subsection above remains the **frozen** record for the **1926-image** bundle + **30-epoch** RF-DETR Small.
+
+### EXP-CAMPO-FULL-2511-YOLO8962-RFDETR-EP60 — 2511-image bundle, YOLO26n `full_8962` + RF-DETR long train (`ep60_es`), 2026-04
+
+**Context:** `datasets/camponotus_processed/analysis.json` on this export: **train=1772 / val=694 / test=45** images (**2511** total); **~14.3%** trophallaxis boxes at export. Images use **path-flattened** `file_name` under YOLO (`in_situ__seq_*__…`) so basenames do not collide. **Hardware note:** metrics below were recorded on **NVIDIA GeForce RTX 4070** (see each `metrics_*.json` `system_info`).
+
+**Training:** **YOLO26n** — [`experiments/yolo/camponotus_trackidmajor_full_8962/`](../experiments/yolo/camponotus_trackidmajor_full_8962/) (`imgsz=896`, Hydra recipe aligned with full-export nano). **RF-DETR Small** — [`experiments/rfdetr/camponotus_rfdetr_trackidmajor_896_ep60_es/`](../experiments/rfdetr/camponotus_rfdetr_trackidmajor_896_ep60_es/) from [`camponotus_rfdetr_trackidmajor_896_long_train.yaml`](../configs/camponotus_rfdetr_trackidmajor_896_long_train.yaml) (**60** epochs max, early stopping **patience 12**, `resolution=896`).
+
+**Unified `evaluate.py`:** `infer_yolo.py` (`--imgsz 896`) / `infer_rfdetr.py` (`--conf 0.25`, `--class-id-mode multiclass`, `RFDETRSmall`) → `bench_rfdetr.py` → `evaluate.py` (RF-DETR with `--inference-benchmark-json`). **Bench timed 43** test images (warmup 2) where GT files resolved on disk.
+
+**Interactive demo:** side-by-side inference UI — [Hugging Face Space: Ant trophallaxis YOLO26 vs RF-DETR](https://huggingface.co/spaces/dmytro-kushnir/ant-trophallaxis-rfdetr-vs-yolo26).
+
+**Hugging Face vs `evaluate.py`:** The Space is **qualitative** (user uploads, defaults, and pinned weights may differ from the runs below). For **reproducible** numbers, cite the **`experiments/results/*_metrics_*.json`** from `evaluate.py`; see **EXP-CAMPO-FULL-2511-YOLO-S8962** for **nano vs small** specifically.
+
+**Artifacts:**
+
+- YOLO: [`camponotus_trackidmajor_full_8962_metrics_{val,test}.json`](../experiments/results/camponotus_trackidmajor_full_8962_metrics_val.json)
+- RF-DETR: [`camponotus_rfdetr_trackidmajor_896_ep60_es_metrics_{val,test}.json`](../experiments/results/camponotus_rfdetr_trackidmajor_896_ep60_es_metrics_val.json)
+- Compare (baseline = YOLO): [`camponotus_rfdetr_ep60es_vs_yolo8962_{val,test}.json`](../experiments/results/camponotus_rfdetr_ep60es_vs_yolo8962_val.json)
+
+**YOLO26n (`8962`) — unified `evaluate.py`:**
+
+| Split | mAP@[.50:.95] | mAP@.50 | mAP@.75 | Precision | Recall | TP/FP/FN | FPS | Latency mean (ms) |
+|-------|---------------:|--------:|--------:|----------:|-------:|----------:|----:|------------------:|
+| Val | 0.367 | 0.620 | 0.353 | 0.736 | 0.713 | 2941/1055/1186 | 48.5 | 20.6 |
+| Test | 0.364 | 0.547 | 0.367 | 0.767 | 0.778 | 379/115/108 | 49.0 | 20.4 |
+
+**RF-DETR Small (`ep60_es`) — unified `evaluate.py`:**
+
+| Split | mAP@[.50:.95] | mAP@.50 | mAP@.75 | Precision | Recall | TP/FP/FN | FPS | Latency mean (ms) |
+|-------|---------------:|--------:|--------:|----------:|-------:|----------:|----:|------------------:|
+| Val | 0.489 | 0.830 | 0.474 | 0.698 | 0.881 | 3637/1573/490 | 22.6 | 44.2 |
+| Test | 0.467 | 0.673 | 0.590 | 0.843 | 0.846 | 412/77/75 | 18.1 | 55.3 |
+
+**RF-DETR − YOLO** (Δ = RF-DETR − YOLO; from [`camponotus_rfdetr_ep60es_vs_yolo8962_{val,test}.json`](../experiments/results/camponotus_rfdetr_ep60es_vs_yolo8962_val.json)):
+
+| Split | mAP@[.5:.95] | mAP@.50 | Matched ΔP | Matched ΔR | FPS Δ | Latency mean Δ (ms) |
+|-------|-------------:|--------:|-----------:|-----------:|------:|---------------------:|
+| Val | **+0.122** | **+0.209** | **−0.038** | **+0.169** | **−25.8** | **+23.5** |
+| Test | **+0.103** | **+0.126** | **+0.075** | **+0.068** | **−31.0** | **+34.9** |
+
+**Per-class (COCO AP@[.5:.95], test):** ant — YOLO **0.484** vs RF-DETR **0.572**; trophallaxis — YOLO **0.245** vs RF-DETR **0.361**. Matched troph **recall** (IoU≥0.5, score≥0.25): YOLO **0.426** vs RF-DETR **0.500** (same split; test **n≈45** images — high variance).
+
+**Interpretation (draft):** Longer RF-DETR optimization plus the **2511-image** label set moves **headline COCO mAP** in RF-DETR’s favor on **val and test** relative to this YOLO run. **Val** still shows **many more matched FPs** for RF-DETR (1573 vs 1055) with **lower greedy precision** but **higher recall** — calibration / NMS / `conf` sweeps may still trade off FP rate. **Throughput** remains strongly YOLO-favored (~**2.1–2.7×** FPS on these benches). The [HF demo](https://huggingface.co/spaces/dmytro-kushnir/ant-trophallaxis-rfdetr-vs-yolo26) is useful for **visual** RF vs YOLO checks but is **not** a substitute for the JSON protocol above.
+
+**Regenerate compare JSONs:**
+
+```bash
+python3 scripts/evaluation/compare_camponotus_rfdetr_vs_yolo.py \
+  --baseline experiments/results/camponotus_trackidmajor_full_8962_metrics_val.json \
+  --compare experiments/results/camponotus_rfdetr_trackidmajor_896_ep60_es_metrics_val.json \
+  --out experiments/results/camponotus_rfdetr_ep60es_vs_yolo8962_val.json
+
+python3 scripts/evaluation/compare_camponotus_rfdetr_vs_yolo.py \
+  --baseline experiments/results/camponotus_trackidmajor_full_8962_metrics_test.json \
+  --compare experiments/results/camponotus_rfdetr_trackidmajor_896_ep60_es_metrics_test.json \
+  --out experiments/results/camponotus_rfdetr_ep60es_vs_yolo8962_test.json
+```
+
+### EXP-CAMPO-FULL-2511-YOLO-S8962 — YOLO26s `full_s8962` vs nano vs RF-DETR `ep60_es`, 2026-04
+
+**Goal:** Same **2511-image** track_id–majority GT as **EXP-CAMPO-FULL-2511-YOLO8962-RFDETR-EP60**, with **YOLO26s** (`yolo26s.pt`) for a **capacity** check vs **YOLO26n** and the same **RF-DETR Small** long-train checkpoint.
+
+**Training:** Hydra [`configs/train/yolo_camponotus_trackidmajor_s896.yaml`](../configs/train/yolo_camponotus_trackidmajor_s896.yaml) (`train_yolo.py --config-name=train/yolo_camponotus_trackidmajor_s896`) → run dir [`experiments/yolo/camponotus_trackidmajor_full_s8962/`](../experiments/yolo/camponotus_trackidmajor_full_s8962/) (`batch=6`, `epochs=100`, `patience=50`, `imgsz=896`).
+
+**Unified `evaluate.py`:** Same protocol as nano (`infer_yolo.py --imgsz 896` → `evaluate.py`). **Note:** `compare_camponotus_rfdetr_vs_yolo.py` always prints “RF-DETR − YOLO”; for YOLO-vs-YOLO JSONs the numeric block is **compare − baseline** (e.g. small − nano when baseline = nano metrics).
+
+**Artifacts:**
+
+- YOLO26s metrics: [`camponotus_trackidmajor_full_s8962_metrics_{val,test}.json`](../experiments/results/camponotus_trackidmajor_full_s8962_metrics_val.json)
+- YOLO26s − nano (Δ = **small − nano**; baseline = nano): [`camponotus_yolo_s8962_vs_nano8962_{val,test}.json`](../experiments/results/camponotus_yolo_s8962_vs_nano8962_val.json)
+- RF-DETR − YOLO26s (Δ = RF − small; baseline = small): [`camponotus_rfdetr_ep60es_vs_yolo_s8962_{val,test}.json`](../experiments/results/camponotus_rfdetr_ep60es_vs_yolo_s8962_val.json)
+
+**YOLO26s (`s8962`) — unified `evaluate.py`:**
+
+| Split | mAP@[.50:.95] | mAP@.50 | mAP@.75 | Precision | Recall | TP/FP/FN | FPS | Latency mean (ms) |
+|-------|---------------:|--------:|--------:|----------:|-------:|----------:|----:|------------------:|
+| Val | 0.359 | 0.588 | 0.355 | 0.725 | 0.704 | 2906/1103/1221 | 48.7 | 20.5 |
+| Test | 0.307 | 0.458 | 0.344 | 0.740 | 0.782 | 381/134/106 | 48.4 | 20.7 |
+
+**YOLO26s − YOLO26n** (Δ = small − nano; from [`camponotus_yolo_s8962_vs_nano8962_{val,test}.json`](../experiments/results/camponotus_yolo_s8962_vs_nano8962_val.json)):
+
+| Split | mAP@[.5:.95] | mAP@.50 | Matched ΔP | Matched ΔR | FPS Δ | Latency mean Δ (ms) |
+|-------|-------------:|--------:|-----------:|-----------:|------:|---------------------:|
+| Val | **−0.008** | **−0.032** | **−0.011** | **−0.008** | **+0.26** | **−0.11** |
+| Test | **−0.058** | **−0.089** | **−0.027** | **+0.004** | **−0.65** | **+0.28** |
+
+**RF-DETR − YOLO26s** (Δ = RF-DETR − YOLO; baseline = small; from [`camponotus_rfdetr_ep60es_vs_yolo_s8962_{val,test}.json`](../experiments/results/camponotus_rfdetr_ep60es_vs_yolo_s8962_val.json)):
+
+| Split | mAP@[.5:.95] | mAP@.50 | Matched ΔP | Matched ΔR | FPS Δ | Latency mean Δ (ms) |
+|-------|-------------:|--------:|-----------:|-----------:|------:|---------------------:|
+| Val | **+0.130** | **+0.241** | **−0.027** | **+0.177** | **−26.1** | **+23.6** |
+| Test | **+0.160** | **+0.215** | **+0.103** | **+0.064** | **−30.3** | **+34.6** |
+
+**Per-class (test):** **Trophallaxis** COCO AP@[.5:.95] collapses for **small** (**0.093**) vs nano (**0.245**); matched troph **TP 10** / **R 0.15** vs nano **29** / **0.43** — drives the test mAP gap. **Ant** COCO AP is **higher** for small (**0.521** vs **0.484**).
+
+**Interpretation (draft):** On this run, **YOLO26n remains the better YOLO checkpoint** under unified COCOeval despite more capacity; **small is not a free upgrade** (troph calibration / head balance / seed variance). **RF-DETR `ep60_es`** still leads **headline mAP** vs **both** YOLO sizes; **YOLO** (nano or small) keeps a large **FPS** advantage (~**2.1–2.7×** vs RF on these benches).
+
+**Why the [HF Space](https://huggingface.co/spaces/dmytro-kushnir/ant-trophallaxis-rfdetr-vs-yolo26) can still “feel” like small > nano:** Side-by-side demos rarely match **instances_{val,test}.json**; **ant-heavy** frames line up with **higher test ant AP for small** (0.521 vs 0.484 here) even when **mean** mAP favors nano because **trophallaxis** scores collapse for small on the **held-out test** list. Different **`conf`**, **`imgsz`**, or **weight paths** in the Space will also shift what you see. Pin the same `best.pt` files and settings as this repo if you want the UI to track the tables above.
+
+**Regenerate YOLO26s compare JSONs:**
+
+```bash
+python3 scripts/evaluation/compare_camponotus_rfdetr_vs_yolo.py \
+  --baseline experiments/results/camponotus_trackidmajor_full_8962_metrics_val.json \
+  --compare experiments/results/camponotus_trackidmajor_full_s8962_metrics_val.json \
+  --out experiments/results/camponotus_yolo_s8962_vs_nano8962_val.json
+
+python3 scripts/evaluation/compare_camponotus_rfdetr_vs_yolo.py \
+  --baseline experiments/results/camponotus_trackidmajor_full_8962_metrics_test.json \
+  --compare experiments/results/camponotus_trackidmajor_full_s8962_metrics_test.json \
+  --out experiments/results/camponotus_yolo_s8962_vs_nano8962_test.json
+
+python3 scripts/evaluation/compare_camponotus_rfdetr_vs_yolo.py \
+  --baseline experiments/results/camponotus_trackidmajor_full_s8962_metrics_val.json \
+  --compare experiments/results/camponotus_rfdetr_trackidmajor_896_ep60_es_metrics_val.json \
+  --out experiments/results/camponotus_rfdetr_ep60es_vs_yolo_s8962_val.json
+
+python3 scripts/evaluation/compare_camponotus_rfdetr_vs_yolo.py \
+  --baseline experiments/results/camponotus_trackidmajor_full_s8962_metrics_test.json \
+  --compare experiments/results/camponotus_rfdetr_trackidmajor_896_ep60_es_metrics_test.json \
+  --out experiments/results/camponotus_rfdetr_ep60es_vs_yolo_s8962_test.json
+```
+
+### EXP-CAMPO-FULL-MEDIUM-896 — YOLO26m + RF-DETR Medium @896 (capacity ablation, 2026-04)
+
+**Goal:** Same full-export **track_id–majority** GT and image roots as **EXP-CAMPO-FULL-CVAT-EXPORT-TRACKIDMAJORITY-896**, with **larger** backbones: **YOLO26m** vs **RF-DETR Medium** (`RFDETRMedium`), both trained @**896**.
+
+**Training:** Hydra [`configs/train/yolo_camponotus_trackidmajor_m896.yaml`](../configs/train/yolo_camponotus_trackidmajor_m896.yaml) → run dir [`experiments/yolo/camponotus_trackidmajor_m896/`](../experiments/yolo/camponotus_trackidmajor_m896/) (`batch=4`, `epochs=100`, `patience=50`; log: **88** epochs in ~**1.48** h, best ~epoch **38**). RF-DETR: [`configs/camponotus_rfdetr_trackidmajor_896_medium.yaml`](../configs/camponotus_rfdetr_trackidmajor_896_medium.yaml) → [`experiments/rfdetr/camponotus_rfdetr_trackidmajor_896_medium/`](../experiments/rfdetr/camponotus_rfdetr_trackidmajor_896_medium/) (`batch_size=2`, `grad_accum_steps=8`, `epochs=60`, early stop **12**).
+
+**Unified `evaluate.py`:** Same protocol as full-export nano/Small (`--conf 0.25`, `infer_rfdetr.py` with `--model-class RFDETRMedium`). **Infer warnings** (**274** val / **176** test image files not in COCO GT) match the stale `seq_*` vs annotation list issue noted above — re-clean `images/{val,test}` or regenerate splits so **scored** image sets match **610 / 45** GT images.
+
+**Artifacts:**
+
+- YOLO26m metrics: [`camponotus_trackidmajor_m896_metrics_{val,test}.json`](../experiments/results/camponotus_trackidmajor_m896_metrics_val.json)
+- RF-DETR Medium metrics: [`camponotus_rfdetr_trackidmajor_896_medium_metrics_{val,test}.json`](../experiments/results/camponotus_rfdetr_trackidmajor_896_medium_metrics_val.json)
+- Compare (baseline = YOLO26m): [`camponotus_rfdetr_trackidmajor_896_medium_vs_yolo896m_full_export_{val,test}.json`](../experiments/results/camponotus_rfdetr_trackidmajor_896_medium_vs_yolo896m_full_export_val.json)
+
+**YOLO26m (full export) — unified `evaluate.py`:**
+
+| Split | mAP@[.50:.95] | mAP@.50 | mAP@.75 | Precision | Recall | TP/FP/FN | FPS | Latency mean (ms) |
+|-------|---------------:|--------:|--------:|----------:|-------:|----------:|----:|------------------:|
+| Val | 0.137 | 0.247 | 0.125 | 0.576 | 0.233 | 869/640/2860 | 51.0 | 19.6 |
+| Test | 0.340 | 0.502 | 0.380 | 0.796 | 0.786 | 383/98/104 | 45.8 | 21.8 |
+
+**RF-DETR Medium (full export, same GT):**
+
+| Split | mAP@[.50:.95] | mAP@.50 | mAP@.75 | Precision | Recall | TP/FP/FN | FPS | Latency mean (ms) |
+|-------|---------------:|--------:|--------:|----------:|-------:|----------:|----:|------------------:|
+| Val | 0.035 | 0.066 | 0.033 | 0.196 | 0.152 | 568/2329/3161 | 24.8 | 40.3 |
+| Test | 0.202 | 0.334 | 0.209 | 0.834 | 0.639 | 311/62/176 | 21.7 | 46.1 |
+
+**RF-DETR Medium − YOLO26m** (Δ = RF-DETR − YOLO; from [`camponotus_rfdetr_trackidmajor_896_medium_vs_yolo896m_full_export_{val,test}.json`](../experiments/results/camponotus_rfdetr_trackidmajor_896_medium_vs_yolo896m_full_export_val.json)):
+
+| Split | mAP@[.5:.95] | mAP@.50 | Matched ΔP | Matched ΔR | FPS Δ | Latency mean Δ (ms) |
+|-------|-------------:|--------:|-----------:|-----------:|------:|---------------------:|
+| Val | **−0.102** | **−0.181** | **−0.380** | **−0.081** | **−26.2** | **+20.7** |
+| Test | **−0.138** | **−0.168** | **+0.038** | **−0.148** | **−24.2** | **+24.3** |
+
+**Medium vs Small / nano (same full-export val, unified `evaluate.py`):**
+
+- **YOLO:** **YOLO26m** val mAP@[.5:.95] **0.137** is **below** **YOLO26n** **0.163** on this split (despite trainer-native val ~**0.42** on Ultralytics’ loop — still not `evaluate.py`). **Test** mAP **0.340** is slightly **above** nano **0.317** (small test set; high variance).
+- **RF-DETR:** **Medium** val **0.035** is **much below** **Small** **0.071**; **test** **0.202** vs Small **0.208** (similar headline mAP, but Medium’s **per-class COCO AP for trophallaxis** collapses on **test** to **0.0** with **0** troph TP at matched P/R, vs Small’s non-zero troph metrics — treat as **failure mode**, not a clean “Medium wins”).
+- **Conclusion (draft):** This capacity step did **not** improve RF-DETR on the recorded full-export protocol; YOLO26m is **mixed** vs nano. Prefer **hyperparameter / schedule / conf** search before assuming larger RF-DETR fixes val FPs.
+
+**Regenerate medium compare JSONs:**
+
+```bash
+python3 scripts/evaluation/compare_camponotus_rfdetr_vs_yolo.py \
+  --baseline experiments/results/camponotus_trackidmajor_m896_metrics_val.json \
+  --compare experiments/results/camponotus_rfdetr_trackidmajor_896_medium_metrics_val.json \
+  --out experiments/results/camponotus_rfdetr_trackidmajor_896_medium_vs_yolo896m_full_export_val.json
+
+python3 scripts/evaluation/compare_camponotus_rfdetr_vs_yolo.py \
+  --baseline experiments/results/camponotus_trackidmajor_m896_metrics_test.json \
+  --compare experiments/results/camponotus_rfdetr_trackidmajor_896_medium_metrics_test.json \
+  --out experiments/results/camponotus_rfdetr_trackidmajor_896_medium_vs_yolo896m_full_export_test.json
+```
 
 ### EXP-CAMPO-RFDETR-SEQUENCE-SAFE-896 — RF-DETR Small (Idea 1, train/infer @896)
 
@@ -1213,7 +1394,7 @@ python3 scripts/evaluation/compare_camponotus_rfdetr_vs_yolo.py \
 | RF-DETR Small @640 | Test | 0.327 | 0.600 | 0.564 | 0.462 | 8.9 | 112.6 |
 | RF-DETR Small @896 | Test | 0.325 | 0.575 | 0.548 | 0.407 | 18.1 | 55.2 |
 
-**Metrics JSONs (track_id–majority):** YOLO640 `camponotus_idea1_trackidmajor_full_40ep_b8w4_metrics_{val,test}.json`; YOLO896 (smaller export) `camponotus_idea1_trackidmajor_full_896_metrics_{val,test}.json`; **full 1926-image bundle** YOLO896 `camponotus_trackidmajor_full_896_metrics_{val,test}.json` (**EXP-CAMPO-FULL-CVAT-EXPORT-TRACKIDMAJORITY-896**). RF-DETR640 `camponotus_rfdetr_trackidmajor_{val,test}_metrics.json`; RF-DETR896 unified files `camponotus_rfdetr_trackidmajor_896_metrics_{val,test}.json` (after a full-export re-eval, these match the bundle in **EXP-CAMPO-FULL-CVAT-EXPORT-…**; archived RF-DETR−YOLO deltas vs `idea1_trackidmajor` remain in `camponotus_rfdetr_trackidmajor_896_vs_yolo896_{val,test}.json`). **Vs YOLO @896 (archived):** `camponotus_rfdetr_trackidmajor_896_vs_yolo896_{val,test}.json`. **Vs YOLO @896 (full export):** `camponotus_rfdetr_trackidmajor_896_vs_yolo896_full_export_{val,test}.json`.
+**Metrics JSONs (track_id–majority):** YOLO640 `camponotus_idea1_trackidmajor_full_40ep_b8w4_metrics_{val,test}.json`; YOLO896 (smaller export) `camponotus_idea1_trackidmajor_full_896_metrics_{val,test}.json`; **full 1926-image bundle** YOLO896 **nano** `camponotus_trackidmajor_full_896_metrics_{val,test}.json` (**EXP-CAMPO-FULL-CVAT-EXPORT-TRACKIDMAJORITY-896**); **2511-image** refresh YOLO896 **nano** `camponotus_trackidmajor_full_8962_metrics_{val,test}.json` + RF-DETR long train `camponotus_rfdetr_trackidmajor_896_ep60_es_metrics_{val,test}.json` (**EXP-CAMPO-FULL-2511-YOLO8962-RFDETR-EP60**); **YOLO26s** `camponotus_trackidmajor_full_s8962_metrics_{val,test}.json` + compares `camponotus_yolo_s8962_vs_nano8962_{val,test}.json`, `camponotus_rfdetr_ep60es_vs_yolo_s8962_{val,test}.json` (**EXP-CAMPO-FULL-2511-YOLO-S8962**); **YOLO26m** `camponotus_trackidmajor_m896_metrics_{val,test}.json` (**EXP-CAMPO-FULL-MEDIUM-896**). RF-DETR640 `camponotus_rfdetr_trackidmajor_{val,test}_metrics.json`; RF-DETR896 **Small** `camponotus_rfdetr_trackidmajor_896_metrics_{val,test}.json`; **Medium** `camponotus_rfdetr_trackidmajor_896_medium_metrics_{val,test}.json`. **Vs YOLO nano (1926 full export):** `camponotus_rfdetr_trackidmajor_896_vs_yolo896_full_export_{val,test}.json`. **Vs YOLO `8962` (2511 bundle):** `camponotus_rfdetr_ep60es_vs_yolo8962_{val,test}.json`. **Vs YOLO26m:** `camponotus_rfdetr_trackidmajor_896_medium_vs_yolo896m_full_export_{val,test}.json`. Archived RF-DETR−YOLO vs `idea1_trackidmajor`: `camponotus_rfdetr_trackidmajor_896_vs_yolo896_{val,test}.json`.
 
 **Footnotes:** (1) **YOLO sequence-safe @640** = 100 epochs, `imgsz=640`, batch 4, workers 0; **YOLO sequence-safe @896** = 40 epochs, `imgsz=896`, batch 8, workers 4, early stop — not comparable as a pure resolution sweep. (2) **YOLO track_id–majority @640 vs @896** uses matched early-stop schedule for 896 (`b8w4`); see **EXP-CAMPO-IDEA1-TRACKIDMAJORITY-FULL-896**. (3) **RF-DETR @896 (track_id–majority)** = 30 epochs, `batch_size=4`, `grad_accum_steps=4`, `resolution=896` (**EXP-CAMPO-RFDETR-TRACKIDMAJORITY-896**). (4) Cross-split **sequence-safe vs track_id–majority** at the same resolution is **diagnostic only** (different images); see the cross-split subsection under YOLO896. (5) **Full CVAT bundle** refresh (**1926** images, **610/45** val/test) changes val difficulty vs the **~1638-image** `idea1_trackidmajor` row; see **EXP-CAMPO-FULL-CVAT-EXPORT-TRACKIDMAJORITY-896** before inferring RF-DETR vs YOLO from matrix rows alone.
 
@@ -1247,6 +1428,10 @@ Recommended table (fill after each run):
 
 | Date | Experiment(s) | Summary |
 |------|----------------|---------|
+| 2026-04-05 | EXP-CAMPO-FULL-MEDIUM-896 | **YOLO26m** [`camponotus_trackidmajor_m896`](../experiments/yolo/camponotus_trackidmajor_m896/) + **RF-DETR Medium** [`camponotus_rfdetr_trackidmajor_896_medium`](../experiments/rfdetr/camponotus_rfdetr_trackidmajor_896_medium/) on full-export track_id–majority @896. Unified metrics + compare [`camponotus_rfdetr_trackidmajor_896_medium_vs_yolo896m_full_export_{val,test}.json`](../experiments/results/camponotus_rfdetr_trackidmajor_896_medium_vs_yolo896m_full_export_val.json). **Val:** YOLO mAP@[.5:.95] **0.137** (below nano **0.163**); RF-DETR Medium **0.035** (below Small **0.071**). **Test:** YOLO **0.340** vs RF-DETR **0.202** mAP; Medium troph COCO AP **0** / **0** troph TP (matched). Configs: [`yolo_camponotus_trackidmajor_m896.yaml`](../configs/train/yolo_camponotus_trackidmajor_m896.yaml), [`camponotus_rfdetr_trackidmajor_896_medium.yaml`](../configs/camponotus_rfdetr_trackidmajor_896_medium.yaml). |
+| 2026-04-06 | EXP-CAMPO-FULL-2511-YOLO-S8962 | **YOLO26s** [`camponotus_trackidmajor_full_s8962`](../experiments/yolo/camponotus_trackidmajor_full_s8962/) on **2511-image** bundle ([`yolo_camponotus_trackidmajor_s896.yaml`](../configs/train/yolo_camponotus_trackidmajor_s896.yaml)). Unified metrics + [`camponotus_yolo_s8962_vs_nano8962_{val,test}.json`](../experiments/results/camponotus_yolo_s8962_vs_nano8962_val.json) (small − nano) + [`camponotus_rfdetr_ep60es_vs_yolo_s8962_{val,test}.json`](../experiments/results/camponotus_rfdetr_ep60es_vs_yolo_s8962_val.json). **Small does not beat nano** on mAP@[.5:.95] (val **0.359** vs **0.367**; test **0.307** vs **0.364**); **test troph** AP/matched R **collapse** vs nano. **RF-DETR** still **+0.130** / **+0.160** mAP vs small on val/test. |
+| 2026-04-06 | EXP-CAMPO-FULL-2511-YOLO8962-RFDETR-EP60 | **2511-image** full-export (train/val/test **1772 / 694 / 45**): **YOLO26n** [`camponotus_trackidmajor_full_8962`](../experiments/yolo/camponotus_trackidmajor_full_8962/) + **RF-DETR Small** long train [`camponotus_rfdetr_trackidmajor_896_ep60_es`](../experiments/rfdetr/camponotus_rfdetr_trackidmajor_896_ep60_es/). Unified metrics + compare [`camponotus_rfdetr_ep60es_vs_yolo8962_{val,test}.json`](../experiments/results/camponotus_rfdetr_ep60es_vs_yolo8962_val.json). **RF-DETR leads COCO mAP** on val (**0.489** vs **0.367**) and test (**0.467** vs **0.364**); matched **val** precision lower (**0.698** vs **0.736**) with **higher recall** (**0.881** vs **0.713**). **Test** matched P/R both up for RF-DETR. YOLO ~**2.1–2.7×** FPS (RTX 4070). [HF demo](https://huggingface.co/spaces/dmytro-kushnir/ant-trophallaxis-rfdetr-vs-yolo26). |
+| 2026-04-06 | EXP-CAMPO-FULL refresh + RF-DETR long-train recipe | Synced **EXP-CAMPO-FULL-CVAT-EXPORT-TRACKIDMAJORITY-896** throughput rows to latest `evaluate.py` JSONs (val **53.7** / **24.0** FPS; Δ **−29.6** FPS / **+22.9** ms latency). Added [`configs/camponotus_rfdetr_trackidmajor_896_long_train.yaml`](../configs/camponotus_rfdetr_trackidmajor_896_long_train.yaml) (**60** ep max, early stop **12**) + [`cli_commands.md`](cli_commands.md) command; narrative now cites **RF-DETR 30 ep vs YOLO ~46 effective ep** as a primary lever. |
 | 2026-04-05 | EXP-CAMPO-FULL-CVAT-EXPORT-TRACKIDMAJORITY-896 | **Full** CVAT bundle (`1926` img, track_id–majority): **YOLO26n** `camponotus_trackidmajor_full_896` + **RF-DETR Small** `camponotus_rfdetr_trackidmajor_896` — unified `evaluate.py` metrics + compare [`camponotus_rfdetr_trackidmajor_896_vs_yolo896_full_export_{val,test}.json`](../experiments/results/camponotus_rfdetr_trackidmajor_896_vs_yolo896_full_export_val.json). **Val:** YOLO mAP@[.5:.95] **0.163** vs RF-DETR **0.071**; YOLO ~**2×** FPS. **Test** (45 img): YOLO **0.317** vs RF-DETR **0.208** mAP; RF-DETR higher matched **P**, lower **R**. Prior **smaller-export** RF-DETR−YOLO story preserved under **EXP-CAMPO-RFDETR-TRACKIDMAJORITY-896** + frozen `…_vs_yolo896_*.json` vs `idea1_trackidmajor`. |
 | 2026-04-05 | Camponotus CVAT bundle + source inventory | Docs: use **CVAT export bundle** (`images/` + `annotations/`) as `--raw-root` for `align_*` + `prepare_camponotus_detection_dataset.py` ([`cli_commands.md`](cli_commands.md), [`camponotus_cvat_workflow.md`](camponotus_cvat_workflow.md) §1B). **Refreshed** full-export bbox inventory: **1926** images, **22843** boxes; **`attributes.state`** **normal 90.62%** (20701) / **trophallaxis 9.38%** (2142). |
 | 2026-04-04 | Camponotus source data (documentation) | Recorded **full CVAT** `instances_default.json` inventory in **Camponotus** section: **1638** images, **21774** boxes; raw COCO category is single **`ant`**; **`attributes.state`** bbox fractions **normal 92.08%** (20050) / **trophallaxis 7.92%** (1724). Cross-linked to sequence-safe ~**92.1% / 7.9%** prepared split; re-count after major CVAT dumps. |

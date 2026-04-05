@@ -102,6 +102,17 @@ python3 scripts/train/train_rfdetr_ants.py \
 
 Weights typically appear under `experiments/rfdetr/<run>/weights/best.pth` (see that run’s `config.yaml`).
 
+**Longer schedule (recommended after full CVAT bundle refresh):** YOLO `camponotus_trackidmajor_full_896` trains up to **100** epochs with **patience 50** (~46 effective); baseline RF-DETR uses **30** epochs only. Use [`configs/camponotus_rfdetr_trackidmajor_896_long_train.yaml`](../configs/camponotus_rfdetr_trackidmajor_896_long_train.yaml) (**60** epochs max, **early stopping patience 12**, same LR/batch/accum) — then re-run infer → bench → `evaluate.py` and `compare_camponotus_rfdetr_vs_yolo.py`. To **continue** from an existing checkpoint, set `resume_checkpoint` in that YAML to `experiments/rfdetr/camponotus_rfdetr_trackidmajor_896/weights/best.pth` (or pass `--resume-checkpoint` on the CLI).
+
+```bash
+python3 scripts/train/train_rfdetr_ants.py \
+  --config configs/camponotus_rfdetr_trackidmajor_896_long_train.yaml
+```
+
+**YOLO26s @896 (2511 bundle):** [`configs/train/yolo_camponotus_trackidmajor_s896.yaml`](../configs/train/yolo_camponotus_trackidmajor_s896.yaml) — `train_yolo.py --config-name=train/yolo_camponotus_trackidmajor_s896`. Narrative: [`research_analysis.md`](research_analysis.md) **EXP-CAMPO-FULL-2511-YOLO-S8962**.
+
+**Medium models @896 (capacity ablation vs nano/Small):** Train **YOLO26m** with Hydra [`configs/train/yolo_camponotus_trackidmajor_m896.yaml`](../configs/train/yolo_camponotus_trackidmajor_m896.yaml) (`train_yolo.py --config-name=train/yolo_camponotus_trackidmajor_m896`) and **RF-DETR Medium** with [`configs/camponotus_rfdetr_trackidmajor_896_medium.yaml`](../configs/camponotus_rfdetr_trackidmajor_896_medium.yaml). After infer → bench → `evaluate.py`, compare with `compare_camponotus_rfdetr_vs_yolo.py` → `experiments/results/camponotus_rfdetr_trackidmajor_896_medium_vs_yolo896m_full_export_{val,test}.json`. Narrative: [`research_analysis.md`](research_analysis.md) **EXP-CAMPO-FULL-MEDIUM-896**.
+
 **Sequence-safe export + train @896 (fill paper matrix TBD row):**
 
 ```bash
@@ -314,6 +325,14 @@ python3 scripts/evaluation/compare_camponotus_rfdetr_vs_yolo.py \
 ```
 
 **Full 1926-image CVAT bundle** (YOLO run `camponotus_trackidmajor_full_896`): baseline = `experiments/results/camponotus_trackidmajor_full_896_metrics_{val,test}.json`, out = `experiments/results/camponotus_rfdetr_trackidmajor_896_vs_yolo896_full_export_{val,test}.json` — see [`research_analysis.md`](research_analysis.md) **EXP-CAMPO-FULL-CVAT-EXPORT-TRACKIDMAJORITY-896**.
+
+**YOLO26m + RF-DETR Medium @896:** baseline = `experiments/results/camponotus_trackidmajor_m896_metrics_{val,test}.json`, out = `experiments/results/camponotus_rfdetr_trackidmajor_896_medium_vs_yolo896m_full_export_{val,test}.json` — **EXP-CAMPO-FULL-MEDIUM-896**.
+
+**2511-image bundle + long RF-DETR + YOLO `full_8962`:** baseline = `experiments/results/camponotus_trackidmajor_full_8962_metrics_{val,test}.json`, compare = `experiments/results/camponotus_rfdetr_trackidmajor_896_ep60_es_metrics_{val,test}.json`, out = `experiments/results/camponotus_rfdetr_ep60es_vs_yolo8962_{val,test}.json` — **EXP-CAMPO-FULL-2511-YOLO8962-RFDETR-EP60** in [`research_analysis.md`](research_analysis.md).
+
+**YOLO26s (`full_s8962`) vs nano / RF-DETR:** train [`configs/train/yolo_camponotus_trackidmajor_s896.yaml`](../configs/train/yolo_camponotus_trackidmajor_s896.yaml); metrics `experiments/results/camponotus_trackidmajor_full_s8962_metrics_{val,test}.json`; small − nano → `experiments/results/camponotus_yolo_s8962_vs_nano8962_{val,test}.json`; RF − small → `experiments/results/camponotus_rfdetr_ep60es_vs_yolo_s8962_{val,test}.json` — **EXP-CAMPO-FULL-2511-YOLO-S8962**.
+
+**Interactive demo (qualitative):** [Hugging Face Space — ant trophallaxis YOLO26 vs RF-DETR](https://huggingface.co/spaces/dmytro-kushnir/ant-trophallaxis-rfdetr-vs-yolo26). Visual **nano vs small** can disagree with unified COCO mAP (ant-heavy clips vs troph collapse on test); see [`research_analysis.md`](research_analysis.md) **EXP-CAMPO-FULL-2511-YOLO-S8962** — **Hugging Face vs `evaluate.py`**.
 
 ---
 

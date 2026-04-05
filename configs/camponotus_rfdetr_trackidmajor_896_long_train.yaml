@@ -1,0 +1,25 @@
+# Longer RF-DETR schedule — Camponotus track_id–majority (full CVAT bundle).
+#
+# Rationale: default Camponot RF-DETR @896 uses epochs=30 while YOLO26 uses up to 100
+# with patience 50 (~46 effective epochs). This config increases optimization budget and
+# enables early stopping on trainer val. After training, copy or symlink weights to a stable
+# path or re-run infer/bench/eval with --weights pointing at …/weights/best.pth.
+#
+# Optional continuation: set resume_checkpoint to the previous run's weights/best.pth
+# and lower epochs (e.g. 30) for a second stage.
+
+dataset_dir: datasets/camponotus_rfdetr_coco_trackidmajor
+output_dir: experiments/rfdetr/camponotus_rfdetr_trackidmajor_896_ep60_es
+model_class: RFDETRSmall
+resume_checkpoint: null
+
+epochs: 60
+batch_size: 4
+grad_accum_steps: 4
+lr: 1.0e-4
+seed: 42
+resolution: 896
+early_stopping: true
+early_stopping_patience: 12
+tensorboard: false
+device: cuda:0
