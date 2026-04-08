@@ -9,8 +9,12 @@ from dataclasses import dataclass
 from pathlib import Path
 from typing import Any
 
-CAMPO_CLASSES = ["ant", "trophallaxis"]
+# Class 0 = CVAT attributes.state != trophallaxis (typically "normal"); class 1 = trophallaxis.
+# Legacy alias: CVAT box label / old exports used name "ant" for class 0 — see normalize_category_id.
+CAMPO_CLASSES = ["normal", "trophallaxis"]
 CAMPO_CLASS_TO_ID = {name: idx for idx, name in enumerate(CAMPO_CLASSES)}
+# Map legacy category string "ant" (single CVAT label) to exported class id 0.
+CAMPO_CLASS_ALIASES = {"ant": 0}
 
 
 @dataclass
@@ -31,14 +35,17 @@ def write_json(path: Path, payload: Any) -> None:
 
 
 def build_categories() -> list[dict[str, Any]]:
-    return [{"id": i, "name": n, "supercategory": "ant"} for i, n in enumerate(CAMPO_CLASSES)]
+    return [{"id": i, "name": n, "supercategory": "camponotus"} for i, n in enumerate(CAMPO_CLASSES)]
 
 
 def normalize_category_id(cat: Any, categories: dict[int, str] | None = None) -> int:
     if isinstance(cat, str):
-        if cat not in CAMPO_CLASS_TO_ID:
-            raise ValueError(f"Unknown category name: {cat}")
-        return CAMPO_CLASS_TO_ID[cat]
+        key = str(cat).strip().lower()
+        if key in CAMPO_CLASS_TO_ID:
+            return CAMPO_CLASS_TO_ID[key]
+        if key in CAMPO_CLASS_ALIASES:
+            return int(CAMPO_CLASS_ALIASES[key])
+        raise ValueError(f"Unknown category name: {cat}")
     cid = int(cat)
     if cid in (0, 1):
         return cid
@@ -46,6 +53,8 @@ def normalize_category_id(cat: Any, categories: dict[int, str] | None = None) ->
         name = str(categories[cid]).strip().lower()
         if name in CAMPO_CLASS_TO_ID:
             return CAMPO_CLASS_TO_ID[name]
+        if name in CAMPO_CLASS_ALIASES:
+            return int(CAMPO_CLASS_ALIASES[name])
     raise ValueError(f"Unsupported category id: {cid}")
 
 

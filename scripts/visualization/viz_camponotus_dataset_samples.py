@@ -12,7 +12,7 @@ import cv2
 import yaml
 
 
-CLS = {0: "ant", 1: "trophallaxis"}
+CLS = {0: "normal", 1: "trophallaxis"}
 COL = {0: (80, 220, 80), 1: (80, 80, 240)}
 
 

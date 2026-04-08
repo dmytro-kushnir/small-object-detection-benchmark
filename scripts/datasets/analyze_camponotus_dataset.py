@@ -10,7 +10,7 @@ from typing import Any
 
 import matplotlib.pyplot as plt
 
-from camponotus_common import read_json, write_json
+from camponotus_common import CAMPO_CLASSES, read_json, write_json
 
 
 def _collect_split_stats(coco: dict[str, Any]) -> dict[str, Any]:
@@ -43,7 +43,7 @@ def _collect_split_stats(coco: dict[str, Any]) -> dict[str, Any]:
 
 
 def _plot_class_counts(class_totals: dict[int, int], out_path: Path) -> None:
-    labels = ["ant", "trophallaxis"]
+    labels = list(CAMPO_CLASSES)
     vals = [int(class_totals.get(0, 0)), int(class_totals.get(1, 0))]
     plt.figure(figsize=(6, 4))
     plt.bar(labels, vals)
@@ -114,7 +114,7 @@ def main() -> None:
         all_areas.extend(st["bbox_areas"])
 
     summary["class_balance"] = {
-        "ant_fraction": summary["class_totals"][0] / max(1, summary["objects_total"]),
+        "normal_fraction": summary["class_totals"][0] / max(1, summary["objects_total"]),
         "trophallaxis_fraction": summary["class_totals"][1] / max(1, summary["objects_total"]),
     }
     write_json(out_json, summary)

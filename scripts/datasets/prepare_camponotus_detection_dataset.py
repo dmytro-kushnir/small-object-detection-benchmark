@@ -4,7 +4,7 @@
 When CVAT uses a single box label (e.g. ``ant``) and encodes trophallaxis via an attribute
 (``attributes.state == "trophallaxis"``), exported training classes are still ``0``/``1``:
 
-- ``0`` = ant
+- ``0`` = normal (non-trophallaxis; exported category name ``normal``)
 - ``1`` = trophallaxis
 
 Optional integer ``track_id`` is copied onto each exported COCO annotation when present (detection
@@ -406,16 +406,16 @@ def main() -> None:
         }
         write_json(out_coco / "annotations" / f"instances_{split}.json", payload)
 
-    tot_ant = sum(counts["class_counts"][s][0] for s in ("train", "val", "test"))
+    tot_normal = sum(counts["class_counts"][s][0] for s in ("train", "val", "test"))
     tot_troph = sum(counts["class_counts"][s][1] for s in ("train", "val", "test"))
-    tot_obj = tot_ant + tot_troph
+    tot_obj = tot_normal + tot_troph
     analysis_payload: dict[str, Any] = {
         "images_by_split": counts["images"],
         "objects_by_split": counts["objects"],
         "class_counts_by_split": counts["class_counts"],
         "source_distribution": counts["source_counts"],
         "class_balance": {
-            "ant_fraction": tot_ant / max(1, tot_obj),
+            "normal_fraction": tot_normal / max(1, tot_obj),
             "trophallaxis_fraction": tot_troph / max(1, tot_obj),
         },
         "split_source": str(args.split_source),

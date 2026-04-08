@@ -1,4 +1,4 @@
-# EXP-CAMPO-RFDETR: RF-DETR on Camponotus (two-class ant / trophallaxis), same split as YOLO.
+# EXP-CAMPO-RFDETR: RF-DETR on Camponotus (two-class normal / trophallaxis), same split as YOLO.
 
 # Roboflow layout from prepare_camponotus_coco_rfdetr.py
 dataset_dir: datasets/camponotus_rfdetr_coco

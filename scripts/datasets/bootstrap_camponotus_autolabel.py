@@ -740,7 +740,7 @@ def main() -> None:
                     {"id": cid + 1, "name": c["name"], "supercategory": c.get("supercategory", "object")}
                 )
         else:
-            coco_categories = [{"id": 0, "name": "ant"}, {"id": 1, "name": "trophallaxis"}]
+            coco_categories = [{"id": 0, "name": "normal"}, {"id": 1, "name": "trophallaxis"}]
 
         payload = {
             "info": {

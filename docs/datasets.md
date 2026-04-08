@@ -37,7 +37,7 @@ See `configs/prepare_dataset.yaml` for all options. Bbox filters use `filter.app
 
 ## Camponotus Workflow (custom dataset)
 
-For the two-class Camponotus dataset (`ant`, `trophallaxis`), use:
+For the two-class Camponotus dataset (`normal`, `trophallaxis`; CVAT `state` normal vs trophallaxis), use:
 
 - Raw pixels: either **`datasets/camponotus_raw/`** (`in_situ/seq_*`, optional `external/images`) **or** a **CVAT export bundle** on disk (`<bundle>/images/` + `<bundle>/annotations/*.json`) with the same path passed as `--raw-root` to `align_coco_filenames_to_camponotus_raw.py` and `prepare_camponotus_detection_dataset.py` (see [`camponotus_cvat_workflow.md`](camponotus_cvat_workflow.md) §1B and [`cli_commands.md`](cli_commands.md)).
 - Processed manifests: `datasets/camponotus_processed/`

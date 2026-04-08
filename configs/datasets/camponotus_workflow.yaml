@@ -14,7 +14,7 @@ paths:
   rfdetr_coco_root: datasets/camponotus_rfdetr_coco
 
 classes:
-  - ant
+  - normal
   - trophallaxis
 
 split:
