@@ -6,6 +6,20 @@ Evaluate different techniques to improve small object detection.
 
 ---
 
+## 🧭 Recommended Order (from first smoke to model comparisons)
+
+Use this sequence when reproducing the research arc:
+
+1. **EXP-000 (smoke baseline):** validate the full pipeline and metric generation.
+2. **EXP-001 (train-only small-box filter):** isolate data-prep effects with matched val GT.
+3. **EXP-002 (high `imgsz`) and EXP-002b (resolution sweep):** characterize AP vs speed behavior.
+4. **EXP-003 (SAHI, no retrain):** evaluate inference-time slicing on the same validation set.
+5. **Later-stage ant/Camponotus tracks:** run YOLO and RF-DETR comparisons only after baseline mechanics are validated.
+
+This ordering keeps results interpretable: each step changes one major axis (data filter, resolution, or inference strategy) before architecture-level comparisons.
+
+---
+
 ## 🧪 Baseline (EXP-000)
 
 * Model: YOLOv26
@@ -179,6 +193,8 @@ chmod +x scripts/run_exp003.sh   # once
 
 **Make:** `make reproduce-exp003` runs the same shell script.
 
+**Why SAHI is not the default for downstream experiments:** On the recorded **COCO128** and **ants** val splits, SAHI **did not** improve the metrics we cared about relative to **vanilla predict at the chosen `imgsz`** (and on COCO128 it **did not** lift **mAP_small**; see **EXP-003** interpretation in [`research_analysis.md`](research_analysis.md)). **EXP-A005**, **EXP-A006**, and **Camponotus** comparisons therefore use **full-image** inference unless you explicitly add a SAHI path. Revisit tiling only with a domain-specific justification and a **fair** timing protocol.
+
 ---
 
 ### EXP-A000: Ant MOT → YOLO baseline (domain dataset)
@@ -217,6 +233,8 @@ export ANTS_DATASET_ROOT="/path/to/Ant_dataset"
 * **Relative areas (all resolutions):** `experiments/results/ants_expA002b_relative_metrics.json` from [`ants_relative_sweep_aggregate.py`](../scripts/evaluation/ants_relative_sweep_aggregate.py).
 * **Viz:** `experiments/visualizations/ants_expA002b/imgsz*/` — `comparisons/` highlights FN (orange) / FP (thick red); default overlay cap **250** (`ANTS_VIZ_MAX_IMAGES`).
 * **Report:** `experiments/results/ants_expA002b_summary.md` from [`write_ants_expA002b_summary.py`](../scripts/evaluation/write_ants_expA002b_summary.py). Compare to reference [`experiments/results/ants_expA000_full_metrics.json`](../experiments/results/ants_expA000_full_metrics.json).
+
+**Canonical size for downstream ant compares:** On the **recorded** sweep, **`imgsz=768`** wins for YOLO26n (20 epochs) on mAP, mAP_medium, and bench FPS—**EXP-A005** / **EXP-A006** therefore compare RF-DETR to **YOLO @768**, not @896 (896 was **worse** than 768 on ants in that table). *Camponotus* uses **896** for a separate paired YOLO/RF-DETR line; see [`research_context.md`](research_context.md).
 
 **Prerequisite:** prepared `datasets/ants_yolo/`; for 640 reuse, completed `ants_expA000_full` at 640.
 
@@ -258,6 +276,8 @@ chmod +x scripts/run_ants_expA003_sahi_ablation.sh   # once
 # smoke: python3 scripts/evaluation/run_ants_expA003_sahi_ablation.py --max-runs 2
 # optional early exit: --early-stop-consecutive 12
 ```
+
+**Design note:** Recorded compares and the 54-config ablation support **deprioritizing SAHI** for the main ant RF-DETR vs YOLO line: vanilla **768** remained stronger on mAP / matched P&R in the logged runs (see [`research_analysis.md`](research_analysis.md) **EXP-A003**).
 
 ---
 
@@ -382,6 +402,11 @@ Outputs:
 * `experiments/visualizations/camponotus_dataset/`
 
 Research phases (Ideas 1–3): [`camponotus_research_roadmap.md`](camponotus_research_roadmap.md). **YOLO vs RF-DETR (Idea 1):** [`run_camponotus_rfdetr_exp.sh`](../scripts/run_camponotus_rfdetr_exp.sh) + [`configs/expCAMPO_rfdetr.yaml`](../configs/expCAMPO_rfdetr.yaml). **Common CLI** (prepare, train, infer, `evaluate.py`, compares): [`cli_commands.md`](cli_commands.md).
+
+**Two split philosophies (do not conflate metrics):**
+
+* **Sequence-safe** — keeps each **source clip** in one split → preferred when reporting **clip-level** generalization; see **EXP-CAMPO-IDEA1-SEQUENCE-SAFE** in [`research_analysis.md`](research_analysis.md).
+* **Track_id–majority** — assigns each **`track_id`** by **majority** of annotations; run [`qa_track_id_overlap_in_splits.py`](../scripts/datasets/qa_track_id_overlap_in_splits.py) for overlap counts. The **2511-image** headline YOLO *vs* RF-DETR compares (**`camponotus_rfdetr_ep60es_vs_yolo8962_*`**) use this manifest for **repro alignment** with long-trained weights and the HF Space—not because track-majority is a **stricter** temporal holdout than sequence-safe (often the opposite).
 
 ```bash
 chmod +x scripts/run_camponotus_dataset_workflow.sh   # once

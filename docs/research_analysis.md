@@ -7,6 +7,17 @@ Narrative synthesis for a future paper. **Update this file after each experiment
 
 ---
 
+## How to read this document
+
+- **Early entries (smoke / imgsz / SAHI):** methodology-shaping experiments used to validate the pipeline and choose reasonable operating points.
+- **SAHI (EXP-003, EXP-A003):** documented **inference-only** tiling experiments; recorded results did **not** justify making SAHI the default for later **EXP-A005** / **Camponotus** comparisons (prefer **full-frame** predict at the chosen **`imgsz`** unless you explicitly revisit tiling—see interpretation under those section headings and [`research_context.md`](research_context.md)).
+- **`imgsz` policy:** **768** for **ants** reflects **EXP-A002b** (best recorded YOLO trade-off on that val split). **896** for the main ***Camponotus*** YOLO vs RF-DETR compare is a **paired** mid-high setting plus historical alignment with **COCO128 EXP-002b** (896 mAP peak there)—**not** the ant optimum. See [`research_context.md`](research_context.md) and **EXP-A002b** / **EXP-CAMPO-IDEA1-SEQUENCE-SAFE-FULL-896** in this file.
+- ***Camponotus* split policy:** **Sequence-safe** = clip-level containment (stronger **temporal** split hygiene). **Track_id–majority** = identity-majority heuristic with **documented** partial cross-split track overlap; it is the manifest behind the **2511-image** headline YOLO *vs* RF-DETR JSONs—not because it is stricter than sequence-safe, but because that is the **repro bundle** we trained and released first. Cite **EXP-CAMPO-IDEA1-SEQUENCE-SAFE** *vs* **EXP-CAMPO-FULL-2511-…** explicitly when comparing claims.
+- **Later entries (ants / Camponotus, YOLO vs RF-DETR):** architecture-comparison and task-focused results that carry the main manuscript claims.
+- Keep both layers: early runs provide decision provenance; later runs provide publication-strength comparisons under the current data regime.
+
+---
+
 ## Shared setup (EXP-000 / EXP-001 / EXP-002 / EXP-002b / EXP-003 as currently scripted)
 
 | Item | Value |
