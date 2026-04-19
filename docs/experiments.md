@@ -4,6 +4,8 @@
 
 Evaluate different techniques to improve small object detection.
 
+**Paper-oriented one-pagers (concluded runs):** see [`experiments/README.md`](experiments/README.md) — short sheets per experiment ID with conclusions and key metric paths.
+
 ---
 
 ## 🧭 Recommended Order (from first smoke to model comparisons)
