@@ -1,0 +1,26 @@
+# Camponotus track-majority Faster R-CNN @896 (shortest-side resize).
+# Paper Table 5 third baseline (two-stage CNN). Not compute-matched to YOLO/RF-DETR schedules.
+
+coco_train: datasets/camponotus_coco/camponotus_full_export_unique_trackidmajor/annotations/instances_train.json
+coco_val: datasets/camponotus_coco/camponotus_full_export_unique_trackidmajor/annotations/instances_val.json
+images_train: datasets/camponotus_yolo/camponotus_full_export_unique_trackidmajor/images/train
+images_val: datasets/camponotus_yolo/camponotus_full_export_unique_trackidmajor/images/val
+output_dir: experiments/faster_rcnn/camponotus_faster_rcnn_trackidmajor_896
+
+min_size: 896
+max_size: 1333
+epochs: 50
+batch_size: 2
+grad_accum_steps: 2
+lr: 0.005
+num_workers: 4
+conf_threshold: 0.25
+seed: 42
+device: cuda:0
+
+# Torchvision FastRCNNPredictor: num_classes = background + foreground labels.
+# Task has 2 COCO categories (normal=0, trophallaxis=1) → model labels 1/2 → num_classes: 3.
+num_classes: 3
+evaluation_note: >-
+  Faster R-CNN uses torchvision shortest-side resize (min_size/max_size), not YOLO square letterbox.
+  Training schedule is not matched to YOLO26n (100 ep) or RF-DETR (60 ep).

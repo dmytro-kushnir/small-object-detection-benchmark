@@ -1,6 +1,16 @@
 # Hydra default multirun/sweep output (ephemeral; do not commit)
 outputs/
 
+# macOS Finder metadata
+.DS_Store
+**/.DS_Store
+
+# Cursor / local editor temp extracts (never commit)
+.cursor-tmp-*.txt
+
+# Faster R-CNN smoke test regenerates this tree (scripts/run_faster_rcnn_smoke_test.sh)
+experiments/smoke_faster_rcnn_coco/
+
 # Ultralytics / detection runs — exported visualization videos (e.g. runs/detect/.../results/video_try_*/)
 runs/**/*.avi
 runs/**/*.mp4
@@ -46,6 +56,9 @@ experiments/detr/*
 # RF-DETR ants EXP-A005 runs
 experiments/rfdetr/*
 !experiments/rfdetr/README.md
+
+experiments/faster_rcnn/*
+!experiments/faster_rcnn/README.md
 
 # EXP-000 / smoke metrics (regenerate via scripts/run_smoke_test.sh)
 experiments/results/*.json

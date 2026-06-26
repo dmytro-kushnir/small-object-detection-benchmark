@@ -29,7 +29,9 @@ This document summarizes how the repo stays **simple**, **comparable across mode
 
 3. **Throughput** — [`bench_rfdetr.py`](../scripts/evaluation/bench_rfdetr.py) times full-image RF-DETR `predict`; embed in metrics via `evaluate.py --inference-benchmark-json` (same pattern as `bench_ants_v1.py`).
 
-4. **Evaluate & compare** — `evaluate.py` + [`compare_ants_expA005.py`](../scripts/evaluation/compare_ants_expA005.py) vs YOLO768 metrics.
+4. **Faster R-CNN (Camponotus third baseline)** — [`train_faster_rcnn.py`](../scripts/train/train_faster_rcnn.py), [`infer_faster_rcnn.py`](../scripts/inference/infer_faster_rcnn.py), [`bench_faster_rcnn.py`](../scripts/evaluation/bench_faster_rcnn.py); orchestration [`run_camponotus_faster_rcnn_exp.sh`](../scripts/run_camponotus_faster_rcnn_exp.sh). Same COCO pred list contract; torchvision `min_size`/`max_size` resize (not YOLO letterbox).
+
+5. **Evaluate & compare** — `evaluate.py` + [`compare_ants_expA005.py`](../scripts/evaluation/compare_ants_expA005.py) vs YOLO768 metrics.
 
 ## Scalability notes
 

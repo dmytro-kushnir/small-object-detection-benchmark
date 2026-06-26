@@ -267,6 +267,27 @@ python3 scripts/evaluation/evaluate.py \
 
 **YOLO** Camponotus runs follow the same **GT + predictions + `evaluate.py`** pattern; use `scripts/inference/infer_yolo.py` and pass `--imgsz` when it must match training resolution.
 
+---
+
+## Camponotus — Faster R-CNN (third baseline, paper Table 5)
+
+End-to-end on **track-majority 2511-image** export (`min_size=896`, `conf=0.25`):
+
+```bash
+./scripts/run_camponotus_faster_rcnn_exp.sh
+```
+
+Config: [`configs/camponotus_faster_rcnn_trackidmajor_896.yaml`](../configs/camponotus_faster_rcnn_trackidmajor_896.yaml). Metrics:
+
+- `experiments/results/camponotus_faster_rcnn_trackidmajor_896_metrics_{val,test}.json`
+- `experiments/results/camponotus_faster_rcnn_vs_yolo8962_{val,test}.json`
+
+**Smoke test (synthetic subset, CPU):** `./scripts/run_faster_rcnn_smoke_test.sh`
+
+**Skip re-train:** `EXP_FRCNN_SKIP_TRAIN=1 ./scripts/run_camponotus_faster_rcnn_exp.sh`
+
+**Dev subset:** `EXP_FRCNN_MAX_IMAGES=20 EXP_FRCNN_EPOCHS=1 ./scripts/run_camponotus_faster_rcnn_exp.sh`
+
 ### External-only inference (no COCO GT)
 
 For ad-hoc PNG/JPEG/WebP not in a benchmark JSON: **omit `--coco-gt`**. Images get sequential `image_id` values starting at **`--synthetic-image-id-start`** (default `1`). Output is still a COCO **list** JSON; `evaluate.py` only scores rows whose `image_id` exists in the GT you pass there.
