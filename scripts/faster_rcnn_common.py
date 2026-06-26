@@ -14,6 +14,16 @@ from torchvision.models.detection import (
 from torchvision.models.detection.faster_rcnn import FastRCNNPredictor
 
 
+def coco_category_to_label(category_id: int) -> int:
+    """Map benchmark COCO category_id (0/1) to torchvision foreground label (1/2)."""
+    return int(category_id) + 1
+
+
+def label_to_coco_category(label: int) -> int:
+    """Map torchvision label (1/2) back to benchmark category_id (0/1)."""
+    return int(label) - 1
+
+
 def build_faster_rcnn(
     *,
     num_classes: int = 3,
@@ -69,9 +79,19 @@ def xyxy_to_xywh(boxes: torch.Tensor) -> list[list[float]]:
     return out
 
 
+def default_device_str() -> str:
+    """Best available backend: CUDA → Apple MPS → CPU."""
+    if torch.cuda.is_available():
+        return "cuda:0"
+    mps = getattr(torch.backends, "mps", None)
+    if mps is not None and mps.is_available():
+        return "mps"
+    return "cpu"
+
+
 def resolve_device(device_str: str | None) -> torch.device:
     if device_str is None or device_str.strip().lower() == "auto":
-        return torch.device("cuda:0" if torch.cuda.is_available() else "cpu")
+        return torch.device(default_device_str())
     dev = device_str.strip()
     if dev.isdigit():
         dev = f"cuda:{dev}"

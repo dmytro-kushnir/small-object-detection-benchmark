@@ -4,6 +4,7 @@
 from __future__ import annotations
 
 import json
+import sys
 from pathlib import Path
 from typing import Any
 
@@ -12,20 +13,16 @@ from PIL import Image
 from torch.utils.data import Dataset
 from torchvision.transforms import functional as TF
 
+_SCRIPTS = Path(__file__).resolve().parents[1]
+if str(_SCRIPTS) not in sys.path:
+    sys.path.insert(0, str(_SCRIPTS))
+
+from faster_rcnn_common import coco_category_to_label  # noqa: E402
+
 
 def coco_xywh_to_xyxy(box: list[float]) -> list[float]:
     x, y, w, h = box
     return [x, y, x + w, y + h]
-
-
-def coco_category_to_label(category_id: int) -> int:
-    """Map benchmark COCO category_id (0/1) to torchvision foreground label (1/2)."""
-    return int(category_id) + 1
-
-
-def label_to_coco_category(label: int) -> int:
-    """Map torchvision label (1/2) back to benchmark category_id (0/1)."""
-    return int(label) - 1
 
 
 class CocoDetectionTorchvision(Dataset):

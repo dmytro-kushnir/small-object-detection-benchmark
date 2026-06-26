@@ -36,7 +36,14 @@ TRAIN_CFG_OUT="$OUT_DIR/config.yaml"
 
 DEVICE="${EXP_FRCNN_DEVICE:-${CAMPO_DEVICE:-${SMOKE_DEVICE:-auto}}}"
 if [[ "$DEVICE" == "auto" ]]; then
-  DEVICE="$(python3 -c "import torch; print('cuda:0' if torch.cuda.is_available() else 'cpu')" 2>/dev/null || echo cpu)"
+  DEVICE="$(python3 -c "
+import sys
+from pathlib import Path
+p = Path('$ROOT/scripts')
+sys.path.insert(0, str(p))
+from faster_rcnn_common import default_device_str
+print(default_device_str())
+" 2>/dev/null || echo cpu)"
 fi
 
 MIN_SIZE="$(python3 -c "import yaml,sys; print(yaml.safe_load(open(sys.argv[1],encoding='utf-8')).get('min_size',896))" "$CFG" 2>/dev/null || echo 896)"
@@ -68,6 +75,7 @@ if [[ "${EXP_FRCNN_SKIP_TRAIN:-0}" != "1" ]]; then
   echo "== Train Faster R-CNN → $OUT_DIR =="
   python3 "$ROOT/scripts/train/train_faster_rcnn.py" \
     --config "$CFG" \
+    --device "$DEVICE" \
     "${TRAIN_EXTRA[@]}"
 else
   echo "== Skip train (EXP_FRCNN_SKIP_TRAIN=1) =="

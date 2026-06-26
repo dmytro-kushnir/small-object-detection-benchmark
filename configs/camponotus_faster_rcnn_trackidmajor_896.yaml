@@ -16,7 +16,7 @@ lr: 0.005
 num_workers: 4
 conf_threshold: 0.25
 seed: 42
-device: cuda:0
+device: auto  # cuda:0 on NVIDIA; mps on Apple Silicon; cpu fallback
 
 # Torchvision FastRCNNPredictor: num_classes = background + foreground labels.
 # Task has 2 COCO categories (normal=0, trophallaxis=1) → model labels 1/2 → num_classes: 3.
