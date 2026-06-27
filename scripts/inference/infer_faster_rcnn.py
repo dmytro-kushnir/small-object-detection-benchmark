@@ -19,7 +19,7 @@ for _p in (_INF, _SCRIPTS):
         sys.path.insert(0, str(_p))
 
 from coco_pred_common import (  # noqa: E402
-    load_gt_filename_to_image_id,
+    iter_gt_aligned_image_paths,
     write_coco_predictions_json,
 )
 from faster_rcnn_common import (  # noqa: E402
@@ -28,9 +28,6 @@ from faster_rcnn_common import (  # noqa: E402
     resolve_device,
     xyxy_to_xywh,
 )
-from infer_image_common import iter_image_paths  # noqa: E402
-
-
 def _predict_image(
     model: torch.nn.Module,
     image_path: Path,
@@ -75,17 +72,12 @@ def main() -> None:
         device=device,
     )
 
-    name_to_id = load_gt_filename_to_image_id(gt_path)
-    paths = iter_image_paths(source)
+    work = iter_gt_aligned_image_paths(source, gt_path)
     if args.max_images is not None:
-        paths = paths[: max(0, args.max_images)]
+        work = work[: max(0, args.max_images)]
 
     detections: list[dict] = []
-    for ip in paths:
-        base = ip.name
-        if base not in name_to_id:
-            continue
-        image_id = name_to_id[base]
+    for ip, image_id in work:
         try:
             boxes, labels, scores = _predict_image(model, ip, device, float(args.conf))
         except RuntimeError as exc:
